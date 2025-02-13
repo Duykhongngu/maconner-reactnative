@@ -37,7 +37,7 @@ export const trendingProducts: Product[] = [
       category: "Valentine's Day",
       inStock: true,
       images: [trend1, trend1, trend1, trend1],
-      link: "/Products/detailProducts",
+      link: "detailProducts",
     },
     {
       id: 2,
