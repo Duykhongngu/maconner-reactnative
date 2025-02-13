@@ -67,8 +67,8 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: "Starter Base",
-            header: () => <SiteHeader />,
+            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+            headerTitleAlign: "center",
           }}
         />
         <Stack.Screen

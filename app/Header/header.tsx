@@ -52,7 +52,7 @@ function SiteHeader() {
 
   return (
     <SafeAreaView>
-      <View className="flex-4 gap-2 shadow-sm py-2 px-2 flex-row items-center mt-14 border-b border-gray-200 justify-between ">
+      <View className="flex-4 gap-2   flex-row items-center   justify-between ">
         <View>
           <Popover>
             <PopoverTrigger asChild>

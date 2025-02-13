@@ -6,7 +6,7 @@ const trend5 = require("~/assets/images/trend5.webp");
 const trend6 = require("~/assets/images/trend6.webp");
 const trend7 = require("~/assets/images/trend7.webp");
 const trend8 = require("~/assets/images/trend8.webp");
-export interface Product {
+export  interface Product {
     id: number;
     name: string;
     description: string;
@@ -22,7 +22,7 @@ export interface Product {
     link: string;
   }
   
-export const trendingProducts: Product[] = [
+export  const trendingProducts: Product[] = [
     {
       id: 1,
       name: "Drive Safe",
