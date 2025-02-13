@@ -6,13 +6,20 @@ type CartItem = {
   price: number;
   quantity: number;
   color: string;
+  size: string;
   image: string | number;
 };
 
 type CartContextType = {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (id: number) => void;
+  removeFromCart: (id: number, color: string, size: string) => void;
+  updateCartQuantity: (
+    id: number,
+    color: string,
+    size: string,
+    newQuantity: number
+  ) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -22,22 +29,51 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((p) => p.id === item.id);
+      const existingItem = prevItems.find(
+        (p) =>
+          p.id === item.id && p.color === item.color && p.size === item.size
+      );
+
       if (existingItem) {
         return prevItems.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + 1 } : p
+          p.id === item.id && p.color === item.color && p.size === item.size
+            ? { ...p, quantity: p.quantity + item.quantity } // ✅ Cộng dồn số lượng
+            : p
         );
       }
-      return [...prevItems, { ...item, quantity: 1 }];
+
+      return [...prevItems, { ...item }];
     });
   };
 
-  const removeFromCart = (id: number) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  const removeFromCart = (id: number, color: string, size: string) => {
+    setCartItems((prevItems) =>
+      prevItems.filter(
+        (item) =>
+          !(item.id === id && item.color === color && item.size === size)
+      )
+    );
+  };
+
+  const updateCartQuantity = (
+    id: number,
+    color: string,
+    size: string,
+    newQuantity: number
+  ) => {
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id && item.color === color && item.size === size
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    );
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart }}>
+    <CartContext.Provider
+      value={{ cartItems, addToCart, removeFromCart, updateCartQuantity }}
+    >
       {children}
     </CartContext.Provider>
   );

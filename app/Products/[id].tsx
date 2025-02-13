@@ -17,15 +17,17 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const { addToCart } = useCart();
 
-  // ✅ Thêm state cho số lượng và màu sắc
+  // ✅ Thêm state cho số lượng, màu sắc, và kích thước
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   useEffect(() => {
     const foundProduct = trendingProducts.find((p) => p.id === Number(id));
     if (foundProduct) {
       setProduct(foundProduct);
-      setSelectedColor(foundProduct.colors[0]); // Chọn màu đầu tiên làm mặc định
+      setSelectedColor(foundProduct.colors[0]); // Chọn màu mặc định
+      setSelectedSize(foundProduct.sizes ? foundProduct.sizes[0] : null); // Chọn size đầu tiên nếu có
     }
   }, [id]);
 
@@ -38,16 +40,16 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    if (product && selectedColor) {
+    if (product && selectedColor && selectedSize) {
       addToCart({
         id: product.id,
         name: product.name,
         price: product.price,
         quantity: quantity,
         color: selectedColor,
+        size: selectedSize,
         image: product.img as any,
       });
-      router.push("/Cart/CartPages"); // ✅ Chuyển đến trang giỏ hàng sau khi thêm
     }
   };
 
@@ -71,7 +73,7 @@ export default function ProductDetail() {
           ${product.price} USD
         </Text>
 
-        {/* Màu sắc */}
+        {/* Chọn màu */}
         <View className="mt-4">
           <Text className="text-lg font-semibold">Choose Color</Text>
           <View className="flex-row mt-2">
@@ -86,6 +88,30 @@ export default function ProductDetail() {
                 }`}
                 style={{ backgroundColor: color }}
               />
+            ))}
+          </View>
+        </View>
+
+        {/* Chọn size */}
+        <View className="mt-4">
+          <Text className="text-lg font-semibold">Choose Size</Text>
+          <View className="flex-row mt-2">
+            {product.sizes?.map((size) => (
+              <TouchableOpacity
+                key={size}
+                onPress={() => setSelectedSize(size)}
+                className={`px-4 py-2 mx-1 rounded-md ${
+                  selectedSize === size ? "bg-blue-500" : "bg-gray-200"
+                }`}
+              >
+                <Text
+                  className={
+                    selectedSize === size ? "text-white" : "text-black"
+                  }
+                >
+                  {size}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
         </View>

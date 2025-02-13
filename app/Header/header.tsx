@@ -25,6 +25,7 @@ import {
 } from "~/components/ui/popover";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
+import { useCart } from "../Cart/CartContext";
 
 const logo = require("~/assets/images/logo.png");
 const inlineMenu = [
@@ -40,6 +41,12 @@ const inlineMenu = [
 ];
 
 function SiteHeader() {
+  const { cartItems } = useCart();
+  const totalItems = cartItems.reduce(
+    (total, item) => total + item.quantity,
+    0
+  ); // Tính tổng số lượng sản phẩm
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -99,8 +106,9 @@ function SiteHeader() {
             <View>
               <ShoppingCart size={28} color="black" />
             </View>
-            <View className="absolute bg-red-500  flex rounded-full w-6 h-6 -right-2 -top-1 justify-center items-center text-sm">
-              <Text className="text-white">0</Text>
+
+            <View className="absolute bg-red-500 flex rounded-full w-6 h-6 -right-2 -top-2 justify-center items-center text-sm">
+              <Text className="text-white">{totalItems}</Text>
             </View>
           </TouchableOpacity>
         </View>

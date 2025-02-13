@@ -5,68 +5,42 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
-  useWindowDimensions,
 } from "react-native";
 import { trendingProducts } from "~/app/Data/product";
+import { useWindowDimensions } from "react-native";
 
 function Trending() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingHorizontal: 16 }}>
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: "bold",
-            textAlign: "center",
-            color: "#f97316",
-            marginBottom: 16,
-          }}
-        >
+    <SafeAreaView className="flex-1 px-4">
+      <View className="flex-1">
+        <Text className="text-2xl font-bold text-center text-orange-500 mb-4">
           Trending Now
         </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-          }}
-        >
+        <View className="flex-row flex-wrap justify-between">
           {trendingProducts.map((item) => {
-            console.log("Image source:", item.img); // ✅ Kiểm tra giá trị img
+            // ✅ Kiểm tra giá trị img
 
             return (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => router.push(`/Products/${item.id}`)}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: 8,
-                  padding: 8,
-                  marginBottom: 16,
-                  width: width < 768 ? "48%" : "30%",
-                }}
+                className={`bg-white rounded-lg p-2 mb-4 ${
+                  width < 768 ? "w-[48%]" : "w-[30%]"
+                }`}
               >
                 <Image
-                  source={item.img}
-                  style={{ width: "100%", height: 160, borderRadius: 8 }}
+                  source={
+                    typeof item.img === "string" ? { uri: item.img } : item.img
+                  }
+                  className="w-full h-40 rounded-lg"
                 />
-                <Text
-                  style={{
-                    marginTop: 8,
-                    fontWeight: "600",
-                    fontSize: 16,
-                    height: 60,
-                    color: "black",
-                  }}
-                >
+                <Text className="mt-2 font-semibold text-base h-20 text-black">
                   {item.description}
                 </Text>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "bold", color: "#f97316" }}
-                >
+                <Text className="text-lg font-bold text-orange-500">
                   $ {item.price} USD
                 </Text>
               </TouchableOpacity>
