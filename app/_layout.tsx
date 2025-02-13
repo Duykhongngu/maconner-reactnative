@@ -73,15 +73,27 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="test" // ✅ Thêm trang test
-          options={{ title: "Test Page", header: () => <SiteHeader /> }}
+          options={{
+            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+            headerTitleAlign: "center",
+            headerBackVisible: false,
+          }}
         />
         <Stack.Screen
           name="Home/sliderShow" // ✅ Thêm trang test
-          options={{ title: "Test Page", header: () => <SiteHeader /> }}
+          options={{
+            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+            headerTitleAlign: "center",
+            headerBackVisible: false,
+          }}
         />
         <Stack.Screen
           name="Products/[id]" // ✅ Thêm trang test
-          options={{ title: "Test Page", header: () => <SiteHeader /> }}
+          options={{
+            headerTitle: () => <SiteHeader />,
+            headerTitleAlign: "center",
+            headerBackVisible: false,
+          }}
         />
       </Stack>
       <PortalHost />

@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       screens: {
-        xs: "400px",
+        xs: "375px",
       },
       colors: {
         border: "hsl(var(--border))",
