@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { useRouter } from "expo-router";
 import {
   View,
   Image,
@@ -8,8 +8,10 @@ import {
   SafeAreaView,
 } from "react-native";
 import { trendingProducts } from "~/app/Data/product";
+
 function Trending() {
   const router = useRouter();
+
   return (
     <SafeAreaView>
       <View style={styles.container}>
@@ -18,10 +20,15 @@ function Trending() {
           {trendingProducts.map((item) => (
             <TouchableOpacity
               key={item.id}
-              onPress={() => router.push(item.link as any)}
+              onPress={() =>
+                router.push({
+                  pathname: "/Products/[id]",
+                  params: { id: item.id.toString() },
+                })
+              }
               style={styles.card}
             >
-              <Image source={require(item.img)} style={styles.image} />
+              <Image source={item.img as any} style={styles.image} />
               <Text style={styles.description}>{item.description}</Text>
               <Text style={styles.price}>$ {item.price} USD</Text>
             </TouchableOpacity>

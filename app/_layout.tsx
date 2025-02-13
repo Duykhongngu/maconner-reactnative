@@ -80,7 +80,7 @@ export default function RootLayout() {
           options={{ title: "Test Page", header: () => <SiteHeader /> }}
         />
         <Stack.Screen
-          name="detailProducts" // ✅ Thêm trang test
+          name="Products/[id]" // ✅ Thêm trang test
           options={{ title: "Test Page", header: () => <SiteHeader /> }}
         />
       </Stack>

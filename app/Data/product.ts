@@ -1,11 +1,11 @@
-const trend1 = "~/assets/images/trend1.webp";
-const trend2 = "~/assets/images/trend2.webp";
-const trend3 = "~/assets/images/trend3.webp";
-const trend4 = "~/assets/images/trend4.webp";
-const trend5 = "~/assets/images/trend5.webp";
-const trend6 = "~/assets/images/trend6.webp";
-const trend7 = "~/assets/images/trend7.webp";
-const trend8 = "~/assets/images/trend8.webp";
+const trend1 = require("~/assets/images/trend1.webp");
+const trend2 = require("~/assets/images/trend2.webp");
+const trend3 = require("~/assets/images/trend3.webp");
+const trend4 = require("~/assets/images/trend4.webp");
+const trend5 = require("~/assets/images/trend5.webp");
+const trend6 = require("~/assets/images/trend6.webp");
+const trend7 = require("~/assets/images/trend7.webp");
+const trend8 = require("~/assets/images/trend8.webp");
 export interface Product {
     id: number;
     name: string;
@@ -37,7 +37,7 @@ export const trendingProducts: Product[] = [
       category: "Valentine's Day",
       inStock: true,
       images: [trend1, trend1, trend1, trend1],
-      link: "detailProducts",
+      link: "Products/[id]",
     },
     {
       id: 2,
