@@ -1,19 +1,22 @@
 import { SafeAreaView, View } from "react-native";
 import Background from "./background";
 import Trending from "./trending";
+import { CartProvider } from "../Cart/CartContext";
 
 function HomePage() {
   return (
-    <SafeAreaView>
-      <View>
+    <CartProvider>
+      <SafeAreaView>
         <View>
-          <Background />
+          <View>
+            <Background />
+          </View>
+          <View>
+            <Trending />
+          </View>
         </View>
-        <View>
-          <Trending />
-        </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </CartProvider>
   );
 }
 

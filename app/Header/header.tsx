@@ -52,7 +52,7 @@ function SiteHeader() {
 
   return (
     <SafeAreaView>
-      <View className="flex-4 gap-2  max-xs:gap-0 flex-row items-center   justify-between ">
+      <View className="flex-4 gap-2  max-xs:gap-0  flex-row items-center   justify-between ">
         <View>
           <Popover>
             <PopoverTrigger asChild>
@@ -69,7 +69,7 @@ function SiteHeader() {
             >
               {inlineMenu.map((item, index) => (
                 <View key={index}>
-                  <Text className="h-12 w-full shadow-current font-medium native:text-2xl">
+                  <Text className="h-12 w-full shadow-current  font-medium native:text-2xl">
                     {item.title}
                   </Text>
                 </View>
@@ -93,12 +93,16 @@ function SiteHeader() {
           <View>
             <Heart size={28} color="black" />
           </View>
-          <View>
-            <ShoppingCart size={28} color="black" />
-          </View>
-          <View className="absolute bg-red-500  flex rounded-full w-6 h-6 -right-2 -top-1 justify-center items-center text-sm">
-            <Text className="text-white">0</Text>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/Cart/CartPages" as any)}
+          >
+            <View>
+              <ShoppingCart size={28} color="black" />
+            </View>
+            <View className="absolute bg-red-500  flex rounded-full w-6 h-6 -right-2 -top-1 justify-center items-center text-sm">
+              <Text className="text-white">0</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Modal cho giao diện tìm kiếm */}

@@ -4,82 +4,78 @@ import {
   Image,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
+  useWindowDimensions,
 } from "react-native";
 import { trendingProducts } from "~/app/Data/product";
 
 function Trending() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
 
   return (
-    <SafeAreaView>
-      <View style={styles.container}>
-        <Text style={styles.title}>Trending Now</Text>
-        <View style={styles.grid}>
-          {trendingProducts.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/Products/[id]",
-                  params: { id: item.id.toString() },
-                })
-              }
-              style={styles.card}
-            >
-              <Image source={item.img as any} style={styles.image} />
-              <Text style={styles.description}>{item.description}</Text>
-              <Text style={styles.price}>$ {item.price} USD</Text>
-            </TouchableOpacity>
-          ))}
+    <SafeAreaView style={{ flex: 1, paddingHorizontal: 16 }}>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: "bold",
+            textAlign: "center",
+            color: "#f97316",
+            marginBottom: 16,
+          }}
+        >
+          Trending Now
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+          }}
+        >
+          {trendingProducts.map((item) => {
+            console.log("Image source:", item.img); // ✅ Kiểm tra giá trị img
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => router.push(`/Products/${item.id}`)}
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: 8,
+                  padding: 8,
+                  marginBottom: 16,
+                  width: width < 768 ? "48%" : "30%",
+                }}
+              >
+                <Image
+                  source={item.img}
+                  style={{ width: "100%", height: 160, borderRadius: 8 }}
+                />
+                <Text
+                  style={{
+                    marginTop: 8,
+                    fontWeight: "600",
+                    fontSize: 16,
+                    height: 60,
+                    color: "black",
+                  }}
+                >
+                  {item.description}
+                </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#f97316" }}
+                >
+                  $ {item.price} USD
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-    color: "orange",
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 8,
-    width: "48%", // Để tạo lưới 2 cột
-    marginBottom: 16,
-  },
-  image: {
-    width: "100%",
-    height: 150, // Hoặc kích thước phù hợp với thiết kế của bạn
-    borderRadius: 8,
-  },
-  description: {
-    height: 90,
-    fontWeight: "600",
-    marginTop: 8,
-    fontSize: 16,
-    color: "black",
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "orange",
-  },
-});
 
 export default Trending;

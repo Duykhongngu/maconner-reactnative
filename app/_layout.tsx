@@ -16,6 +16,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import SiteHeader from "~/app/Header/header";
+import { CartProvider } from "./Cart/CartContext";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -55,49 +56,55 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <StatusBar
-        animated={true}
-        backgroundColor={isDarkColorScheme ? "transparent" : "white"}
-        networkActivityIndicatorVisible
-        style={isDarkColorScheme ? "light" : "dark"}
-        translucent
-      />
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{
-            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-            headerTitleAlign: "center",
-          }}
+    <CartProvider>
+      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar
+          animated={true}
+          backgroundColor={isDarkColorScheme ? "transparent" : "white"}
+          networkActivityIndicatorVisible
+          style={isDarkColorScheme ? "light" : "dark"}
+          translucent
         />
-        <Stack.Screen
-          name="test" // ✅ Thêm trang test
-          options={{
-            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-            headerTitleAlign: "center",
-            headerBackVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="Home/sliderShow" // ✅ Thêm trang test
-          options={{
-            headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-            headerTitleAlign: "center",
-            headerBackVisible: false,
-          }}
-        />
-        <Stack.Screen
-          name="Products/[id]" // ✅ Thêm trang test
-          options={{
-            headerTitle: () => <SiteHeader />,
-            headerTitleAlign: "center",
-            headerBackVisible: false,
-          }}
-        />
-      </Stack>
-      <PortalHost />
-    </ThemeProvider>
+        <Stack screenOptions={{ headerBackVisible: false }}>
+          <Stack.Screen
+            name="index"
+            options={{
+              headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+            }}
+          />
+          <Stack.Screen
+            name="test" // ✅ Thêm trang test
+            options={{
+              headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="Home/sliderShow" // ✅ Thêm trang test
+            options={{
+              headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="Products/[id]" // ✅ Thêm trang test
+            options={{
+              headerTitle: () => <SiteHeader />,
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="Cart/CartPages" // ✅ Thêm trang test
+            options={{
+              headerTitle: () => <SiteHeader />,
+              headerTitleAlign: "center",
+            }}
+          />
+        </Stack>
+
+        <PortalHost />
+      </ThemeProvider>
+    </CartProvider>
   );
 }
 

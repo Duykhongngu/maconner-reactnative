@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
-  SectionList,
 } from "react-native";
 
 const imgCozy = require("~/assets/images/CozyGlow.png");
@@ -19,6 +18,11 @@ const imgNest = require("~/assets/images/CozyNest.png");
 const imgSoft = require("~/assets/images/SnugWear.png");
 
 const { width } = Dimensions.get("window");
+
+// Xác định số cột dựa trên kích thước màn hình
+const numColumns = width > 1024 ? 6 : width > 768 ? 5 : width > 480 ? 4 : 3;
+const iconSize = Math.max(60, Math.min(100, width / (numColumns + 1)));
+// Giới hạn iconSize từ 60px đến 100px
 
 const items = [
   { id: 1, link: "/", img: imgCozy, title: "Cozy Glow" },
@@ -38,12 +42,23 @@ const Background = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {items.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.item}>
-            <View style={styles.iconWrapper}>
+        {memoizedItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[styles.item, { width: iconSize }]}
+          >
+            <View
+              style={[
+                styles.iconWrapper,
+                { width: iconSize, height: iconSize },
+              ]}
+            >
               <Image
                 source={item.img}
-                style={styles.icon}
+                style={[
+                  styles.icon,
+                  { width: iconSize * 0.8, height: iconSize * 0.8 },
+                ]}
                 resizeMode="contain"
               />
             </View>
@@ -61,14 +76,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 15,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   item: {
     alignItems: "center",
-    marginRight: 20,
+    marginRight: 15,
   },
   iconWrapper: {
-    width: 80,
-    height: 80,
     borderRadius: 35,
     backgroundColor: "#F5F7FA",
     justifyContent: "center",
