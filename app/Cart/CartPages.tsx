@@ -1,11 +1,19 @@
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import type React from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { PackageOpen, Trash2 } from "lucide-react-native";
 import { useCart } from "./CartContext";
 import { router } from "expo-router";
 
-function CartPages() {
+const CartPages: React.FC = () => {
   const { cartItems, removeFromCart, updateCartQuantity } = useCart();
 
   const subtotal = cartItems.reduce(
@@ -13,113 +21,212 @@ function CartPages() {
     0
   );
 
-  return (
-    <View className="flex-1 p-4 bg-white">
-      {cartItems.length === 0 ? (
-        <View className="items-center justify-center flex-1">
+  if (cartItems.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyCartContainer}>
           <PackageOpen size={48} color="#374151" />
-          <Text className="text-xl font-semibold mt-4">Your cart is empty</Text>
-          <Text className="text-gray-500 text-center mt-2">
+          <Text style={styles.emptyCartTitle}>Your cart is empty</Text>
+          <Text style={styles.emptyCartSubtitle}>
             Explore special gifts for you and your loved ones.
           </Text>
           <Button
-            variant={"normal"}
-            size={"lg"}
-            className="mt-4 px-6 py-2 bg-orange-500 rounded-md"
+            variant="normal"
+            size="lg"
+            style={styles.keepShoppingButton}
             onPress={() => router.push("/")}
           >
-            <Text className="w-full text-white font-semibold text-2xl">
-              Keep Shopping
-            </Text>
+            <Text style={styles.keepShoppingButtonText}>Keep Shopping</Text>
           </Button>
         </View>
-      ) : (
-        <ScrollView>
-          {cartItems.map((item) => (
-            <Card
-              key={`${item.id}-${item.color}-${item.size}`}
-              className="flex-row items-center p-4 mb-4"
-            >
-              <Image
-                source={
-                  typeof item.image === "string"
-                    ? { uri: item.image }
-                    : item.image
-                }
-                className="w-40 h-40 rounded-md"
-              />
+      </View>
+    );
+  }
 
-              <View className="ml-4 flex-1">
-                <Text className="text-2xl font-semibold">
-                  Name: {item.name}
-                </Text>
-                <Text className="text-xl text-orange-500 font-semibold">
-                  Price:${item.price.toFixed(2)} USD
-                </Text>
-                <Text className=" text-lg font-semibold">
-                  Color: {item.color}
-                </Text>
-                <Text className="text-lg font-semibold">Size: {item.size}</Text>
-
-                {/* ✅ Hiển thị số lượng & thêm nút tăng/giảm */}
-                <View className="flex-row items-center mt-2">
-                  <TouchableOpacity
-                    onPress={() =>
-                      updateCartQuantity(
-                        item.id,
-                        item.color,
-                        item.size,
-                        Math.max(1, item.quantity - 1)
-                      )
-                    }
-                    className="p-2 bg-gray-200 rounded-lg"
-                  >
-                    <Text className="w-5 p-1 text-2xl ">-</Text>
-                  </TouchableOpacity>
-                  <Text className="mx-4 text-lg">{item.quantity}</Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      updateCartQuantity(
-                        item.id,
-                        item.color,
-                        item.size,
-                        item.quantity + 1
-                      )
-                    }
-                    className="p-2 bg-gray-200 rounded-lg"
-                  >
-                    <Text className="w-5 p-1 text-xl">+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <Button
-                variant="outline"
-                onPress={() => removeFromCart(item.id, item.color, item.size)}
-              >
-                <Trash2 size={16} color={"black"} />
-              </Button>
-            </Card>
-          ))}
-          <View className="mt-6 border-t pt-4">
-            <Text className="text-lg font-semibold">
-              Subtotal: ${subtotal.toFixed(2)} USD
-            </Text>
-          </View>
-          <Button
-            variant={"normal"}
-            size={"lg"}
-            className="mt-4 font-semibold px-6 py-2 bg-orange-500 rounded-md"
-            onPress={() => console.log("Proceed to Checkout pressed")}
+  return (
+    <View style={styles.container}>
+      <ScrollView>
+        {cartItems.map((item) => (
+          <Card
+            key={`${item.id}-${item.color}-${item.size}`}
+            style={styles.cartItemCard}
           >
-            <Text className="h-full text-white items-center justify-center text-2xl ">
-              Proceed to Checkout
-            </Text>
-          </Button>
-        </ScrollView>
-      )}
+            <Image
+              source={
+                typeof item.image === "string"
+                  ? { uri: item.image }
+                  : item.image
+              }
+              style={styles.cartItemImage}
+            />
+
+            <View style={styles.cartItemDetails}>
+              <Text style={styles.cartItemName}>Name: {item.name}</Text>
+              <Text style={styles.cartItemPrice}>
+                Price: ${item.price.toFixed(2)} USD
+              </Text>
+              <Text style={styles.cartItemInfo}>Color: {item.color}</Text>
+              <Text style={styles.cartItemInfo}>Size: {item.size}</Text>
+
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                  onPress={() =>
+                    updateCartQuantity(
+                      item.id,
+                      item.color,
+                      item.size,
+                      Math.max(1, item.quantity - 1)
+                    )
+                  }
+                  style={styles.quantityButton}
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{item.quantity}</Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    updateCartQuantity(
+                      item.id,
+                      item.color,
+                      item.size,
+                      item.quantity + 1
+                    )
+                  }
+                  style={styles.quantityButton}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <Button
+              variant="outline"
+              onPress={() => removeFromCart(item.id, item.color, item.size)}
+            >
+              <Trash2 size={16} color="black" />
+            </Button>
+          </Card>
+        ))}
+        <View style={styles.subtotalContainer}>
+          <Text style={styles.subtotalText}>
+            Subtotal: ${subtotal.toFixed(2)} USD
+          </Text>
+        </View>
+        <Button
+          variant="normal"
+          size="lg"
+          style={styles.checkoutButton}
+          onPress={() => console.log("Proceed to Checkout pressed")}
+        >
+          <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+        </Button>
+      </ScrollView>
     </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "white",
+  },
+  emptyCartContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCartTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 16,
+  },
+  emptyCartSubtitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  keepShoppingButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    backgroundColor: "#F97316",
+    borderRadius: 8,
+  },
+  keepShoppingButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  cartItemCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    marginBottom: 16,
+  },
+  cartItemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  cartItemDetails: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  cartItemName: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  cartItemPrice: {
+    fontSize: 16,
+    color: "#F97316",
+    fontWeight: "600",
+  },
+  cartItemInfo: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  quantityButton: {
+    padding: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 8,
+  },
+  quantityButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  quantityText: {
+    marginHorizontal: 16,
+    fontSize: 16,
+  },
+  subtotalContainer: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingTop: 16,
+  },
+  subtotalText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  checkoutButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    backgroundColor: "#F97316",
+    borderRadius: 8,
+  },
+  checkoutButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+});
 
 export default CartPages;

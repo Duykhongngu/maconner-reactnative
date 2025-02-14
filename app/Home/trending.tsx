@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
+  StyleSheet,
 } from "react-native";
 import { trendingProducts } from "~/app/Data/product";
 import { useWindowDimensions } from "react-native";
@@ -48,12 +49,21 @@ function Trending() {
             );
           })}
         </View>
-        <Button variant={"secondary"} className="w-5/12">
-          <Text className="text-black text-xl font-normal">Show More</Text>
-        </Button>
+        <View>
+          <Button variant={"secondary"} style={styles.showMoreButton}>
+            <Text className="text-black text-xl font-normal">Show More</Text>
+          </Button>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
+const styles = StyleSheet.create({
+  showMoreButton: {
+    backgroundColor: "rgb(228, 89, 39)0",
 
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 export default Trending;

@@ -1,15 +1,5 @@
 import "~/global.css";
-import { useFonts } from "expo-font";
-import {
-  Poppins_100Thin,
-  Poppins_200ExtraLight,
-  Poppins_300Light,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-} from "@expo-google-fonts/poppins";
-import * as SplashScreen from "expo-splash-screen"; // ✅ Import SplashScreen
+
 import { useEffect, useState } from "react";
 import {
   DarkTheme,
@@ -64,33 +54,6 @@ export default function RootLayout() {
 
   if (!isColorSchemeLoaded) {
     return null;
-  }
-  const [fontsLoaded] = useFonts({
-    Poppins_100Thin,
-    Poppins_200ExtraLight,
-    Poppins_300Light,
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-  });
-
-  const [appReady, setAppReady] = useState(false);
-
-  useEffect(() => {
-    async function prepareApp() {
-      await SplashScreen.preventAutoHideAsync(); // ✅ Ngăn Splash Screen tự ẩn
-      if (fontsLoaded) {
-        setAppReady(true);
-        await SplashScreen.hideAsync(); // ✅ Ẩn Splash Screen khi font đã load xong
-      }
-    }
-
-    prepareApp();
-  }, [fontsLoaded]);
-
-  if (!appReady) {
-    return null; // ✅ Trả về null để giữ màn hình Splash
   }
 
   return (
