@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 const imgCozy = require("~/assets/images/CozyGlow.png");
 const imgDrinkware = require("~/assets/images/Drinkware.png");
@@ -34,9 +35,16 @@ const items = [
 ];
 
 const Background = () => {
+  const { isDarkColorScheme } = useColorScheme();
+  const backgroundColor = isDarkColorScheme ? "#1E1E1E" : "#FFFFFF";
+  const textColor = isDarkColorScheme ? "#E5E7EB" : "#333";
+  const itemBackgroundColor = isDarkColorScheme ? "#2D2D2D" : "#FFFFFF";
+  const iconBackgroundColor = isDarkColorScheme ? "#3A3A3A" : "#F5F7FA";
+
   const memoizedItems = useMemo(() => items, [items]);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       <ScrollView
         horizontal={true}
         showsHorizontalScrollIndicator={false}
@@ -45,12 +53,19 @@ const Background = () => {
         {memoizedItems.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={[styles.item, { width: iconSize }]}
+            style={[
+              styles.item,
+              { width: iconSize, backgroundColor: itemBackgroundColor },
+            ]}
           >
             <View
               style={[
                 styles.iconWrapper,
-                { width: iconSize, height: iconSize },
+                {
+                  width: iconSize,
+                  height: iconSize,
+                  backgroundColor: iconBackgroundColor,
+                },
               ]}
             >
               <Image
@@ -62,7 +77,9 @@ const Background = () => {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.text}>{item.title}</Text>
+            <Text style={[styles.text, { color: textColor }]}>
+              {item.title}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -82,10 +99,10 @@ const styles = StyleSheet.create({
   item: {
     alignItems: "center",
     marginRight: 15,
+    borderRadius: 15,
   },
   iconWrapper: {
     borderRadius: 35,
-    backgroundColor: "#F5F7FA",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -99,7 +116,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontSize: 14,
     textAlign: "center",
-    color: "#333",
   },
 });
 

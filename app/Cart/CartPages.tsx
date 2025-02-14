@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { useColorScheme } from "~/lib/useColorScheme";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { PackageOpen, Trash2 } from "lucide-react-native";
@@ -14,6 +15,12 @@ import { useCart } from "./CartContext";
 import { router } from "expo-router";
 
 const CartPages: React.FC = () => {
+  const { isDarkColorScheme } = useColorScheme();
+  const iconColor = isDarkColorScheme ? "white" : "black";
+  const bgColor = isDarkColorScheme ? "#1E1E1E" : "white";
+  const textColor = isDarkColorScheme ? "white" : "black";
+  const borderColor = isDarkColorScheme ? "#374151" : "#E5E7EB";
+
   const { cartItems, removeFromCart, updateCartQuantity } = useCart();
 
   const subtotal = cartItems.reduce(
@@ -23,11 +30,13 @@ const CartPages: React.FC = () => {
 
   if (cartItems.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: bgColor }]}>
         <View style={styles.emptyCartContainer}>
-          <PackageOpen size={48} color="#374151" />
-          <Text style={styles.emptyCartTitle}>Your cart is empty</Text>
-          <Text style={styles.emptyCartSubtitle}>
+          <PackageOpen size={48} color={iconColor} />
+          <Text style={[styles.emptyCartTitle, { color: textColor }]}>
+            Your cart is empty
+          </Text>
+          <Text style={[styles.emptyCartSubtitle, { color: textColor }]}>
             Explore special gifts for you and your loved ones.
           </Text>
           <Button
@@ -44,12 +53,15 @@ const CartPages: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
       <ScrollView>
         {cartItems.map((item) => (
           <Card
             key={`${item.id}-${item.color}-${item.size}`}
-            style={styles.cartItemCard}
+            style={[
+              styles.cartItemCard,
+              { backgroundColor: bgColor, borderColor },
+            ]}
           >
             <Image
               source={
@@ -61,12 +73,18 @@ const CartPages: React.FC = () => {
             />
 
             <View style={styles.cartItemDetails}>
-              <Text style={styles.cartItemName}>Name: {item.name}</Text>
-              <Text style={styles.cartItemPrice}>
+              <Text style={[styles.cartItemName, { color: textColor }]}>
+                Name: {item.name}
+              </Text>
+              <Text style={[styles.cartItemPrice, { color: "#F97316" }]}>
                 Price: ${item.price.toFixed(2)} USD
               </Text>
-              <Text style={styles.cartItemInfo}>Color: {item.color}</Text>
-              <Text style={styles.cartItemInfo}>Size: {item.size}</Text>
+              <Text style={[styles.cartItemInfo, { color: textColor }]}>
+                Color: {item.color}
+              </Text>
+              <Text style={[styles.cartItemInfo, { color: textColor }]}>
+                Size: {item.size}
+              </Text>
 
               <View style={styles.quantityContainer}>
                 <TouchableOpacity
@@ -78,11 +96,20 @@ const CartPages: React.FC = () => {
                       Math.max(1, item.quantity - 1)
                     )
                   }
-                  style={styles.quantityButton}
+                  style={[
+                    styles.quantityButton,
+                    { backgroundColor: borderColor },
+                  ]}
                 >
-                  <Text style={styles.quantityButtonText}>-</Text>
+                  <Text
+                    style={[styles.quantityButtonText, { color: textColor }]}
+                  >
+                    -
+                  </Text>
                 </TouchableOpacity>
-                <Text style={styles.quantityText}>{item.quantity}</Text>
+                <Text style={[styles.quantityText, { color: textColor }]}>
+                  {item.quantity}
+                </Text>
                 <TouchableOpacity
                   onPress={() =>
                     updateCartQuantity(
@@ -92,9 +119,16 @@ const CartPages: React.FC = () => {
                       item.quantity + 1
                     )
                   }
-                  style={styles.quantityButton}
+                  style={[
+                    styles.quantityButton,
+                    { backgroundColor: borderColor },
+                  ]}
                 >
-                  <Text style={styles.quantityButtonText}>+</Text>
+                  <Text
+                    style={[styles.quantityButtonText, { color: textColor }]}
+                  >
+                    +
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -103,12 +137,12 @@ const CartPages: React.FC = () => {
               variant="outline"
               onPress={() => removeFromCart(item.id, item.color, item.size)}
             >
-              <Trash2 size={16} color="black" />
+              <Trash2 size={16} color={iconColor} />
             </Button>
           </Card>
         ))}
         <View style={styles.subtotalContainer}>
-          <Text style={styles.subtotalText}>
+          <Text style={[styles.subtotalText, { color: textColor }]}>
             Subtotal: ${subtotal.toFixed(2)} USD
           </Text>
         </View>
@@ -129,7 +163,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "white",
   },
   emptyCartContainer: {
     flex: 1,
@@ -143,7 +176,6 @@ const styles = StyleSheet.create({
   },
   emptyCartSubtitle: {
     fontSize: 16,
-    color: "#6B7280",
     textAlign: "center",
     marginTop: 8,
   },
@@ -164,6 +196,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
   },
   cartItemImage: {
     width: 80,
@@ -180,7 +213,6 @@ const styles = StyleSheet.create({
   },
   cartItemPrice: {
     fontSize: 16,
-    color: "#F97316",
     fontWeight: "600",
   },
   cartItemInfo: {
@@ -194,7 +226,6 @@ const styles = StyleSheet.create({
   },
   quantityButton: {
     padding: 8,
-    backgroundColor: "#E5E7EB",
     borderRadius: 8,
   },
   quantityButtonText: {
@@ -208,7 +239,6 @@ const styles = StyleSheet.create({
   subtotalContainer: {
     marginTop: 24,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
     paddingTop: 16,
   },
   subtotalText: {

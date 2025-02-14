@@ -75,13 +75,18 @@ function SiteHeader() {
           </TouchableOpacity>
 
           <Modal visible={menuVisible} transparent animationType="slide">
-            <View className="flex-1 bg-white p-4">
+            <View
+              style={[
+                styles.modalContainer,
+                isDarkColorScheme && styles.darkModal,
+              ]}
+            >
               <TouchableOpacity
-                className="flex-row items-center"
+                style={styles.closeButton}
                 onPress={() => setMenuVisible(false)}
               >
                 <ChevronLeft size={26} color={iconColor} />
-                <Text className="text-2xl font-semibold  py-2  p-4  ">
+                <Text style={[styles.backText, { color: iconColor }]}>
                   Back
                 </Text>
               </TouchableOpacity>
@@ -94,8 +99,8 @@ function SiteHeader() {
                     setMenuVisible(false);
                   }}
                 >
-                  <View className="shadow-sm shadow-foreground/10 flex-row items-center">
-                    <Text className="text-2xl font-semibold  py-2  p-4  ">
+                  <View style={styles.menuItem}>
+                    <Text style={[styles.menuText, { color: iconColor }]}>
                       {item.title}
                     </Text>
                   </View>
@@ -109,11 +114,10 @@ function SiteHeader() {
           </Modal>
         </View>
 
-        <TouchableOpacity className="" onPress={() => router.push("/")}>
-          {/* <Image source={logo} /> */}
+        <TouchableOpacity onPress={() => router.push("/")}>
           <Logo width={188} height={40} />
         </TouchableOpacity>
-        <View className="flex-row gap-3 items-center">
+        <View style={styles.iconContainer}>
           <View>
             <Button
               variant="ghost"
@@ -127,27 +131,26 @@ function SiteHeader() {
             <Heart size={26} color={iconColor} />
           </View>
           <TouchableOpacity
-            className=""
             onPress={() => router.push("/Cart/CartPages" as any)}
           >
             <View>
               <ShoppingCart size={28} color={iconColor} />
             </View>
 
-            <View className="absolute bg-red-400 flex rounded-full w-6 h-6 -right-2 -top-2 justify-center items-center text-sm">
-              <Text className="text-white font-semibold">{totalItems}</Text>
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Modal cho giao diện tìm kiếm */}
         <Modal visible={isSearchOpen} transparent={true} animationType="slide">
-          <View className="flex-1 bg-white">
-            <View className="p-4 flex items-center justify-between ">
+          <View style={styles.searchModal}>
+            <View style={styles.searchHeader}>
               <Button
                 variant={"ghost"}
                 onPress={() => setIsSearchOpen(false)}
-                className="flex w-full flex-row justify-start items-center gap-2 text-black"
+                style={styles.cancelButton}
               >
                 <ChevronLeft size={24} color={iconColor} />
                 <Text>Cancel</Text>
@@ -155,7 +158,7 @@ function SiteHeader() {
             </View>
 
             {/* Nội dung tìm kiếm */}
-            <View className="p-4 flex-1">
+            <View style={styles.searchContent}>
               <SearchBar />
             </View>
           </View>
@@ -174,22 +177,81 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-
     justifyContent: "flex-start",
   },
-  menuContainer: {
-    width: 280,
-    height: "100%",
+  modalContainer: {
+    flex: 1,
     backgroundColor: "white",
     paddingVertical: 20,
-    position: "absolute",
-    left: 0,
-    top: 0,
+  },
+  darkModal: {
+    backgroundColor: "#1c1c1c", // Màu nền cho modal tối
   },
   closeButton: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
   },
+  backText: {
+    fontSize: 20,
+    fontWeight: "600",
+    paddingLeft: 10,
+  },
+  menuItem: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  menuText: {
+    fontSize: 20,
+    fontWeight: "600",
+    paddingHorizontal: 20,
+  },
+  iconContainer: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  cartBadge: {
+    position: "absolute",
+    backgroundColor: "red",
+    borderRadius: 50,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    right: -10,
+    top: -10,
+  },
+  cartBadgeText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  searchModal: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  searchHeader: {
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cancelButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  searchContent: {
+    padding: 16,
+    flex: 1,
+  },
 });
+
 export default SiteHeader;

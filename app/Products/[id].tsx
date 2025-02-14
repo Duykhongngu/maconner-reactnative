@@ -9,6 +9,7 @@ import {
   Dimensions,
   StyleSheet,
   FlatList,
+  useColorScheme,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type Product, trendingProducts } from "~/app/Data/product";
@@ -52,6 +53,7 @@ export default function ProductDetail(): JSX.Element {
   const [product, setProduct] = useState<Product | null>(null);
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const colorScheme = useColorScheme(); // Get the current color scheme
 
   // State management
   const [quantity, setQuantity] = useState<number>(1);
@@ -124,8 +126,13 @@ export default function ProductDetail(): JSX.Element {
     </TouchableOpacity>
   );
 
+  // Determine styles based on color scheme
+  const isDarkMode = colorScheme === "dark";
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, isDarkMode && styles.darkContainer]}
+    >
       <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
         {/* Image Gallery */}
         <View style={styles.imageContainer}>
@@ -165,16 +172,24 @@ export default function ProductDetail(): JSX.Element {
         <View style={styles.contentContainer}>
           {/* Product Info */}
           <View style={styles.productInfoContainer}>
-            <Text style={styles.productName}>{product.name}</Text>
-            <Text style={styles.productPrice}>
+            <Text style={[styles.productName, isDarkMode && styles.darkText]}>
+              {product.name}
+            </Text>
+            <Text style={[styles.productPrice, isDarkMode && styles.darkText]}>
               ${product.price.toFixed(2)} USD
             </Text>
-            <Text style={styles.productDescription}>{product.description}</Text>
+            <Text
+              style={[styles.productDescription, isDarkMode && styles.darkText]}
+            >
+              {product.description}
+            </Text>
           </View>
 
           {/* Color Selection */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Color</Text>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Color
+            </Text>
             <View style={styles.colorContainer}>
               {product.colors.map((color) => (
                 <TouchableOpacity
@@ -192,7 +207,9 @@ export default function ProductDetail(): JSX.Element {
 
           {/* Size Selection */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Size</Text>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Size
+            </Text>
             <View style={styles.sizeContainer}>
               {product.sizes?.map((size) => (
                 <TouchableOpacity
@@ -218,7 +235,9 @@ export default function ProductDetail(): JSX.Element {
 
           {/* Quantity */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Quantity</Text>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Quantity
+            </Text>
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
@@ -238,7 +257,9 @@ export default function ProductDetail(): JSX.Element {
 
           {/* Customer Reviews */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Customer Reviews</Text>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Customer Reviews
+            </Text>
             <FlatList
               data={customerReviews}
               renderItem={renderReviewItem}
@@ -249,7 +270,9 @@ export default function ProductDetail(): JSX.Element {
 
           {/* Suggested Products */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>You May Also Like</Text>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              You May Also Like
+            </Text>
             <FlatList
               data={trendingProducts
                 .filter((p) => p.id !== product.id)
@@ -282,6 +305,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  darkContainer: {
+    backgroundColor: "#000",
   },
   loadingContainer: {
     flex: 1,
@@ -344,6 +370,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000",
     marginBottom: 16,
+  },
+  darkText: {
+    color: "#fff",
   },
   colorContainer: {
     flexDirection: "row",
