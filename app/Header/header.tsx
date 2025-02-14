@@ -145,7 +145,12 @@ function SiteHeader() {
 
         {/* Modal cho giao diện tìm kiếm */}
         <Modal visible={isSearchOpen} transparent={true} animationType="slide">
-          <View style={styles.searchModal}>
+          <View
+            style={[
+              styles.modalContainer,
+              isDarkColorScheme && styles.darkModal,
+            ]}
+          >
             <View style={styles.searchHeader}>
               <Button
                 variant={"ghost"}
@@ -153,7 +158,7 @@ function SiteHeader() {
                 style={styles.cancelButton}
               >
                 <ChevronLeft size={24} color={iconColor} />
-                <Text>Cancel</Text>
+                <Text style={{ color: iconColor }}>Cancel</Text>
               </Button>
             </View>
 
@@ -224,8 +229,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     backgroundColor: "red",
     borderRadius: 50,
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     justifyContent: "center",
     alignItems: "center",
     right: -10,

@@ -108,6 +108,14 @@ export default function RootLayout() {
               headerLeft: () => null,
             }}
           />
+          <Stack.Screen
+            name="Checkout/Checkout" // ✅ Thêm trang test
+            options={{
+              headerTitle: () => <SiteHeader />,
+              headerTitleAlign: "center",
+              headerLeft: () => null,
+            }}
+          />
         </Stack>
 
         <PortalHost />
