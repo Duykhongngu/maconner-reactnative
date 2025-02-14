@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import Logo from "~/assets/logo.svg";
 import {
   Modal,
   View,
@@ -103,8 +104,10 @@ function SiteHeader() {
             </View>
           </Modal>
         </View>
+
         <TouchableOpacity className="" onPress={() => router.push("/")}>
-          <Image source={logo} />
+          {/* <Image source={logo} /> */}
+          <Logo width={188} height={40} />
         </TouchableOpacity>
         <View className="flex-row gap-3 items-center">
           <View>

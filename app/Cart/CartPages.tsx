@@ -116,7 +116,7 @@ const CartPages: React.FC = () => {
           variant="normal"
           size="lg"
           style={styles.checkoutButton}
-          onPress={() => console.log("Proceed to Checkout pressed")}
+          onPress={() => router.push("/Checkout/Checkout" as any)}
         >
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </Button>

@@ -1,4 +1,5 @@
 {
+
   "expo": {
     "name": "marconer-reacnative",
     "slug": "marconer-reacnative",
@@ -36,6 +37,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "packagerOpts": {
+      "config": "metro.config.js"
     }
   }
 }
