@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import Logo from "~/assets/logo.svg";
+import { useColorScheme } from "~/lib/useColorScheme";
+
 import {
   Modal,
   View,
@@ -44,6 +46,8 @@ const inlineMenu = [
 ];
 
 function SiteHeader() {
+  const { isDarkColorScheme } = useColorScheme();
+  const iconColor = isDarkColorScheme ? "white" : "black";
   const { cartItems } = useCart();
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -67,7 +71,7 @@ function SiteHeader() {
       <View style={styles.container}>
         <View>
           <TouchableOpacity onPress={() => setMenuVisible(true)}>
-            <MenuIcon size={26} color="black" />
+            <MenuIcon size={26} color={iconColor} />
           </TouchableOpacity>
 
           <Modal visible={menuVisible} transparent animationType="slide">
@@ -76,7 +80,7 @@ function SiteHeader() {
                 className="flex-row items-center"
                 onPress={() => setMenuVisible(false)}
               >
-                <ChevronLeft size={26} color="black" />
+                <ChevronLeft size={26} color={iconColor} />
                 <Text className="text-2xl font-semibold  py-2  p-4  ">
                   Back
                 </Text>
@@ -116,18 +120,18 @@ function SiteHeader() {
               size="icon"
               onPress={() => setIsSearchOpen(true)}
             >
-              <SearchIcon size={26} color="black" />
+              <SearchIcon size={26} color={iconColor} />
             </Button>
           </View>
           <View>
-            <Heart size={26} color="black" />
+            <Heart size={26} color={iconColor} />
           </View>
           <TouchableOpacity
             className=""
             onPress={() => router.push("/Cart/CartPages" as any)}
           >
             <View>
-              <ShoppingCart size={28} color="black" />
+              <ShoppingCart size={28} color={iconColor} />
             </View>
 
             <View className="absolute bg-red-400 flex rounded-full w-6 h-6 -right-2 -top-2 justify-center items-center text-sm">
@@ -145,7 +149,7 @@ function SiteHeader() {
                 onPress={() => setIsSearchOpen(false)}
                 className="flex w-full flex-row justify-start items-center gap-2 text-black"
               >
-                <ChevronLeft size={24} color={"black"} />
+                <ChevronLeft size={24} color={iconColor} />
                 <Text>Cancel</Text>
               </Button>
             </View>
