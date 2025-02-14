@@ -46,14 +46,20 @@ function CartPages() {
                     ? { uri: item.image }
                     : item.image
                 }
-                className="w-16 h-16 rounded-md"
+                className="w-40 h-40 rounded-md"
               />
 
               <View className="ml-4 flex-1">
-                <Text>{item.name}</Text>
-                <Text>${item.price.toFixed(2)} USD</Text>
-                <Text className="text-gray-600">Color: {item.color}</Text>
-                <Text className="text-gray-600">Size: {item.size}</Text>
+                <Text className="text-2xl font-semibold">
+                  Name: {item.name}
+                </Text>
+                <Text className="text-xl text-orange-500 font-semibold">
+                  Price:${item.price.toFixed(2)} USD
+                </Text>
+                <Text className=" text-lg font-semibold">
+                  Color: {item.color}
+                </Text>
+                <Text className="text-lg font-semibold">Size: {item.size}</Text>
 
                 {/* ✅ Hiển thị số lượng & thêm nút tăng/giảm */}
                 <View className="flex-row items-center mt-2">
@@ -68,7 +74,7 @@ function CartPages() {
                     }
                     className="p-2 bg-gray-200 rounded-lg"
                   >
-                    <Text>-</Text>
+                    <Text className="w-5 p-1 text-2xl ">-</Text>
                   </TouchableOpacity>
                   <Text className="mx-4 text-lg">{item.quantity}</Text>
                   <TouchableOpacity
@@ -82,7 +88,7 @@ function CartPages() {
                     }
                     className="p-2 bg-gray-200 rounded-lg"
                   >
-                    <Text>+</Text>
+                    <Text className="w-5 p-1 text-xl">+</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -100,18 +106,18 @@ function CartPages() {
               Subtotal: ${subtotal.toFixed(2)} USD
             </Text>
           </View>
+          <Button
+            variant={"normal"}
+            size={"lg"}
+            className="mt-4 font-semibold px-6 py-2 bg-orange-500 rounded-md"
+            onPress={() => console.log("Proceed to Checkout pressed")}
+          >
+            <Text className="h-full text-white items-center justify-center text-2xl ">
+              Proceed to Checkout
+            </Text>
+          </Button>
         </ScrollView>
       )}
-      <Button
-        variant={"normal"}
-        size={"lg"}
-        className="mt-4 font-semibold px-6 py-2 bg-orange-500 rounded-md"
-        onPress={() => console.log("Proceed to Checkout pressed")}
-      >
-        <Text className="h-full text-white items-center justify-center text-2xl ">
-          Proceed to Checkout
-        </Text>
-      </Button>
     </View>
   );
 }

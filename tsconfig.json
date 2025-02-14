@@ -3,6 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
+    "jsx": "react-native",
+    "jsxImportSource": "react",
     "paths": {
       "~/*": [
         "*"

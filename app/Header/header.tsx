@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Modal,
   View,
   Image,
   TouchableOpacity,
   SafeAreaView,
+  StyleSheet,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -29,15 +31,15 @@ import { useCart } from "../Cart/CartContext";
 
 const logo = require("~/assets/images/logo.png");
 const inlineMenu = [
-  { title: "Valentine's Day", link: "/valentines" },
-  { title: "Occasions", link: "/" },
-  { title: "Recipients", link: "/" },
-  { title: "Interests", link: "/" },
-  { title: "Home & Kitchen", link: "/" },
-  { title: "Clothing & Jewelry", link: "/" },
-  { title: "Drinkware & Barware", link: "/" },
-  { title: "Accessories", link: "/" },
-  { title: "Happy Customers", link: "/" },
+  { title: "Valentine's Day", link: "/Products/[id]" },
+  { title: "Occasions", link: "/Products/[id]" },
+  { title: "Recipients", link: "/Products/[id]" },
+  { title: "Interests", link: "/Products/[id]" },
+  { title: "Home & Kitchen", link: "/Products/[id]" },
+  { title: "Clothing & Jewelry", link: "/Products/[id]" },
+  { title: "Drinkware & Barware", link: "/Products/[id]" },
+  { title: "Accessories", link: "/Products/[id]" },
+  { title: "Happy Customers", link: "/Products/[id]" },
 ];
 
 function SiteHeader() {
@@ -57,34 +59,51 @@ function SiteHeader() {
     right: 12,
   };
 
+  const [menuVisible, setMenuVisible] = React.useState(false);
+
   return (
     <SafeAreaView>
-      <View className="flex-4 gap-2  max-xs:gap-0  flex-row items-center   justify-between ">
+      <View style={styles.container}>
         <View>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost">
-                <View>
-                  <MenuIcon size={28} color="black" />
-                </View>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="bottom"
-              insets={contentInsets}
-              className="w-full"
-            >
+          <TouchableOpacity onPress={() => setMenuVisible(true)}>
+            <MenuIcon size={26} color="black" />
+          </TouchableOpacity>
+
+          <Modal visible={menuVisible} transparent animationType="slide">
+            <View className="flex-1 bg-white p-4">
+              <TouchableOpacity
+                className="flex-row items-center"
+                onPress={() => setMenuVisible(false)}
+              >
+                <ChevronLeft size={26} color="black" />
+                <Text className="text-2xl font-semibold  py-2  p-4  ">
+                  Back
+                </Text>
+              </TouchableOpacity>
+
               {inlineMenu.map((item, index) => (
-                <View key={index}>
-                  <Text className="h-12 w-full shadow-current  font-medium native:text-2xl">
-                    {item.title}
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    router.push(item.link as any);
+                    setMenuVisible(false);
+                  }}
+                >
+                  <View className="shadow-sm shadow-foreground/10 flex-row items-center">
+                    <Text className="text-2xl font-semibold  py-2  p-4  ">
+                      {item.title}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
               ))}
-            </PopoverContent>
-          </Popover>
+              <TouchableOpacity
+                style={styles.overlay}
+                onPress={() => setMenuVisible(false)}
+              />
+            </View>
+          </Modal>
         </View>
-        <TouchableOpacity onPress={() => router.push("/")}>
+        <TouchableOpacity className="" onPress={() => router.push("/")}>
           <Image source={logo} />
         </TouchableOpacity>
         <View className="flex-row gap-3 items-center">
@@ -94,21 +113,22 @@ function SiteHeader() {
               size="icon"
               onPress={() => setIsSearchOpen(true)}
             >
-              <SearchIcon size={28} color="black" />
+              <SearchIcon size={26} color="black" />
             </Button>
           </View>
           <View>
-            <Heart size={28} color="black" />
+            <Heart size={26} color="black" />
           </View>
           <TouchableOpacity
+            className=""
             onPress={() => router.push("/Cart/CartPages" as any)}
           >
             <View>
               <ShoppingCart size={28} color="black" />
             </View>
 
-            <View className="absolute bg-red-500 flex rounded-full w-6 h-6 -right-2 -top-2 justify-center items-center text-sm">
-              <Text className="text-white">{totalItems}</Text>
+            <View className="absolute bg-red-400 flex rounded-full w-6 h-6 -right-2 -top-2 justify-center items-center text-sm">
+              <Text className="text-white font-semibold">{totalItems}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -138,4 +158,31 @@ function SiteHeader() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 15,
+  },
+  overlay: {
+    flex: 1,
+
+    justifyContent: "flex-start",
+  },
+  menuContainer: {
+    width: 280,
+    height: "100%",
+    backgroundColor: "white",
+    paddingVertical: 20,
+    position: "absolute",
+    left: 0,
+    top: 0,
+  },
+  closeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+  },
+});
 export default SiteHeader;

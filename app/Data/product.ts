@@ -152,3 +152,4 @@ export const trendingProducts: Product[] = [
     link: "/details",
   },
 ];
+export default trendingProducts;

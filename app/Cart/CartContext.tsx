@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type CartItem = {
   id: number;
@@ -20,12 +27,39 @@ type CartContextType = {
     size: string,
     newQuantity: number
   ) => void;
+  clearCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = "cartItems"; // Key lưu dữ liệu vào AsyncStorage
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load cart from AsyncStorage khi ứng dụng khởi động
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const storedCart = await AsyncStorage.getItem(CART_STORAGE_KEY);
+        if (storedCart) {
+          setCartItems(JSON.parse(storedCart));
+        }
+      } catch (error) {
+        console.error("Failed to load cart", error);
+      }
+    };
+
+    loadCart();
+  }, []);
+
+  // Hàm lưu cart vào AsyncStorage
+  const saveCartToStorage = async (items: CartItem[]) => {
+    try {
+      await AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    } catch (error) {
+      console.error("Failed to save cart", error);
+    }
+  };
 
   const addToCart = (item: CartItem) => {
     setCartItems((prevItems) => {
@@ -34,25 +68,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
           p.id === item.id && p.color === item.color && p.size === item.size
       );
 
+      let updatedCart;
       if (existingItem) {
-        return prevItems.map((p) =>
+        updatedCart = prevItems.map((p) =>
           p.id === item.id && p.color === item.color && p.size === item.size
-            ? { ...p, quantity: p.quantity + item.quantity } // ✅ Cộng dồn số lượng
+            ? { ...p, quantity: p.quantity + item.quantity }
             : p
         );
+      } else {
+        updatedCart = [...prevItems, item];
       }
 
-      return [...prevItems, { ...item }];
+      saveCartToStorage(updatedCart);
+      return updatedCart;
     });
   };
 
   const removeFromCart = (id: number, color: string, size: string) => {
-    setCartItems((prevItems) =>
-      prevItems.filter(
+    setCartItems((prevItems) => {
+      const updatedCart = prevItems.filter(
         (item) =>
           !(item.id === id && item.color === color && item.size === size)
-      )
-    );
+      );
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
   };
 
   const updateCartQuantity = (
@@ -61,18 +101,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
     size: string,
     newQuantity: number
   ) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
+    setCartItems((prevItems) => {
+      const updatedCart = prevItems.map((item) =>
         item.id === id && item.color === color && item.size === size
           ? { ...item, quantity: newQuantity }
           : item
-      )
-    );
+      );
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    saveCartToStorage([]);
   };
 
   return (
     <CartContext.Provider
-      value={{ cartItems, addToCart, removeFromCart, updateCartQuantity }}
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateCartQuantity,
+        clearCart,
+      }}
     >
       {children}
     </CartContext.Provider>
@@ -86,3 +139,4 @@ export function useCart() {
   }
   return context;
 }
+export default CartProvider;

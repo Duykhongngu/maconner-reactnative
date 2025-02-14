@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { trendingProducts } from "~/app/Data/product";
 import { useWindowDimensions } from "react-native";
+import { Button } from "~/components/ui/button";
 
 function Trending() {
   const router = useRouter();
@@ -47,6 +48,9 @@ function Trending() {
             );
           })}
         </View>
+        <Button variant={"secondary"} className="w-5/12">
+          <Text className="text-black text-xl font-normal">Show More</Text>
+        </Button>
       </View>
     </SafeAreaView>
   );
