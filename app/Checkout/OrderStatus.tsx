@@ -10,6 +10,7 @@ import { useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
+import { MaterialIcons } from "@expo/vector-icons"; // Thêm biểu tượng
 
 const OrderStatus: React.FC = () => {
   const { order } = useOrder();
@@ -39,7 +40,7 @@ const OrderStatus: React.FC = () => {
           Chưa có đơn hàng nào được đặt.
         </Text>
       ) : (
-        <View>
+        <View style={styles.orderDetailsContainer}>
           <Text
             style={[
               styles.successMessage,
@@ -48,6 +49,37 @@ const OrderStatus: React.FC = () => {
           >
             🎉 Đơn hàng của bạn đã đặt thành công!
           </Text>
+          <View style={styles.infoContainer}>
+            <MaterialIcons
+              name="person"
+              size={20}
+              color={isDarkMode ? "#ffffff" : "#000000"}
+            />
+            <Text
+              style={[
+                styles.itemInfo,
+                isDarkMode ? styles.darkText : styles.lightText,
+              ]}
+            >
+              Tên: {order.name} | Email: {order.email} | Số điện thoại:{" "}
+              {order.phone}
+            </Text>
+          </View>
+          <View style={styles.infoContainer}>
+            <MaterialIcons
+              name="location-on"
+              size={20}
+              color={isDarkMode ? "#ffffff" : "#000000"}
+            />
+            <Text
+              style={[
+                styles.itemInfo,
+                isDarkMode ? styles.darkText : styles.lightText,
+              ]}
+            >
+              Địa chỉ: {order.address} | Quốc gia: {order.country}
+            </Text>
+          </View>
           <FlatList
             data={order.cartItems}
             keyExtractor={(item) => `${item.id}-${item.color}-${item.size}`}
@@ -64,12 +96,7 @@ const OrderStatus: React.FC = () => {
                       ? { uri: item.image }
                       : item.image
                   }
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 8,
-                    marginRight: 16,
-                  }}
+                  style={styles.itemImage}
                 />
                 <View style={styles.itemDetails}>
                   <Text
@@ -125,10 +152,7 @@ const OrderStatus: React.FC = () => {
           </View>
         </View>
       )}
-      <Button
-        style={styles.button}
-        onPress={() => router.push("/Cart/CartPages")}
-      >
+      <Button style={styles.button} onPress={() => router.push("/")}>
         <Text>Tiếp tục mua sắm</Text>
       </Button>
     </View>
@@ -174,6 +198,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 16,
+  },
+  orderDetailsContainer: {
+    marginBottom: 20,
+  },
+  infoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
   itemContainer: {
     flexDirection: "row",

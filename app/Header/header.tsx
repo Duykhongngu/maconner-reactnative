@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
+  CarIcon,
   Carrot,
   ChevronLeft,
   Heart,
@@ -20,6 +21,7 @@ import {
   Search,
   SearchIcon,
   ShoppingCart,
+  Truck,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "~/components/ui/button";
@@ -131,7 +133,7 @@ function SiteHeader() {
             onPress={() => router.push("/Checkout/OrderStatus" as any)}
           >
             <View>
-              <Heart size={26} color={iconColor} />
+              <Truck size={26} color={iconColor} />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -183,6 +185,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16, // Thêm padding nếu cần
     gap: 15,
   },
   overlay: {

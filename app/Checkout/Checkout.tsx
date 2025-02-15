@@ -61,24 +61,20 @@ const CheckoutScreen: React.FC = () => {
 
   const router = useRouter(); // Initialize router
 
+  // CheckoutScreen.tsx
   async function onSubmit(values: FormData) {
     console.log("Submitting form with values:", values);
     try {
       const orderData = { ...values, cartItems, total };
 
-      // Lấy danh sách đơn hàng đã lưu
+      // Lưu đơn hàng vào AsyncStorage và cập nhật trạng thái đơn hàng
       const existingOrders = await AsyncStorage.getItem("orders");
       const orders = existingOrders ? JSON.parse(existingOrders) : [];
-
-      // Thêm đơn hàng mới vào danh sách
       orders.push(orderData);
-
-      // Lưu lại vào AsyncStorage
       await AsyncStorage.setItem("orders", JSON.stringify(orders));
 
       console.log("Order saved successfully:", orderData);
-
-      setOrder({ cartItems, total });
+      setOrder(orderData); // Cập nhật trạng thái đơn hàng với thông tin bổ sung
       clearCart();
       console.log("Cart cleared successfully.");
       router.push("/Checkout/OrderStatus" as any);
@@ -86,7 +82,6 @@ const CheckoutScreen: React.FC = () => {
       console.error("Error saving order:", error);
     }
   }
-
   // Xác định chế độ sáng/tối
   const colorScheme = Appearance.getColorScheme();
   const isDarkMode = colorScheme === "dark";

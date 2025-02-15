@@ -74,7 +74,7 @@ export default function RootLayout() {
               options={{
                 headerTitle: () => <SiteHeader />,
                 headerLeft: () => null,
-                // Thay thế tiêu đề bằng SiteHeader
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -83,6 +83,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -91,6 +92,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -99,6 +101,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />,
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -107,6 +110,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />,
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -115,6 +119,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />,
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
             <Stack.Screen
@@ -123,6 +128,7 @@ export default function RootLayout() {
                 headerTitle: () => <SiteHeader />,
 
                 headerLeft: () => null,
+                headerRight: () => null,
               }}
             />
           </Stack>
