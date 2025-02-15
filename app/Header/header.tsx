@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
 
@@ -56,7 +56,7 @@ function SiteHeader() {
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const contentInsets = {
     top: insets.top,
     bottom: insets.bottom,
@@ -64,7 +64,7 @@ function SiteHeader() {
     right: 12,
   };
 
-  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   return (
     <SafeAreaView>
@@ -127,9 +127,13 @@ function SiteHeader() {
               <SearchIcon size={26} color={iconColor} />
             </Button>
           </View>
-          <View>
-            <Heart size={26} color={iconColor} />
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/Checkout/OrderStatus" as any)}
+          >
+            <View>
+              <Heart size={26} color={iconColor} />
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/Cart/CartPages" as any)}
           >
@@ -175,6 +179,7 @@ function SiteHeader() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

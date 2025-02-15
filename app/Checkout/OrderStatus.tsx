@@ -1,34 +1,136 @@
-// OrderStatus.tsx
-import React from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
-import { useCart } from "../Cart/CartContext"; // Import CartContext để lấy thông tin giỏ hàng
-import { router } from "expo-router";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { useOrder } from "./OrderContext";
+import { useRouter } from "expo-router";
+import { Button } from "~/components/ui/button";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 const OrderStatus: React.FC = () => {
-  const { cartItems } = useCart(); // Lấy thông tin giỏ hàng từ CartContext
+  const { order } = useOrder();
+  const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDarkMode = colorScheme === "dark";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Order Status</Text>
-      {cartItems.length === 0 ? (
-        <Text style={styles.message}>No orders placed.</Text>
+    <View
+      style={[
+        styles.container,
+        isDarkMode ? styles.darkBackground : styles.lightBackground,
+      ]}
+    >
+      <Text
+        style={[styles.title, isDarkMode ? styles.darkText : styles.lightText]}
+      >
+        Trạng thái đơn hàng
+      </Text>
+      {order === null ? (
+        <Text
+          style={[
+            styles.message,
+            isDarkMode ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Chưa có đơn hàng nào được đặt.
+        </Text>
       ) : (
         <View>
-          <Text style={styles.message}>
-            Your order has been placed successfully!
+          <Text
+            style={[
+              styles.successMessage,
+              isDarkMode ? styles.darkText : styles.lightText,
+            ]}
+          >
+            🎉 Đơn hàng của bạn đã đặt thành công!
           </Text>
-          <Text style={styles.subTitle}>Order Summary:</Text>
-          {cartItems.map((item) => (
-            <Text key={`${item.id}-${item.color}-${item.size}`}>
-              {item.name} - ${item.price.toFixed(2)} x {item.quantity}
+          <FlatList
+            data={order.cartItems}
+            keyExtractor={(item) => `${item.id}-${item.color}-${item.size}`}
+            renderItem={({ item }) => (
+              <View
+                style={[
+                  styles.itemContainer,
+                  isDarkMode ? styles.darkCard : styles.lightCard,
+                ]}
+              >
+                <Image
+                  source={
+                    typeof item.image === "string"
+                      ? { uri: item.image }
+                      : item.image
+                  }
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 8,
+                    marginRight: 16,
+                  }}
+                />
+                <View style={styles.itemDetails}>
+                  <Text
+                    style={[
+                      styles.itemName,
+                      isDarkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.itemInfo,
+                      isDarkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    Màu: {item.color} | Size: {item.size}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.itemPrice,
+                      isDarkMode ? styles.lightText : styles.darkText,
+                    ]}
+                  >
+                    ${item.price.toFixed(2)} x {item.quantity}
+                  </Text>
+                </View>
+              </View>
+            )}
+          />
+          <View
+            style={[
+              styles.totalContainer,
+              isDarkMode ? styles.darkCard : styles.lightCard,
+            ]}
+          >
+            <Text
+              style={[
+                styles.totalText,
+                isDarkMode ? styles.darkText : styles.lightText,
+              ]}
+            >
+              Tổng cộng:{" "}
             </Text>
-          ))}
+            <Text
+              style={[
+                styles.totalPrice,
+                isDarkMode ? styles.lightText : styles.darkText,
+              ]}
+            >
+              ${order.total.toFixed(2)}
+            </Text>
+          </View>
         </View>
       )}
       <Button
-        title="Back to Cart"
-        onPress={() => router.push("/Cart/CartPages" as any)}
-      />
+        style={styles.button}
+        onPress={() => router.push("/Cart/CartPages")}
+      >
+        <Text>Tiếp tục mua sắm</Text>
+      </Button>
     </View>
   );
 };
@@ -37,22 +139,99 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    justifyContent: "center",
-    alignItems: "center",
+  },
+  darkBackground: {
+    backgroundColor: "#121212",
+  },
+  lightBackground: {
+    backgroundColor: "#f8f9fa",
+  },
+  darkText: {
+    color: "#ffffff",
+  },
+  lightText: {
+    color: "#000000",
+  },
+  darkCard: {
+    backgroundColor: "#1E1E1E",
+  },
+  lightCard: {
+    backgroundColor: "white",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
+    textAlign: "center",
   },
   message: {
     fontSize: 18,
-    marginBottom: 8,
+    textAlign: "center",
+    marginTop: 20,
   },
-  subTitle: {
-    fontSize: 20,
+  successMessage: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  itemContainer: {
+    flexDirection: "row",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  itemInfo: {
+    fontSize: 14,
+  },
+  itemPrice: {
+    fontSize: 14,
     fontWeight: "600",
-    marginTop: 16,
+    color: "#f97316",
+  },
+  totalContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  totalText: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  totalPrice: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#f97316",
+  },
+  button: {
+    marginTop: 20,
+    paddingVertical: 12,
+    backgroundColor: "#f97316",
+    borderRadius: 8,
+    alignItems: "center",
   },
 });
 

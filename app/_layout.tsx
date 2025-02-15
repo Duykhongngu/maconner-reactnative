@@ -18,6 +18,7 @@ import { ThemeToggle } from "~/components/ThemeToggle";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import SiteHeader from "~/app/Header/header";
 import { CartProvider } from "./Cart/CartContext";
+import { OrderProvider } from "./Checkout/OrderContext";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -57,70 +58,79 @@ export default function RootLayout() {
   }
 
   return (
-    <CartProvider>
-      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-        <StatusBar
-          animated={true}
-          backgroundColor={isDarkColorScheme ? "transparent" : "white"}
-          networkActivityIndicatorVisible
-          style={isDarkColorScheme ? "light" : "dark"}
-          translucent
-        />
-        <Stack screenOptions={{ headerBackVisible: false }}>
-          <Stack.Screen
-            name="index"
-            options={{
-              headerTitle: () => <SiteHeader />,
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-              // Thay thế tiêu đề bằng SiteHeader
-            }}
+    <OrderProvider>
+      <CartProvider>
+        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+          <StatusBar
+            animated={true}
+            backgroundColor={isDarkColorScheme ? "transparent" : "white"}
+            networkActivityIndicatorVisible
+            style={isDarkColorScheme ? "light" : "dark"}
+            translucent
           />
-          <Stack.Screen
-            name="test" // ✅ Thêm trang test
-            options={{
-              headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-            }}
-          />
-          <Stack.Screen
-            name="Home/sliderShow" // ✅ Thêm trang test
-            options={{
-              headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-            }}
-          />
-          <Stack.Screen
-            name="Products/[id]" // ✅ Thêm trang test
-            options={{
-              headerTitle: () => <SiteHeader />,
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-            }}
-          />
-          <Stack.Screen
-            name="Cart/CartPages" // ✅ Thêm trang test
-            options={{
-              headerTitle: () => <SiteHeader />,
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-            }}
-          />
-          <Stack.Screen
-            name="Checkout/Checkout" // ✅ Thêm trang test
-            options={{
-              headerTitle: () => <SiteHeader />,
-              headerTitleAlign: "center",
-              headerLeft: () => null,
-            }}
-          />
-        </Stack>
+          <Stack screenOptions={{ headerBackVisible: false }}>
+            <Stack.Screen
+              name="index"
+              options={{
+                headerTitle: () => <SiteHeader />,
+                headerLeft: () => null,
+                // Thay thế tiêu đề bằng SiteHeader
+              }}
+            />
+            <Stack.Screen
+              name="test" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
 
-        <PortalHost />
-      </ThemeProvider>
-    </CartProvider>
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Home/sliderShow" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
+
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Products/[id]" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />,
+
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Cart/CartPages" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />,
+
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Checkout/Checkout" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />,
+
+                headerLeft: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Checkout/OrderStatus" // ✅ Thêm trang test
+              options={{
+                headerTitle: () => <SiteHeader />,
+
+                headerLeft: () => null,
+              }}
+            />
+          </Stack>
+
+          <PortalHost />
+        </ThemeProvider>
+      </CartProvider>
+    </OrderProvider>
   );
 }
 

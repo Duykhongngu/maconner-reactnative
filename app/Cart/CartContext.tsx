@@ -7,6 +7,7 @@ import {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Định nghĩa kiểu dữ liệu cho sản phẩm trong giỏ hàng
 type CartItem = {
   id: number;
   name: string;
@@ -17,6 +18,7 @@ type CartItem = {
   image: string | number;
 };
 
+// Định nghĩa kiểu dữ liệu cho CartContext
 type CartContextType = {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -30,9 +32,11 @@ type CartContextType = {
   clearCart: () => void;
 };
 
+// Tạo context cho giỏ hàng
 const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "cartItems"; // Key lưu dữ liệu vào AsyncStorage
 
+// Provider cho CartContext
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
@@ -56,11 +60,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const saveCartToStorage = async (items: CartItem[]) => {
     try {
       await AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      console.log("Cart saved to storage:", items); // Log để kiểm tra
     } catch (error) {
       console.error("Failed to save cart", error);
     }
   };
 
+  // Thêm sản phẩm vào giỏ hàng
   const addToCart = (item: CartItem) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(
@@ -84,6 +90,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Xóa sản phẩm khỏi giỏ hàng
   const removeFromCart = (id: number, color: string, size: string) => {
     setCartItems((prevItems) => {
       const updatedCart = prevItems.filter(
@@ -95,6 +102,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Cập nhật số lượng sản phẩm trong giỏ hàng
   const updateCartQuantity = (
     id: number,
     color: string,
@@ -112,7 +120,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Xóa tất cả sản phẩm trong giỏ hàng
   const clearCart = () => {
+    console.log("Clearing cart..."); // Log để kiểm tra
     setCartItems([]);
     saveCartToStorage([]);
   };
@@ -132,6 +142,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Hook để sử dụng CartContext
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
@@ -139,4 +150,5 @@ export function useCart() {
   }
   return context;
 }
+
 export default CartProvider;
