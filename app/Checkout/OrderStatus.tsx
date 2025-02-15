@@ -10,7 +10,7 @@ import { useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { MaterialIcons } from "@expo/vector-icons"; // Thêm biểu tượng
+import { MaterialIcons } from "@expo/vector-icons";
 
 const OrderStatus: React.FC = () => {
   const { order } = useOrder();
@@ -115,12 +115,7 @@ const OrderStatus: React.FC = () => {
                   >
                     Màu: {item.color} | Size: {item.size}
                   </Text>
-                  <Text
-                    style={[
-                      styles.itemPrice,
-                      isDarkMode ? styles.lightText : styles.darkText,
-                    ]}
-                  >
+                  <Text style={[styles.itemPrice]}>
                     ${item.price.toFixed(2)} x {item.quantity}
                   </Text>
                 </View>
@@ -141,19 +136,16 @@ const OrderStatus: React.FC = () => {
             >
               Tổng cộng:{" "}
             </Text>
-            <Text
-              style={[
-                styles.totalPrice,
-                isDarkMode ? styles.lightText : styles.darkText,
-              ]}
-            >
-              ${order.total.toFixed(2)}
-            </Text>
+            <Text style={[styles.totalPrice]}>${order.total.toFixed(2)}</Text>
           </View>
         </View>
       )}
       <Button style={styles.button} onPress={() => router.push("/")}>
-        <Text>Tiếp tục mua sắm</Text>
+        <Text
+          style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
+        >
+          Tiếp tục mua sắm
+        </Text>
       </Button>
     </View>
   );
@@ -264,6 +256,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#f97316",
     borderRadius: 8,
     alignItems: "center",
+  },
+  darkButtonText: {
+    color: "#ffffff",
+  },
+  lightButtonText: {
+    color: "#000000",
   },
 });
 

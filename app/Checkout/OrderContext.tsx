@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 type Order = {
   cartItems: any[]; // Thay thế `any` bằng kiểu dữ liệu cụ thể của sản phẩm trong giỏ hàng
   total: number;
-  name: string; // Tên người đặt hàng
+  name: string; // Tên gui đặt hàng
   email: string; // Email người đặt hàng
   phone: string; // Số điện thoại người đặt hàng
   address: string; // Địa chỉ giao hàng

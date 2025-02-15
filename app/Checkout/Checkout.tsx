@@ -40,7 +40,7 @@ const CheckoutScreen: React.FC = () => {
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const shippingFee = 30000; // Assuming a fixed shipping fee
+  const shippingFee = 30; // Assuming a fixed shipping fee
   const total = subtotal + shippingFee;
 
   const {
@@ -338,7 +338,7 @@ const CheckoutScreen: React.FC = () => {
                 Phí vận chuyển
               </Text>
               <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-                ${(shippingFee / 1000).toFixed(2)}
+                ${shippingFee.toFixed(2)}
               </Text>
             </View>
             <Separator />
@@ -357,7 +357,7 @@ const CheckoutScreen: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                ${(subtotal + shippingFee / 1000).toFixed(2)}
+                ${(subtotal + shippingFee).toFixed(2)}
               </Text>
             </View>
           </View>
