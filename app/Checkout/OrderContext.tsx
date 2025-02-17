@@ -1,70 +1,130 @@
-// OrderContext.tsx
+"use client";
+
+import type React from "react";
 import {
   createContext,
   useContext,
   useState,
-  ReactNode,
+  type ReactNode,
   useEffect,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Cập nhật kiểu Order để bao gồm thông tin bổ sung
-type Order = {
-  cartItems: any[]; // Thay thế `any` bằng kiểu dữ liệu cụ thể của sản phẩm trong giỏ hàng
-  total: number;
-  name: string; // Tên gui đặt hàng
-  email: string; // Email người đặt hàng
-  phone: string; // Số điện thoại người đặt hàng
-  address: string; // Địa chỉ giao hàng
-  country: string; // Quốc gia
-};
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  color: string;
+  size: string;
+  image: string;
+}
 
-type OrderContextType = {
-  order: Order | null;
-  setOrder: (order: Order) => void;
-};
+export interface Order {
+  id: string;
+  cartItems: CartItem[];
+  total: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+  date: string;
+  status: "pending" | "completed" | "cancelled";
+}
+interface OrderContextType {
+  orders: Order[];
+  currentOrder: Order | null;
+  setCurrentOrder: (order: Order | null) => void;
+  addOrder: (
+    orderData: Omit<Order, "id" | "date" | "status">
+  ) => Promise<Order>;
+  getOrder: (id: string) => Order | undefined;
+  removeOrder: (id: string) => Promise<void>; // Thêm dòng này
+}
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-export const OrderProvider = ({ children }: { children: ReactNode }) => {
-  const [order, setOrder] = useState<Order | null>(null);
+export const OrderProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
 
-  // Khôi phục đơn hàng từ AsyncStorage khi ứng dụng khởi động
   useEffect(() => {
-    const loadOrder = async () => {
-      try {
-        const existingOrder = await AsyncStorage.getItem("currentOrder");
-        if (existingOrder) {
-          setOrder(JSON.parse(existingOrder));
-        }
-      } catch (error) {
-        console.error("Error loading order from AsyncStorage:", error);
-      }
-    };
-
-    loadOrder();
+    loadOrders();
   }, []);
 
-  // Cập nhật đơn hàng vào AsyncStorage khi nó thay đổi
-  useEffect(() => {
-    const saveOrder = async () => {
-      if (order) {
-        try {
-          await AsyncStorage.setItem("currentOrder", JSON.stringify(order));
-        } catch (error) {
-          console.error("Error saving order to AsyncStorage:", error);
-        }
-      } else {
-        // Nếu không có đơn hàng, xóa khỏi AsyncStorage
-        await AsyncStorage.removeItem("currentOrder");
+  const loadOrders = async () => {
+    try {
+      const savedOrders = await AsyncStorage.getItem("orders");
+      if (savedOrders) {
+        setOrders(JSON.parse(savedOrders));
       }
-    };
+    } catch (error) {
+      console.error("Error loading orders:", error);
+    }
+  };
 
-    saveOrder();
-  }, [order]);
+  const saveOrders = async (updatedOrders: Order[]) => {
+    try {
+      await AsyncStorage.setItem("orders", JSON.stringify(updatedOrders));
+      setOrders(updatedOrders);
+    } catch (error) {
+      console.error("Error saving orders:", error);
+      throw new Error("Failed to save orders");
+    }
+  };
+
+  const addOrder = async (
+    orderData: Omit<Order, "id" | "date" | "status">
+  ): Promise<Order> => {
+    try {
+      const newOrder: Order = {
+        ...orderData,
+        id: `ORDER-${Date.now()}`,
+        date: new Date().toISOString(),
+        status: "pending",
+      };
+
+      const updatedOrders = [...orders, newOrder];
+      await saveOrders(updatedOrders);
+      setCurrentOrder(newOrder);
+      return newOrder;
+    } catch (error) {
+      console.error("Error adding order:", error);
+      throw new Error("Failed to add order");
+    }
+  };
+  const removeOrder = async (orderId: string) => {
+    try {
+      const updatedOrders = orders.filter((order) => order.id !== orderId);
+      await saveOrders(updatedOrders);
+      setOrders(updatedOrders);
+      if (currentOrder?.id === orderId) {
+        setCurrentOrder(null);
+      }
+    } catch (error) {
+      console.error("Error removing order:", error);
+      throw new Error("Failed to remove order");
+    }
+  };
+
+  const getOrder = (id: string) => {
+    return orders.find((order) => order.id === id);
+  };
 
   return (
-    <OrderContext.Provider value={{ order, setOrder }}>
+    <OrderContext.Provider
+      value={{
+        orders,
+        currentOrder,
+        setCurrentOrder,
+        addOrder,
+        getOrder,
+        removeOrder,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );
@@ -78,4 +138,4 @@ export const useOrder = () => {
   return context;
 };
 
-export default OrderContext;
+export default OrderProvider;

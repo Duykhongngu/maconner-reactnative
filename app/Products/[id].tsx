@@ -243,14 +243,21 @@ export default function ProductDetail(): JSX.Element {
                 onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 style={styles.quantityButton}
               >
-                <Text style={styles.quantityButtonText}>-</Text>
+                <Text style={[styles.quantityButtonText]}>-</Text>
               </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <Text
+                style={[
+                  styles.quantityButtonText,
+                  isDarkMode && styles.darkText,
+                ]}
+              >
+                {quantity}
+              </Text>
               <TouchableOpacity
                 onPress={() => setQuantity((prev) => prev + 1)}
                 style={styles.quantityButton}
               >
-                <Text style={styles.quantityButtonText}>+</Text>
+                <Text style={[styles.quantityButtonText]}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -268,7 +275,6 @@ export default function ProductDetail(): JSX.Element {
             />
           </View>
 
-          {/* Suggested Products */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               You May Also Like
@@ -276,11 +282,45 @@ export default function ProductDetail(): JSX.Element {
             <FlatList
               data={trendingProducts
                 .filter((p) => p.id !== product.id)
-                .slice(0, 4)}
-              renderItem={renderSuggestedProduct}
+                .slice(0, 6)}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.suggestedProductItem,
+                    isDarkMode && styles.darkSuggestedProductList,
+                  ]}
+                  onPress={() => router.push(`/Products/${item.id}`)}
+                >
+                  <Image
+                    source={item.img}
+                    style={styles.suggestedProductImage}
+                  />
+                  <Text
+                    style={[
+                      styles.suggestedProductName,
+                      isDarkMode && styles.darkSuggestedProductName,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.suggestedProductPrice,
+                      isDarkMode && styles.darkSuggestedProductPrice,
+                    ]}
+                  >
+                    ${item.price.toFixed(2)}
+                  </Text>
+                </TouchableOpacity>
+              )}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={[
+                styles.suggestedProductList,
+                isDarkMode && styles.darkSuggestedProductList,
+              ]}
             />
           </View>
         </View>
@@ -497,6 +537,18 @@ const styles = StyleSheet.create({
   suggestedProductPrice: {
     fontSize: 14,
     fontWeight: "600",
+    color: "#FF6B00",
+  },
+  suggestedProductList: {
+    backgroundColor: "#fff",
+  },
+  darkSuggestedProductList: {
+    backgroundColor: "#333",
+  },
+  darkSuggestedProductName: {
+    color: "#fff",
+  },
+  darkSuggestedProductPrice: {
     color: "#FF6B00",
   },
 });

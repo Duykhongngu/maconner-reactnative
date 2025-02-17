@@ -1,22 +1,43 @@
+import type React from "react";
 import {
-  View,
   Text,
   StyleSheet,
-  FlatList,
-  Image,
   TouchableOpacity,
+  View,
+  Alert,
+  ScrollView,
 } from "react-native";
 import { useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { MaterialIcons } from "@expo/vector-icons";
+
+interface OrderItem {
+  id: string;
+  date: string;
+  total: number;
+}
 
 const OrderStatus: React.FC = () => {
-  const { order } = useOrder();
+  const { orders, removeOrder } = useOrder();
+
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
+
+  const handleDelete = async (orderId: string) => {
+    Alert.alert("Xác nhận xoá", "Bạn có chắc chắn muốn xóa đơn hàng này?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          await removeOrder(orderId);
+          // Quay về trang chính sau khi xóa
+        },
+      },
+    ]);
+  };
 
   return (
     <View
@@ -25,128 +46,79 @@ const OrderStatus: React.FC = () => {
         isDarkMode ? styles.darkBackground : styles.lightBackground,
       ]}
     >
-      <Text
-        style={[styles.title, isDarkMode ? styles.darkText : styles.lightText]}
-      >
-        Trạng thái đơn hàng
-      </Text>
-      {order === null ? (
+      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <Text
           style={[
-            styles.message,
+            styles.title,
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Chưa có đơn hàng nào được đặt.
+          Trạng thái đơn hàng
         </Text>
-      ) : (
-        <View style={styles.orderDetailsContainer}>
+
+        {orders.length === 0 ? (
           <Text
             style={[
-              styles.successMessage,
+              styles.message,
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            🎉 Đơn hàng của bạn đã đặt thành công!
+            Chưa có đơn hàng nào được đặt.
           </Text>
-          <View style={styles.infoContainer}>
-            <MaterialIcons
-              name="person"
-              size={20}
-              color={isDarkMode ? "#ffffff" : "#000000"}
-            />
-            <Text
+        ) : (
+          orders.map((item) => (
+            <TouchableOpacity
+              key={item.id}
               style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
+                styles.orderItem,
+                isDarkMode ? styles.darkCard : styles.lightCard,
               ]}
+              onPress={() =>
+                router.push(`/Checkout/OrderDetails?id=${item.id}` as any)
+              }
             >
-              Tên: {order.name} | Email: {order.email} | Số điện thoại:{" "}
-              {order.phone}
-            </Text>
-          </View>
-          <View style={styles.infoContainer}>
-            <MaterialIcons
-              name="location-on"
-              size={20}
-              color={isDarkMode ? "#ffffff" : "#000000"}
-            />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
-              Địa chỉ: {order.address} | Quốc gia: {order.country}
-            </Text>
-          </View>
-          <FlatList
-            data={order.cartItems}
-            keyExtractor={(item) => `${item.id}-${item.color}-${item.size}`}
-            renderItem={({ item }) => (
-              <View
+              <Text
                 style={[
-                  styles.itemContainer,
-                  isDarkMode ? styles.darkCard : styles.lightCard,
+                  styles.orderTitle,
+                  isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                <Image
-                  source={
-                    typeof item.image === "string"
-                      ? { uri: item.image }
-                      : item.image
-                  }
-                  style={styles.itemImage}
-                />
-                <View style={styles.itemDetails}>
-                  <Text
-                    style={[
-                      styles.itemName,
-                      isDarkMode ? styles.darkText : styles.lightText,
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.itemInfo,
-                      isDarkMode ? styles.darkText : styles.lightText,
-                    ]}
-                  >
-                    Màu: {item.color} | Size: {item.size}
-                  </Text>
-                  <Text style={[styles.itemPrice]}>
-                    ${item.price.toFixed(2)} x {item.quantity}
-                  </Text>
-                </View>
-              </View>
-            )}
-          />
-          <View
-            style={[
-              styles.totalContainer,
-              isDarkMode ? styles.darkCard : styles.lightCard,
-            ]}
+                Order #{item.name}
+              </Text>
+              <Text
+                style={[
+                  styles.orderInfo,
+                  isDarkMode ? styles.darkText : styles.lightText,
+                ]}
+              >
+                Date: {item.date}
+              </Text>
+              <Text
+                style={[
+                  styles.orderInfo,
+                  isDarkMode ? styles.darkText : styles.lightText,
+                ]}
+              >
+                Total: ${item.total.toFixed(2)}
+              </Text>
+              <Button
+                onPress={() => handleDelete(item.id)}
+                style={{ backgroundColor: "red", marginTop: 10 }}
+              >
+                <Text style={{ color: "white" }}>Xóa đơn hàng</Text>
+              </Button>
+            </TouchableOpacity>
+          ))
+        )}
+
+        <Button style={styles.button} onPress={() => router.push("/")}>
+          <Text
+            style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
           >
-            <Text
-              style={[
-                styles.totalText,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
-              Tổng cộng:{" "}
-            </Text>
-            <Text style={[styles.totalPrice]}>${order.total.toFixed(2)}</Text>
-          </View>
-        </View>
-      )}
-      <Button style={styles.button} onPress={() => router.push("/")}>
-        <Text
-          style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
-        >
-          Tiếp tục mua sắm
-        </Text>
-      </Button>
+            Tiếp tục mua sắm
+          </Text>
+        </Button>
+      </ScrollView>
     </View>
   );
 };
@@ -179,76 +151,29 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
+    color: "#f97316",
   },
   message: {
     fontSize: 18,
     textAlign: "center",
     marginTop: 20,
   },
-  successMessage: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 16,
+  scrollViewContainer: {
+    paddingBottom: 20,
   },
-  orderDetailsContainer: {
-    marginBottom: 20,
-  },
-  infoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  itemContainer: {
-    flexDirection: "row",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  itemInfo: {
-    fontSize: 14,
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#f97316",
-  },
-  totalContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
+  orderItem: {
     padding: 16,
+    marginBottom: 12,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  totalText: {
+  orderTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 8,
   },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#f97316",
+  orderInfo: {
+    fontSize: 14,
+    marginBottom: 4,
   },
   button: {
     marginTop: 20,

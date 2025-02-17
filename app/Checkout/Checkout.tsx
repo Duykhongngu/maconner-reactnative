@@ -1,3 +1,4 @@
+import type React from "react";
 import {
   ScrollView,
   View,
@@ -18,7 +19,6 @@ import { Separator } from "~/components/ui/separator";
 import { useCart } from "../Cart/CartContext";
 import { useOrder } from "./OrderContext"; // Import OrderContext
 import { useRouter } from "expo-router"; // Import useRouter
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Tên phải có ít nhất 2 ký tự" }),
@@ -35,7 +35,7 @@ type FormData = z.infer<typeof formSchema>;
 
 const CheckoutScreen: React.FC = () => {
   const { cartItems, clearCart } = useCart(); // Lấy clearCart từ CartContext
-  const { setOrder } = useOrder(); // Lấy setOrder từ OrderContext
+  const { addOrder, setCurrentOrder } = useOrder(); // Lấy setOrder từ OrderContext
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
@@ -63,20 +63,23 @@ const CheckoutScreen: React.FC = () => {
 
   // CheckoutScreen.tsx
   async function onSubmit(values: FormData) {
-    console.log("Submitting form with values:", values);
     try {
-      const orderData = { ...values, cartItems, total };
+      const orderData = {
+        ...values,
+        cartItems,
+        total,
+      };
 
-      // Lưu đơn hàng vào AsyncStorage và cập nhật trạng thái đơn hàng
-      const existingOrders = await AsyncStorage.getItem("orders");
-      const orders = existingOrders ? JSON.parse(existingOrders) : [];
-      orders.push(orderData);
-      await AsyncStorage.setItem("orders", JSON.stringify(orders));
+      // Use addOrder to create new order and get the result
+      const newOrder = await addOrder(orderData);
 
-      console.log("Order saved successfully:", orderData);
-      setOrder(orderData); // Cập nhật trạng thái đơn hàng với thông tin bổ sung
+      // Update current order with the new order
+      setCurrentOrder(newOrder);
+
+      // Clear the cart after successful order
       clearCart();
-      console.log("Cart cleared successfully.");
+
+      // Navigate to order status page
       router.push("/Checkout/OrderStatus" as any);
     } catch (error) {
       console.error("Error saving order:", error);
@@ -368,15 +371,11 @@ const CheckoutScreen: React.FC = () => {
         style={styles.checkoutButton}
         className="w-full mt-4 mb-1"
         onPress={() => {
-          console.log("Button pressed, attempting to submit form");
           handleSubmit(
             (values) => {
-              console.log("Form validated successfully", values);
               onSubmit(values);
             },
-            (errors) => {
-              console.log("Form validation failed", errors);
-            }
+            (errors) => {}
           )();
         }}
       >
