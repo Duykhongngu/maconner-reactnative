@@ -55,6 +55,14 @@ const OrderStatus: React.FC = () => {
         >
           Trạng thái đơn hàng
         </Text>
+        <Text
+          style={[
+            styles.orderCount,
+            isDarkMode ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Tổng số đơn hàng: {orders.length}
+        </Text>
 
         {orders.length === 0 ? (
           <Text
@@ -83,7 +91,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Order #{item.name}
+                Name: {item.name}
               </Text>
               <Text
                 style={[
@@ -95,7 +103,7 @@ const OrderStatus: React.FC = () => {
               </Text>
               <Text
                 style={[
-                  styles.orderInfo,
+                  styles.orderPrice,
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
@@ -153,6 +161,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#f97316",
   },
+  orderPrice: {
+    fontSize: 18,
+    fontWeight: 500,
+    color: "#f97316",
+  },
   message: {
     fontSize: 18,
     textAlign: "center",
@@ -165,6 +178,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 8,
+    borderWidth: 1,
   },
   orderTitle: {
     fontSize: 18,
@@ -187,6 +201,13 @@ const styles = StyleSheet.create({
   },
   lightButtonText: {
     color: "#000000",
+  },
+  orderCount: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
+    color: "#f97316",
   },
 });
 

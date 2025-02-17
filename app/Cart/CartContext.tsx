@@ -24,6 +24,12 @@ interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string, color: string, size: string) => void;
+  updateCartQuantity: (
+    id: string,
+    color: string,
+    size: string,
+    quantity: number
+  ) => void; // Add this method
   clearCart: () => void;
 }
 
@@ -82,6 +88,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     saveCartItems(updatedCartItems);
   };
 
+  const updateCartQuantity = (
+    id: string,
+    color: string,
+    size: string,
+    quantity: number
+  ) => {
+    const updatedCartItems = cartItems.map((item) =>
+      item.id === id && item.color === color && item.size === size
+        ? { ...item, quantity }
+        : item
+    );
+    saveCartItems(updatedCartItems);
+  };
+
   const clearCart = () => {
     saveCartItems([]);
   };
@@ -92,6 +112,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         cartItems,
         addToCart,
         removeFromCart,
+        updateCartQuantity, // Add this to the context provider
         clearCart,
       }}
     >
@@ -107,4 +128,5 @@ export const useCart = () => {
   }
   return context;
 };
-export default CartProvider;
+
+export default CartContext;

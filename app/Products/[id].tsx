@@ -83,7 +83,7 @@ export default function ProductDetail(): JSX.Element {
   const handleAddToCart = () => {
     if (product && selectedColor && selectedSize) {
       addToCart({
-        id: product.id,
+        id: product.id.toString(),
         name: product.name,
         price: product.price,
         quantity: quantity,

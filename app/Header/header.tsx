@@ -33,6 +33,7 @@ import {
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { useCart } from "../Cart/CartContext";
+import { useOrder } from "../Checkout/OrderContext";
 
 const logo = require("~/assets/images/logo.png");
 const inlineMenu = [
@@ -55,6 +56,8 @@ function SiteHeader() {
     (total, item) => total + item.quantity,
     0
   ); // Tính tổng số lượng sản phẩm
+  const { orders } = useOrder();
+  const totalOrders = orders.length; // Đếm số lượng đơn hàng
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -133,7 +136,10 @@ function SiteHeader() {
             onPress={() => router.push("/Checkout/OrderStatus" as any)}
           >
             <View>
-              <Truck size={26} color={iconColor} />
+              <Truck size={28} color={iconColor} />
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{totalOrders}</Text>
+              </View>
             </View>
           </TouchableOpacity>
           <TouchableOpacity

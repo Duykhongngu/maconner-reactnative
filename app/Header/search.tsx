@@ -78,6 +78,7 @@ export default function SearchBar() {
             color: isDarkColorScheme ? "#fff" : "#000", // Change text color
           }}
         />
+
         <TouchableOpacity
           className="absolute right-1 top-[13px] transform -translate-y-3 p-2 rounded-full bg-orange-500"
           onPress={() => value && handleSearch(value)}
@@ -155,8 +156,7 @@ export default function SearchBar() {
                 <TrendingUp color={"orange"} size={24} />
                 <Text style={{ color: isDarkColorScheme ? "#fff" : "#000" }}>
                   {search}
-                </Text>{" "}
-                {/* Change text color */}
+                </Text>
               </Button>
             ))}
           </View>
