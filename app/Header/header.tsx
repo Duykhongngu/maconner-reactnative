@@ -1,35 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+"use client";
+
+import { useState } from "react";
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
 
 import {
   Modal,
   View,
-  Image,
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
-  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  CarIcon,
-  Carrot,
   ChevronLeft,
-  Heart,
   MenuIcon,
-  Search,
   SearchIcon,
   ShoppingCart,
   Truck,
 } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "~/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { useCart } from "../Cart/CartContext";
@@ -55,107 +45,103 @@ function SiteHeader() {
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,
     0
-  ); // Tính tổng số lượng sản phẩm
+  );
   const { orders } = useOrder();
-  const totalOrders = orders.length; // Đếm số lượng đơn hàng
+  const totalOrders = orders.length;
 
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const contentInsets = {
-    top: insets.top,
-    bottom: insets.bottom,
-    left: 12,
-    right: 12,
-  };
-
   const [menuVisible, setMenuVisible] = useState(false);
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View>
-          <TouchableOpacity onPress={() => setMenuVisible(true)}>
+        {/* Left Section */}
+        <View style={styles.leftSection}>
+          <TouchableOpacity
+            onPress={() => setMenuVisible(true)}
+            style={styles.iconButton}
+          >
             <MenuIcon size={26} color={iconColor} />
           </TouchableOpacity>
-
-          <Modal visible={menuVisible} transparent animationType="slide">
-            <View
-              style={[
-                styles.modalContainer,
-                isDarkColorScheme && styles.darkModal,
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setMenuVisible(false)}
-              >
-                <ChevronLeft size={26} color={iconColor} />
-                <Text style={[styles.backText, { color: iconColor }]}>
-                  Back
-                </Text>
-              </TouchableOpacity>
-
-              {inlineMenu.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    router.push(item.link as any);
-                    setMenuVisible(false);
-                  }}
-                >
-                  <View style={styles.menuItem}>
-                    <Text style={[styles.menuText, { color: iconColor }]}>
-                      {item.title}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={styles.overlay}
-                onPress={() => setMenuVisible(false)}
-              />
-            </View>
-          </Modal>
         </View>
 
-        <TouchableOpacity onPress={() => router.push("/")}>
-          <Logo width={188} height={40} />
-        </TouchableOpacity>
-        <View style={styles.iconContainer}>
-          <View>
-            <Button
-              variant="ghost"
-              size="icon"
+        {/* Center Section */}
+        <View style={styles.centerSection}>
+          <TouchableOpacity onPress={() => router.push("/")}>
+            <Logo width={160} height={30} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Right Section */}
+        <View style={styles.rightSection}>
+          <View style={styles.iconGroup}>
+            <TouchableOpacity
+              style={styles.iconButton}
               onPress={() => setIsSearchOpen(true)}
             >
               <SearchIcon size={26} color={iconColor} />
-            </Button>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.push("/Checkout/OrderStatus" as any)}
-          >
-            <View>
-              <Truck size={28} color={iconColor} />
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{totalOrders}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/Cart/CartPages" as any)}
-          >
-            <View>
-              <ShoppingCart size={28} color={iconColor} />
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{totalItems}</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push("/Checkout/OrderStatus" as any)}
+            >
+              <Truck size={26} color={iconColor} />
+
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{totalOrders}</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push("/Cart/CartPages" as any)}
+            >
+              <ShoppingCart size={26} color={iconColor} />
+
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{totalItems}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Modal cho giao diện tìm kiếm */}
+        {/* Menu Modal */}
+        <Modal visible={menuVisible} transparent animationType="slide">
+          <View
+            style={[
+              styles.modalContainer,
+              isDarkColorScheme && styles.darkModal,
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setMenuVisible(false)}
+            >
+              <ChevronLeft size={24} color={iconColor} />
+              <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
+            </TouchableOpacity>
+
+            {inlineMenu.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  router.push(item.link as any);
+                  setMenuVisible(false);
+                }}
+              >
+                <View style={styles.menuItem}>
+                  <Text style={[styles.menuText, { color: iconColor }]}>
+                    {item.title}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Modal>
+
+        {/* Search Modal */}
         <Modal visible={isSearchOpen} transparent={true} animationType="slide">
           <View
             style={[
@@ -169,12 +155,10 @@ function SiteHeader() {
                 onPress={() => setIsSearchOpen(false)}
                 style={styles.cancelButton}
               >
-                <ChevronLeft size={24} color={iconColor} />
+                <ChevronLeft size={26} color={iconColor} />
                 <Text style={{ color: iconColor }}>Cancel</Text>
               </Button>
             </View>
-
-            {/* Nội dung tìm kiếm */}
             <View style={styles.searchContent}>
               <SearchBar />
             </View>
@@ -186,90 +170,99 @@ function SiteHeader() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    width: "100%",
+  },
   container: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16, // Thêm padding nếu cần
-    gap: 15,
+    paddingHorizontal: 12,
+    height: 56,
+    width: "100%",
   },
-  overlay: {
+  leftSection: {
+    alignItems: "flex-start",
+    marginLeft: -10,
+  },
+  centerSection: {
     flex: 1,
-    justifyContent: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rightSection: {
+    width: 80,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginLeft: 14,
+  },
+  iconGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 20,
+    padding: 4,
+  },
+  iconButton: {
+    padding: 8,
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: 0,
+    right: 2,
+    backgroundColor: "#ff0000",
+    borderRadius: 8,
+    minWidth: 17,
+    height: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 2,
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+    alignItems: "center",
   },
   modalContainer: {
     flex: 1,
     backgroundColor: "white",
-    paddingVertical: 20,
+    marginRight: 10,
   },
   darkModal: {
-    backgroundColor: "#1c1c1c", // Màu nền cho modal tối
+    backgroundColor: "#1c1c1c",
   },
   closeButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 16,
   },
   backText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
-    paddingLeft: 10,
+    marginLeft: 8,
   },
   menuItem: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   menuText: {
-    fontSize: 20,
-    fontWeight: "600",
-    paddingHorizontal: 20,
-  },
-  iconContainer: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-  },
-  cartBadge: {
-    position: "absolute",
-    backgroundColor: "red",
-    borderRadius: 50,
-    width: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    right: -10,
-    top: -10,
-  },
-  cartBadgeText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  searchModal: {
-    flex: 1,
-    backgroundColor: "white",
+    fontSize: 16,
+    fontWeight: "500",
   },
   searchHeader: {
     padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  searchContent: {
+    flex: 1,
+    padding: 16,
   },
   cancelButton: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  searchContent: {
-    padding: 16,
-    flex: 1,
   },
 });
 

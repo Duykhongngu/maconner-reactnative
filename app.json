@@ -1,5 +1,4 @@
 {
-
   "expo": {
     "name": "marconer-reacnative",
     "slug": "marconer-reacnative",
@@ -18,13 +17,18 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.duynguroi1504.marconerreacnative",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.duynguroi1504.marconerreacnative"
     },
     "web": {
       "bundler": "metro",
@@ -40,6 +44,14 @@
     },
     "packagerOpts": {
       "config": "metro.config.js"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "aeea9b67-da41-41dc-9899-2a3ad191fd3f"
+      }
     }
   }
 }

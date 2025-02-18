@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import {
   View,
@@ -9,12 +11,14 @@ import {
   Dimensions,
   StyleSheet,
   FlatList,
+  TextInput,
   useColorScheme,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type Product, trendingProducts } from "~/app/Data/product";
 import { useCart } from "~/app/Cart/CartContext";
 import { Star } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,27 +29,23 @@ interface CustomerReview {
   comment: string;
 }
 
-// Mock customer reviews
-const customerReviews: CustomerReview[] = [
-  {
-    id: 1,
-    name: "John D.",
-    rating: 5,
-    comment: "Great product, very comfortable!",
+const STORAGE_KEY = "productReviews";
+
+const reviewsStorage = {
+  async getAll() {
+    const reviews = await AsyncStorage.getItem(STORAGE_KEY);
+    return reviews ? JSON.parse(reviews) : {};
   },
-  {
-    id: 2,
-    name: "Sarah M.",
-    rating: 4,
-    comment: "Good quality, but sizing runs small.",
+  async getForProduct(productId: string) {
+    const allReviews = await this.getAll();
+    return allReviews[productId] || [];
   },
-  {
-    id: 3,
-    name: "Mike L.",
-    rating: 5,
-    comment: "Exactly as described. Very satisfied!",
+  async saveForProduct(productId: string, reviews: CustomerReview[]) {
+    const allReviews = await this.getAll();
+    allReviews[productId] = reviews;
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allReviews));
   },
-];
+};
 
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,12 +53,22 @@ export default function ProductDetail(): JSX.Element {
   const [product, setProduct] = useState<Product | null>(null);
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const colorScheme = useColorScheme(); // Get the current color scheme
+  const colorScheme = useColorScheme();
 
   // State management
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  // New review state
+  const [newReview, setNewReview] = useState({
+    name: "",
+    rating: 0,
+    comment: "",
+  });
+
+  // Reviews state
+  const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
 
   // Mock multiple product images
   const productImages = product ? [product.img, product.img, product.img] : [];
@@ -70,6 +80,19 @@ export default function ProductDetail(): JSX.Element {
       setSelectedColor(foundProduct.colors[0]);
       setSelectedSize(foundProduct.sizes ? foundProduct.sizes[0] : null);
     }
+  }, [id]);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const productReviews = await reviewsStorage.getForProduct(id);
+        setCustomerReviews(productReviews);
+      } catch (error) {
+        console.error("Failed to load reviews:", error);
+      }
+    };
+
+    loadReviews();
   }, [id]);
 
   if (!product) {
@@ -86,11 +109,34 @@ export default function ProductDetail(): JSX.Element {
         id: product.id.toString(),
         name: product.name,
         price: product.price,
-        quantity: quantity,
+        quantity: quantity, // Sử dụng số lượng hiện tại
         color: selectedColor,
         size: selectedSize,
         image: product.img as any,
       });
+
+      setQuantity(1); // Reset quantity to 1 after adding to cart
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (newReview.name && newReview.rating > 0 && newReview.comment) {
+      const newReviewData = {
+        id: Date.now(),
+        ...newReview,
+      };
+
+      try {
+        const updatedReviews = [...customerReviews, newReviewData];
+        await reviewsStorage.saveForProduct(id, updatedReviews);
+        setCustomerReviews(updatedReviews);
+        setNewReview({ name: "", rating: 0, comment: "" });
+      } catch (error) {
+        console.error("Failed to save review:", error);
+        alert("Failed to save review. Please try again.");
+      }
+    } else {
+      alert("Please fill in all fields.");
     }
   };
 
@@ -126,7 +172,6 @@ export default function ProductDetail(): JSX.Element {
     </TouchableOpacity>
   );
 
-  // Determine styles based on color scheme
   const isDarkMode = colorScheme === "dark";
 
   return (
@@ -273,6 +318,52 @@ export default function ProductDetail(): JSX.Element {
               keyExtractor={(item) => item.id.toString()}
               scrollEnabled={false}
             />
+          </View>
+
+          {/* Review Submission Form */}
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Leave a Review
+            </Text>
+            <TextInput
+              placeholder="Your Name"
+              value={newReview.name}
+              onChangeText={(text) =>
+                setNewReview({ ...newReview, name: text })
+              }
+              style={styles.input}
+            />
+            <View style={styles.ratingContainer}>
+              {[...Array(5)].map((_, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() =>
+                    setNewReview({ ...newReview, rating: index + 1 })
+                  }
+                >
+                  <Star
+                    fill={index < newReview.rating ? "#FFD700" : "#E0E0E0"}
+                    stroke={index < newReview.rating ? "#FFD700" : "#E0E0E0"}
+                    size={24}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              placeholder="Your Comment"
+              value={newReview.comment}
+              onChangeText={(text) =>
+                setNewReview({ ...newReview, comment: text })
+              }
+              style={styles.input}
+              multiline
+            />
+            <TouchableOpacity
+              onPress={handleSubmitReview}
+              style={styles.submitButton}
+            >
+              <Text style={styles.submitButtonText}>Submit Review</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.sectionContainer}>
@@ -471,11 +562,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#000",
   },
-  quantityText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#000",
-  },
   bottomContainer: {
     padding: 20,
     paddingBottom: 34, // Extra padding for iPhone bottom area
@@ -550,5 +636,22 @@ const styles = StyleSheet.create({
   },
   darkSuggestedProductPrice: {
     color: "#FF6B00",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  submitButton: {
+    backgroundColor: "#FF6B00",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

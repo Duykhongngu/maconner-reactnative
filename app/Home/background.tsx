@@ -12,11 +12,11 @@ import {
 import { useColorScheme } from "~/lib/useColorScheme";
 
 const imgCozy = require("~/assets/images/CozyGlow.png");
-const imgDrinkware = require("~/assets/images/Drinkware.png");
-const Glassware = require("~/assets/images/Glassware.png");
-const imgCar = require("~/assets/images/CarCharm.png");
-const imgNest = require("~/assets/images/CozyNest.png");
-const imgSoft = require("~/assets/images/SnugWear.png");
+const imgDrinkware = require("~/assets/images/Drinkware.webp");
+const Glassware = require("~/assets/images/Glassware.webp");
+const imgCar = require("~/assets/images/Car_Charm.webp");
+const imgNest = require("~/assets/images/Cozy_Nest.webp");
+const imgSoft = require("~/assets/images/SnugWear.webp");
 
 const { width } = Dimensions.get("window");
 

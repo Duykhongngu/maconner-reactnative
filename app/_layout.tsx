@@ -1,20 +1,19 @@
-import "~/global.css";
+"use client";
 
-import { useEffect, useState } from "react";
+import "~/global.css";
 import {
   DarkTheme,
   DefaultTheme,
-  Theme,
+  type Theme,
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { PortalHost } from "@rn-primitives/portal";
-import { ThemeToggle } from "~/components/ThemeToggle";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import SiteHeader from "~/app/Header/header";
 import { CartProvider } from "./Cart/CartContext";
@@ -68,7 +67,13 @@ export default function RootLayout() {
             style={isDarkColorScheme ? "light" : "dark"}
             translucent
           />
-          <Stack screenOptions={{ headerBackVisible: false }}>
+          <Stack
+            screenOptions={{
+              headerBackVisible: false,
+
+              headerTitleAlign: "center",
+            }}
+          >
             <Stack.Screen
               name="index"
               options={{
@@ -77,65 +82,51 @@ export default function RootLayout() {
                 headerRight: () => null,
               }}
             />
-            <Stack.Screen
-              name="test" // ✅ Thêm trang test
-              options={{
-                headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
 
-                headerLeft: () => null,
-                headerRight: () => null,
-              }}
-            />
             <Stack.Screen
-              name="Home/sliderShow" // ✅ Thêm trang test
-              options={{
-                headerTitle: () => <SiteHeader />, // Thay thế tiêu đề bằng SiteHeader
-
-                headerLeft: () => null,
-                headerRight: () => null,
-              }}
-            />
-            <Stack.Screen
-              name="Products/[id]" // ✅ Thêm trang test
+              name="Home/sliderShow"
               options={{
                 headerTitle: () => <SiteHeader />,
-
                 headerLeft: () => null,
                 headerRight: () => null,
               }}
             />
             <Stack.Screen
-              name="Cart/CartPages" // ✅ Thêm trang test
+              name="Products/[id]"
               options={{
                 headerTitle: () => <SiteHeader />,
-
                 headerLeft: () => null,
                 headerRight: () => null,
               }}
             />
             <Stack.Screen
-              name="Checkout/Checkout" // ✅ Thêm trang test
+              name="Cart/CartPages"
               options={{
                 headerTitle: () => <SiteHeader />,
-
                 headerLeft: () => null,
                 headerRight: () => null,
               }}
             />
             <Stack.Screen
-              name="Checkout/OrderStatus" // ✅ Thêm trang test
+              name="Checkout/Checkout"
               options={{
                 headerTitle: () => <SiteHeader />,
-
                 headerLeft: () => null,
                 headerRight: () => null,
               }}
             />
             <Stack.Screen
-              name="Checkout/OrderDetails" // ✅ Thêm trang test
+              name="Checkout/OrderStatus"
               options={{
                 headerTitle: () => <SiteHeader />,
-
+                headerLeft: () => null,
+                headerRight: () => null,
+              }}
+            />
+            <Stack.Screen
+              name="Checkout/OrderDetails"
+              options={{
+                headerTitle: () => <SiteHeader />,
                 headerLeft: () => null,
                 headerRight: () => null,
               }}
@@ -148,6 +139,13 @@ export default function RootLayout() {
     </OrderProvider>
   );
 }
+
+// const styles = StyleSheet.create({
+//   header: {
+//     height: 100,
+//     backgroundColor: isDarkColorScheme ? "#121212" : "#FFFFFF", // add this line
+//   },
+// });
 
 const useIsomorphicLayoutEffect =
   Platform.OS === "web" && typeof window === "undefined"

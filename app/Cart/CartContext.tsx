@@ -72,12 +72,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     if (existingItem) {
       const updatedCartItems = cartItems.map((i) =>
         i.id === item.id && i.color === item.color && i.size === item.size
-          ? { ...i, quantity: i.quantity + 1 }
+          ? { ...i, quantity: i.quantity + item.quantity } // Cập nhật số lượng
           : i
       );
       saveCartItems(updatedCartItems);
     } else {
-      saveCartItems([...cartItems, { ...item, quantity: 1 }]);
+      saveCartItems([...cartItems, item]); // Thêm sản phẩm mới
     }
   };
 
