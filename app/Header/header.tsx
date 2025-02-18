@@ -170,9 +170,7 @@ function SiteHeader() {
 }
 
 const styles = StyleSheet.create({
-  safeContainer: {
-    backgroundColor: "#fff",
-  },
+  safeContainer: {},
   container: {
     flex: 1,
     width: "100%",
