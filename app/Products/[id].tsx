@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -51,26 +51,21 @@ export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const colorScheme = useColorScheme();
 
-  // State management
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  // New review state
   const [newReview, setNewReview] = useState({
     name: "",
     rating: 0,
     comment: "",
   });
-
-  // Reviews state
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
 
-  // Mock multiple product images
   const productImages = product ? [product.img, product.img, product.img] : [];
 
   useEffect(() => {
@@ -95,6 +90,12 @@ export default function ProductDetail(): JSX.Element {
     loadReviews();
   }, [id]);
 
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  }, [product]);
+
   if (!product) {
     return (
       <View style={styles.loadingContainer}>
@@ -109,13 +110,13 @@ export default function ProductDetail(): JSX.Element {
         id: product.id.toString(),
         name: product.name,
         price: product.price,
-        quantity: quantity, // Sử dụng số lượng hiện tại
+        quantity: quantity,
         color: selectedColor,
         size: selectedSize,
         image: product.img as any,
       });
 
-      setQuantity(1); // Reset quantity to 1 after adding to cart
+      setQuantity(1);
     }
   };
 
@@ -178,7 +179,11 @@ export default function ProductDetail(): JSX.Element {
     <SafeAreaView
       style={[styles.container, isDarkMode && styles.darkContainer]}
     >
-      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Image Gallery */}
         <View style={styles.imageContainer}>
           <ScrollView
@@ -374,37 +379,7 @@ export default function ProductDetail(): JSX.Element {
               data={trendingProducts
                 .filter((p) => p.id !== product.id)
                 .slice(0, 6)}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.suggestedProductItem,
-                    isDarkMode && styles.darkSuggestedProductList,
-                  ]}
-                  onPress={() => router.push(`/Products/${item.id}`)}
-                >
-                  <Image
-                    source={item.img}
-                    style={styles.suggestedProductImage}
-                  />
-                  <Text
-                    style={[
-                      styles.suggestedProductName,
-                      isDarkMode && styles.darkSuggestedProductName,
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.suggestedProductPrice,
-                      isDarkMode && styles.darkSuggestedProductPrice,
-                    ]}
-                  >
-                    ${item.price.toFixed(2)}
-                  </Text>
-                </TouchableOpacity>
-              )}
+              renderItem={renderSuggestedProduct}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -599,6 +574,8 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     flexDirection: "row",
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   reviewComment: {
     fontSize: 14,
