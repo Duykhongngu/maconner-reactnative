@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
+  SafeAreaView,
 } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
 
@@ -44,46 +45,48 @@ const Background = () => {
   const memoizedItems = useMemo(() => items, [items]);
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <ScrollView
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {memoizedItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={[
-              styles.item,
-              { width: iconSize, backgroundColor: itemBackgroundColor },
-            ]}
-          >
-            <View
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.container, { backgroundColor }]}>
+        <ScrollView
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {memoizedItems.map((item) => (
+            <TouchableOpacity
+              key={item.id}
               style={[
-                styles.iconWrapper,
-                {
-                  width: iconSize,
-                  height: iconSize,
-                  backgroundColor: iconBackgroundColor,
-                },
+                styles.item,
+                { width: iconSize, backgroundColor: itemBackgroundColor },
               ]}
             >
-              <Image
-                source={item.img}
+              <View
                 style={[
-                  styles.icon,
-                  { width: iconSize * 0.8, height: iconSize * 0.8 },
+                  styles.iconWrapper,
+                  {
+                    width: iconSize,
+                    height: iconSize,
+                    backgroundColor: iconBackgroundColor,
+                  },
                 ]}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={[styles.text, { color: textColor }]}>
-              {item.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+              >
+                <Image
+                  source={item.img}
+                  style={[
+                    styles.icon,
+                    { width: iconSize * 0.8, height: iconSize * 0.8 },
+                  ]}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={[styles.text, { color: textColor }]}>
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 

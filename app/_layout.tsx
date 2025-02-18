@@ -10,7 +10,13 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
-import { Platform, StyleSheet, TouchableOpacity, Text } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  SafeAreaView,
+} from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { PortalHost } from "@rn-primitives/portal";
@@ -62,45 +68,50 @@ export default function RootLayout() {
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
           <StatusBar
             animated={true}
-            backgroundColor={isDarkColorScheme ? "transparent" : "white"}
+            backgroundColor="transparent"
             networkActivityIndicatorVisible
             style={isDarkColorScheme ? "light" : "dark"}
             translucent
           />
-          <Stack
-            screenOptions={{
-              headerBackVisible: false,
-              headerTitleAlign: "center",
+          <SafeAreaView
+            style={{
+              flex: 1,
+              backgroundColor: isDarkColorScheme ? "#000" : "#fff",
             }}
           >
-            {[
-              "index",
-              "Home/sliderShow",
-              "Products/[id]",
-              "Cart/CartPages",
-              "Checkout/Checkout",
-              "Checkout/OrderStatus",
-              "Checkout/OrderDetails",
-            ].map((screen) => (
-              <Stack.Screen
-                key={screen}
-                name={screen}
-                options={{
-                  headerTitle: () => <MemoizedSiteHeader />,
-                  headerLeft: () => null,
-                  headerRight: () => null,
-                }}
-              />
-            ))}
-          </Stack>
-
-          <PortalHost />
+            <Stack
+              screenOptions={{
+                headerBackVisible: false,
+                headerTitleAlign: "center",
+              }}
+            >
+              {[
+                "index",
+                "Home/sliderShow",
+                "Products/[id]",
+                "Cart/CartPages",
+                "Checkout/Checkout",
+                "Checkout/OrderStatus",
+                "Checkout/OrderDetails",
+              ].map((screen) => (
+                <Stack.Screen
+                  key={screen}
+                  name={screen}
+                  options={{
+                    headerTitle: () => <MemoizedSiteHeader />,
+                    headerLeft: () => null,
+                    headerRight: () => null,
+                  }}
+                />
+              ))}
+            </Stack>
+            <PortalHost />
+          </SafeAreaView>
         </ThemeProvider>
       </CartProvider>
     </OrderProvider>
   );
 }
-
 const useIsomorphicLayoutEffect =
   Platform.OS === "web" && typeof window === "undefined"
     ? React.useEffect

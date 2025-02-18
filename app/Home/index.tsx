@@ -5,8 +5,8 @@ import { CartProvider } from "../Cart/CartContext";
 
 function HomePage() {
   return (
-    <CartProvider>
-      <SafeAreaView>
+    <SafeAreaView style={{ flex: 1 }}>
+      <CartProvider>
         <View>
           <View>
             <Background />
@@ -15,8 +15,8 @@ function HomePage() {
             <Trending />
           </View>
         </View>
-      </SafeAreaView>
-    </CartProvider>
+      </CartProvider>
+    </SafeAreaView>
   );
 }
 
