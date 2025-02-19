@@ -91,13 +91,12 @@ const Background = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 10,
-  },
+  container: {},
   scrollContent: {
     paddingHorizontal: 15,
     flexDirection: "row",
     justifyContent: "center",
+    marginBottom: 10,
   },
   item: {
     alignItems: "center",

@@ -179,8 +179,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     height: 56,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
   },
   leftSection: {
     alignItems: "flex-start",

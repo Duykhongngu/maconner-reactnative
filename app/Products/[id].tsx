@@ -410,7 +410,6 @@ export default function ProductDetail(): JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   darkContainer: {
     backgroundColor: "#000",
