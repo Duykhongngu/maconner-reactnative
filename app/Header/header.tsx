@@ -170,16 +170,18 @@ function SiteHeader() {
 }
 
 const styles = StyleSheet.create({
-  safeContainer: {},
+  safeContainer: {
+    flexShrink: 1,
+  },
   container: {
-    flex: 1,
-    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 56,
     paddingHorizontal: 16,
+    height: 56,
+    width: "100%",
   },
+
   leftSection: {
     alignItems: "flex-start",
     marginLeft: -10,
@@ -188,12 +190,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
   },
   rightSection: {
     width: 80,
     alignItems: "center",
     justifyContent: "flex-end",
-    marginLeft: 14,
+    marginLeft: 16,
   },
   iconGroup: {
     flexDirection: "row",

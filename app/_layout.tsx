@@ -25,6 +25,7 @@ import SiteHeader from "~/app/Header/header";
 import { CartProvider } from "./Cart/CartContext";
 import { OrderProvider } from "./Checkout/OrderContext";
 import { useNavigation } from "@react-navigation/native";
+import Footer from "./Footer/Footer";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -99,12 +100,14 @@ export default function RootLayout() {
                   name={screen}
                   options={{
                     headerTitle: () => <MemoizedSiteHeader />,
+
                     headerLeft: () => null,
                     headerRight: () => null,
                   }}
                 />
               ))}
             </Stack>
+
             <PortalHost />
           </SafeAreaView>
         </ThemeProvider>

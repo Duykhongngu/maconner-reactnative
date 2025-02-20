@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   showMoreButton: {
     backgroundColor: "#ccc",
     paddingVertical: 12,
-
+    height: 40,
     borderRadius: 25,
     minWidth: 120,
   },

@@ -19,6 +19,7 @@ import { type Product, products } from "~/app/Data/product";
 import { useCart } from "~/app/Cart/CartContext";
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Footer from "../Footer/Footer";
 
 const { width, height } = Dimensions.get("window");
 

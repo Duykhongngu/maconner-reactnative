@@ -1,15 +1,14 @@
-import * as React from "react";
-import { ScrollView, SafeAreaView, StyleSheet } from "react-native";
+import { ScrollView, SafeAreaView, StyleSheet, View } from "react-native";
 import HomePage from "~/app/Home/index";
+import Footer from "./Footer/Footer";
 
 export default function Screen() {
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        <HomePage />
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View style={styles.content}>
+          <HomePage />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -18,9 +17,13 @@ export default function Screen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // Đặt màu nền để tránh xung đột
+    backgroundColor: "#fff",
   },
-  scrollView: {
+
+  contentContainer: {
+    flexGrow: 1,
+  },
+  content: {
     flex: 1,
   },
 });
