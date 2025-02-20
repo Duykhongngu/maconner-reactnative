@@ -420,6 +420,7 @@ export default function ProductDetail(): JSX.Element {
 
           {renderSuggestedProducts()}
         </View>
+        <Footer />
       </ScrollView>
 
       {/* Fixed Bottom Buttons */}

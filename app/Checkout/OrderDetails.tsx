@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { MaterialIcons } from "@expo/vector-icons";
+import Footer from "../Footer/Footer";
 
 const OrderDetailsScreen: React.FC = () => {
   const { getOrder } = useOrder();
@@ -189,6 +190,7 @@ const OrderDetailsScreen: React.FC = () => {
           Quay lại danh sách đơn hàng
         </Text>
       </Button>
+      <Footer />
     </ScrollView>
   );
 };
