@@ -6,13 +6,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
+  FlatList,
 } from "react-native";
-import { products } from "~/app/Data/product";
+import { products } from "../Data/product";
 import { useWindowDimensions } from "react-native";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 
-function Trending() {
+function Recipient() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { isDarkColorScheme } = useColorScheme();
@@ -25,7 +26,9 @@ function Trending() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: "#F97316" }]}>Trending Now</Text>
+        <Text style={[styles.title, { color: "#F97316" }]}>
+          Shop By Recipients
+        </Text>
         <View style={styles.productContainer}>
           {products.trendingProducts.map((item) => {
             return (
@@ -44,17 +47,11 @@ function Trending() {
                   style={styles.productImage}
                 />
                 <Text style={[styles.productDescription, { color: textColor }]}>
-                  {item.description}
+                  {item.name}
                 </Text>
-                <Text style={styles.productPrice}>$ {item.price} USD</Text>
               </TouchableOpacity>
             );
           })}
-        </View>
-        <View style={styles.showMoreContainer}>
-          <Button variant="secondary" style={styles.showMoreButton}>
-            <Text style={[styles.showMoreText]}>Shop All</Text>
-          </Button>
         </View>
       </View>
     </SafeAreaView>
@@ -66,6 +63,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginVertical: 10,
   },
+  productContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
   content: {
     flex: 1,
     paddingHorizontal: 16,
@@ -76,33 +78,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
   },
-  productContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
   productCard: {
-    borderRadius: 10,
+    borderRadius: 9999,
     padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
     width: "48%",
   },
   productImage: {
     width: "100%",
-    height: 160,
-    borderRadius: 10,
+    height: 130,
+    borderRadius: 9999,
   },
   productDescription: {
     marginTop: 8,
-    fontSize: 16,
-    fontWeight: "600",
-    height: 60,
-  },
-  productPrice: {
-    fontSize: 18,
     fontWeight: "bold",
-    color: "#F97316",
+    lineHeight: 20,
+    fontSize: 14,
+    textAlign: "center",
   },
   showMoreContainer: {
     alignItems: "center",
@@ -123,4 +114,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Trending;
+export default Recipient;

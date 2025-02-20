@@ -91,7 +91,7 @@ const Background = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  container: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 15,
     flexDirection: "row",

@@ -3,6 +3,11 @@ import Background from "./background";
 import Trending from "./trending";
 import { CartProvider } from "../Cart/CartContext";
 import MothersSlider from "./sliderShow";
+import ShopAll from "./shopAll";
+import CarVisor from "./carViso";
+import BottleLamp from "./bottleLamp";
+import Recipient from "./recipient";
+import ByProducts from "./byProducts";
 
 function HomePage() {
   return (
@@ -17,6 +22,21 @@ function HomePage() {
           </View>
           <View>
             <Trending />
+          </View>
+          <View>
+            <ShopAll />
+          </View>
+          <View>
+            <CarVisor />
+          </View>
+          <View>
+            <BottleLamp />
+          </View>
+          <View>
+            <Recipient />
+          </View>
+          <View>
+            <ByProducts />
           </View>
         </View>
       </CartProvider>

@@ -15,7 +15,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { type Product, trendingProducts } from "~/app/Data/product";
+import { type Product, products } from "~/app/Data/product";
 import { useCart } from "~/app/Cart/CartContext";
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -69,7 +69,15 @@ export default function ProductDetail(): JSX.Element {
   const productImages = product ? [product.img, product.img, product.img] : [];
 
   useEffect(() => {
-    const foundProduct = trendingProducts.find((p) => p.id === Number(id));
+    // Search for the product in all categories
+    let foundProduct: Product | undefined;
+    const categories = Object.keys(products);
+
+    for (const category of categories) {
+      foundProduct = products[category].find((p) => p.id === Number(id));
+      if (foundProduct) break;
+    }
+
     if (foundProduct) {
       setProduct(foundProduct);
       setSelectedColor(foundProduct.colors[0]);
@@ -174,6 +182,44 @@ export default function ProductDetail(): JSX.Element {
   );
 
   const isDarkMode = colorScheme === "dark";
+
+  // Update the suggested products section to show products from the same category
+  const getSuggestedProducts = () => {
+    if (!product) return [];
+
+    // Find which category the current product belongs to
+    let productCategory = "";
+    Object.entries(products).forEach(([category, productList]) => {
+      if (productList.find((p) => p.id === product.id)) {
+        productCategory = category;
+      }
+    });
+
+    // Get other products from the same category
+    return products[productCategory]
+      .filter((p) => p.id !== product.id)
+      .slice(0, 6);
+  };
+
+  // Update the suggested products rendering
+  const renderSuggestedProducts = () => (
+    <View style={styles.sectionContainer}>
+      <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+        You May Also Like
+      </Text>
+      <FlatList
+        data={getSuggestedProducts()}
+        renderItem={renderSuggestedProduct}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[
+          styles.suggestedProductList,
+          isDarkMode && styles.darkSuggestedProductList,
+        ]}
+      />
+    </View>
+  );
 
   return (
     <SafeAreaView
@@ -371,24 +417,7 @@ export default function ProductDetail(): JSX.Element {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              You May Also Like
-            </Text>
-            <FlatList
-              data={trendingProducts
-                .filter((p) => p.id !== product.id)
-                .slice(0, 6)}
-              renderItem={renderSuggestedProduct}
-              keyExtractor={(item) => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={[
-                styles.suggestedProductList,
-                isDarkMode && styles.darkSuggestedProductList,
-              ]}
-            />
-          </View>
+          {renderSuggestedProducts()}
         </View>
       </ScrollView>
 

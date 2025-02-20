@@ -69,27 +69,29 @@ const MothersSlider: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderItem}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      />
-      {/* Phân trang */}
-      <View style={styles.pagination}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.paginationDot,
-              index === activeIndex ? styles.paginationDotActive : null,
-            ]}
-          />
-        ))}
+      <View style={styles.container}>
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          renderItem={renderItem}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        />
+        {/* Phân trang */}
+        <View style={styles.pagination}>
+          {slides.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationDot,
+                index === activeIndex ? styles.paginationDotActive : null,
+              ]}
+            />
+          ))}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -99,7 +101,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  container: {
+    flex: 1,
+    flexDirection: "column",
+  },
   slide: {
+    flex: 1,
     width: screenWidth,
     height: screenHeight * 0.5,
     justifyContent: "center",
@@ -108,7 +115,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: "50%",
+    height: "60%",
     resizeMode: "cover",
   },
   textContainer: {
@@ -116,7 +123,7 @@ const styles = StyleSheet.create({
     height: "50%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "#ffeee2",
     padding: 20,
   },
   title: {
@@ -149,10 +156,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    position: "absolute",
-    bottom: 16,
-    left: 0,
-    right: 0,
+    paddingTop: 10,
   },
   paginationDot: {
     width: 8,
