@@ -7,14 +7,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
+  Pressable,
 } from "react-native";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
   Facebook,
+  FacebookIcon,
+  Globe2,
   Globe2Icon,
   Instagram,
   MessageCircleHeart,
+  Twitch,
   TwitchIcon,
   Twitter,
 } from "lucide-react-native";
@@ -172,23 +176,28 @@ const Footer: React.FC = () => {
             <Text style={styles.supportButtonText}>Open A Support Ticket</Text>
           </Button>
           <View style={styles.socialIcons}>
-            <Text className="text-gray-300 hover:text-white">
-              <Facebook className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4 " />
+            <Text style={styles.icon}>
+              <FacebookIcon className="text-white" size={24} />
             </Text>
-            <Text className="text-gray-300 hover:text-white">
-              <Instagram className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4" />
+
+            <Text style={styles.icon}>
+              <Instagram size={24} />
             </Text>
-            <Text className="text-gray-300 hover:text-white">
-              <Twitter className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4" />
+
+            <Text style={styles.icon}>
+              <Twitter size={24} />
             </Text>
-            <Text className="text-gray-300 hover:text-white">
-              <MessageCircleHeart className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4" />
+
+            <Text style={styles.icon}>
+              <MessageCircleHeart size={24} />
             </Text>
-            <Text className="text-gray-300 hover:text-white">
-              <Globe2Icon className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4" />
+
+            <Text style={styles.icon}>
+              <Globe2 size={24} />
             </Text>
-            <Text className="text-gray-300 hover:text-white">
-              <TwitchIcon className="h-5 w-5 md:h-7 md:w-7 max-sm:w-4 max-sm:h-4" />
+
+            <Text style={styles.icon}>
+              <Twitch size={24} />
             </Text>
           </View>
         </View>
@@ -336,6 +345,9 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 12,
     padding: 10,
+  },
+  icon: {
+    color: "#D1D5DB", // gray-300
   },
 });
 

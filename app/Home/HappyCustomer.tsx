@@ -80,9 +80,7 @@ export default function HappyCustomers() {
     <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <Text style={[styles.title, { color: textColor }]}>
-            Happy Customers
-          </Text>
+          <Text style={[styles.title]}>Happy Customers</Text>
           <Text style={[styles.description, { color: textColor }]}>
             Unwrap Happiness with Every Gift. Join the Macorner Family of
             Delighted Shoppers!
@@ -125,6 +123,7 @@ const styles = StyleSheet.create({
     padding: 16,
     flex: 1,
     flexDirection: "column",
+    fontFamily: "Poppins",
   },
   headerContainer: {
     maxWidth: 960,
@@ -133,13 +132,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: "bold",
+    fontFamily: "Poppins",
     marginBottom: 8,
+    color: "#f7921f",
   },
   description: {
-    fontSize: 18,
+    fontSize: 20,
+    textAlign: "center",
     marginBottom: 16,
+    fontWeight: "500",
+    fontFamily: "Poppins",
   },
   button: {
     width: "50%",

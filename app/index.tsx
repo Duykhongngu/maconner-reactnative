@@ -22,6 +22,7 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     flexGrow: 1,
+    fontFamily: "Poppins",
   },
   content: {
     flex: 1,
