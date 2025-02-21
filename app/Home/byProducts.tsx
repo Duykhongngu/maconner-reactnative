@@ -27,7 +27,7 @@ function ByProducts() {
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: "#F97316" }]}>
-          Shop By Recipients
+          Shop By Product
         </Text>
         <View style={styles.productContainer}>
           {products.trendingProducts.map((item) => {

@@ -85,7 +85,11 @@ export default function HappyCustomers() {
             Unwrap Happiness with Every Gift. Join the Macorner Family of
             Delighted Shoppers!
           </Text>
-          <Button variant="outline" style={styles.button}>
+          <Button
+            onPress={() => router.push(`/Collections/NightLight` as any)}
+            variant="secondary"
+            style={styles.button}
+          >
             <Text style={[styles.buttonText, { color: textColor }]}>
               {" "}
               Show More
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
   button: {
     width: "50%",
     borderRadius: 24,
-    backgroundColor: "#7373731a",
+    backgroundColor: "#f7921f",
   },
   buttonText: {
     color: "black",

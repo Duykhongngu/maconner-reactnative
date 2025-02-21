@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -43,6 +44,7 @@ const slides: SlideItem[] = [
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const MothersSlider: React.FC = () => {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -54,7 +56,10 @@ const MothersSlider: React.FC = () => {
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity
+          onPress={() => router.push(`/Collections/NightLight` as any)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>{item.buttonText}</Text>
         </TouchableOpacity>
       </View>

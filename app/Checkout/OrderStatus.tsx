@@ -127,7 +127,7 @@ const OrderStatus: React.FC = () => {
             Tiếp tục mua sắm
           </Text>
         </Button>
-        <View>
+        <View style={styles.footerContainer}>
           <Footer />
         </View>
       </ScrollView>
@@ -212,6 +212,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
     color: "#f97316",
+  },
+  footerContainer: {
+    marginTop: 20,
   },
 });
 

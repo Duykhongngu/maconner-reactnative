@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Twitter from "~/assets/twitter.svg";
+import Tiktok from "~/assets/tiktok.svg";
 import {
   View,
   Text,
@@ -20,7 +22,6 @@ import {
   MessageCircleHeart,
   Twitch,
   TwitchIcon,
-  Twitter,
 } from "lucide-react-native";
 
 // Define your data structures
@@ -176,29 +177,41 @@ const Footer: React.FC = () => {
             <Text style={styles.supportButtonText}>Open A Support Ticket</Text>
           </Button>
           <View style={styles.socialIcons}>
-            <Text style={styles.icon}>
-              <FacebookIcon className="text-white" size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <FacebookIcon color={"white"} size={24} />
+              </Text>
+            </TouchableOpacity>
 
-            <Text style={styles.icon}>
-              <Instagram size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <Instagram size={26} color={"white"} />
+              </Text>
+            </TouchableOpacity>
 
-            <Text style={styles.icon}>
-              <Twitter size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <Tiktok width={26} height={26} color={"white"} />
+              </Text>
+            </TouchableOpacity>
 
-            <Text style={styles.icon}>
-              <MessageCircleHeart size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <MessageCircleHeart size={26} color={"white"} />
+              </Text>
+            </TouchableOpacity>
 
-            <Text style={styles.icon}>
-              <Globe2 size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <Globe2 size={26} color={"white"} />
+              </Text>
+            </TouchableOpacity>
 
-            <Text style={styles.icon}>
-              <Twitch size={24} />
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.icon}>
+                <Twitter width={26} height={26} color={"white"} />
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -298,6 +311,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   link: {
+    paddingLeft: 10,
     color: "white",
     marginBottom: 5,
     fontSize: 14,
@@ -321,7 +335,8 @@ const styles = StyleSheet.create({
   socialIcons: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginTop: 10,
+
+    paddingVertical: 10,
   },
   paymentMethods: {
     flexDirection: "row",
@@ -353,6 +368,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   icon: {
+    marginHorizontal: 10,
     color: "#D1D5DB", // gray-300
   },
 });

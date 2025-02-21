@@ -25,7 +25,6 @@ import SearchBar from "./search";
 import { useCart } from "../Cart/CartContext";
 import { useOrder } from "../Checkout/OrderContext";
 
-const logo = require("~/assets/images/logo.png");
 const inlineMenu = [
   { title: "Valentine's Day", link: "/Products/[id]" },
   { title: "Occasions", link: "/Products/[id]" },

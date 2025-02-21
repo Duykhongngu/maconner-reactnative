@@ -52,7 +52,11 @@ function Trending() {
           })}
         </View>
         <View style={styles.showMoreContainer}>
-          <Button variant="secondary" style={styles.showMoreButton}>
+          <Button
+            onPress={() => router.push(`/Collections/NightLight` as any)}
+            variant="secondary"
+            style={styles.showMoreButton}
+          >
             <Text style={[styles.showMoreText]}>Shop All</Text>
           </Button>
         </View>

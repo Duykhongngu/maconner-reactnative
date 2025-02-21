@@ -209,7 +209,11 @@ const ShopAll: React.FC = () => {
         <View style={styles.content}>
           {renderProducts()}
           <View style={styles.showMoreContainer}>
-            <Button variant="secondary" style={styles.showMoreButton}>
+            <Button
+              onPress={() => router.push(`/Collections/NightLight` as any)}
+              variant="secondary"
+              style={styles.showMoreButton}
+            >
               <Text style={styles.showMoreText}>Shop Now</Text>
             </Button>
           </View>

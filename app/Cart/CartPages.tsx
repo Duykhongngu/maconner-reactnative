@@ -154,7 +154,9 @@ const CartPages: React.FC = () => {
         >
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </Button>
-        <Footer />
+        <View style={{ marginTop: 20 }}>
+          <Footer />
+        </View>
       </ScrollView>
     </View>
   );

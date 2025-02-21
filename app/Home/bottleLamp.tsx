@@ -81,7 +81,10 @@ const BottleLamp: React.FC = () => {
       <View style={styles.textContainer}>
         <Text style={styles.bannerTitle}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity
+          onPress={() => router.push(`/Collections/NightLight` as any)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>{item.buttonText}</Text>
         </TouchableOpacity>
       </View>
@@ -206,7 +209,11 @@ const BottleLamp: React.FC = () => {
         <View style={styles.content}>
           {renderProducts()}
           <View style={styles.showMoreContainer}>
-            <Button variant="secondary" style={styles.showMoreButton}>
+            <Button
+              onPress={() => router.push(`/Collections/NightLight` as any)}
+              variant="secondary"
+              style={styles.showMoreButton}
+            >
               <Text style={styles.showMoreText}>Shop Now</Text>
             </Button>
           </View>
