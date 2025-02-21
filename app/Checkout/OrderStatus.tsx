@@ -127,7 +127,9 @@ const OrderStatus: React.FC = () => {
             Tiếp tục mua sắm
           </Text>
         </Button>
-        <Footer />
+        <View>
+          <Footer />
+        </View>
       </ScrollView>
     </View>
   );

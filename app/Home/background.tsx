@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
   View,
@@ -27,12 +27,17 @@ const iconSize = Math.max(60, Math.min(100, width / (numColumns + 1)));
 // Giới hạn iconSize từ 60px đến 100px
 
 const items = [
-  { id: 1, link: "/", img: imgCozy, title: "Cozy Glow" },
-  { id: 2, link: "/", img: imgDrinkware, title: "Drinkware" },
-  { id: 3, link: "/", img: Glassware, title: "Glassware" },
-  { id: 4, link: "/", img: imgCar, title: "Car Charm" },
-  { id: 5, link: "/", img: imgNest, title: "Cozy Nest" },
-  { id: 6, link: "/", img: imgSoft, title: "Soft Ware" },
+  { id: 1, link: "NightLight", img: imgCozy, title: "Cozy Glow" },
+  {
+    id: 2,
+    link: "NightLight",
+    img: imgDrinkware,
+    title: "Drinkware",
+  },
+  { id: 3, link: "NightLight", img: Glassware, title: "Glassware" },
+  { id: 4, link: "NightLight", img: imgCar, title: "Car Charm" },
+  { id: 5, link: "NightLight", img: imgNest, title: "Cozy Nest" },
+  { id: 6, link: "NightLight", img: imgSoft, title: "Soft Ware" },
 ];
 
 const Background = () => {
@@ -42,8 +47,9 @@ const Background = () => {
   const itemBackgroundColor = isDarkColorScheme ? "#2D2D2D" : "#FFFFFF";
   const iconBackgroundColor = isDarkColorScheme ? "#3A3A3A" : "#F5F7FA";
 
-  const memoizedItems = useMemo(() => items, [items]);
+  const memoizedItems = useMemo(() => items ?? [], []);
 
+  const router = useRouter();
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor }]}>
@@ -55,6 +61,7 @@ const Background = () => {
           {memoizedItems.map((item) => (
             <TouchableOpacity
               key={item.id}
+              onPress={() => router.push(`/Collections/${item.link}` as any)}
               style={[
                 styles.item,
                 { width: iconSize, backgroundColor: itemBackgroundColor },

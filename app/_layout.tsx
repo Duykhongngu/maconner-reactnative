@@ -94,6 +94,7 @@ export default function RootLayout() {
                 "Checkout/Checkout",
                 "Checkout/OrderStatus",
                 "Checkout/OrderDetails",
+                "Collections/NightLight",
               ].map((screen) => (
                 <Stack.Screen
                   key={screen}

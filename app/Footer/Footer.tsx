@@ -167,7 +167,7 @@ const Footer: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.column}>
+        <View style={styles.columnGetInTouch}>
           <Text style={styles.columnTitle}>GET IN TOUCH</Text>
           <Text style={styles.supportTime}>
             Support Time: 9 AM to 5 PM, Mon-Sat
@@ -285,7 +285,13 @@ const styles = StyleSheet.create({
   column: {
     marginBottom: 20,
   },
+  columnGetInTouch: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
   columnTitle: {
+    justifyContent: "center",
+    alignItems: "center",
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
