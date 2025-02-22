@@ -1,6 +1,7 @@
+
 import { ImageSourcePropType } from "react-native";
 
-const trend1 = require("~/assets/images/trend1.webp"); // Sửa lại từ `trend` thành `trend1`
+const trend1 = require("~/assets/images/trend1.webp");
 const trend2 = require("~/assets/images/trend2.webp");
 const trend3 = require("~/assets/images/trend3.webp");
 const trend4 = require("~/assets/images/trend4.webp");
@@ -24,7 +25,24 @@ const bottle13 = require("~/assets/images/Bottle_Lamp_13.webp");
 const bottle14 = require("~/assets/images/Bottle_Lamp_14.webp");
 const bottle15 = require("~/assets/images/Bottle_Lamp_15.webp");
 const bottle16 = require("~/assets/images/Bottle_Lamp_16.webp");
+ const drink1= require("~/assets/images/DrinkWare1.webp");
+ const drink2= require("~/assets/images/DrinkWare2.webp");
+ const drink3= require("~/assets/images/DrinkWare3.webp");
+ const drink4= require("~/assets/images/DrinkWare4.webp");
+ const drink5= require("~/assets/images/DrinkWare5.webp");
+ const drink6= require("~/assets/images/DrinkWare6.webp");
+ const drink7= require("~/assets/images/DrinkWare7.webp"); 
+ const drink8= require("~/assets/images/DrinkWare8.webp");
+ const drink9= require("~/assets/images/DrinkWare9.webp");
+ const drink10= require("~/assets/images/DrinkWare10.webp");
+ const drink11= require("~/assets/images/DrinkWare11.webp");
+ const drink12= require("~/assets/images/DrinkWare12.webp");
+ const drink13= require("~/assets/images/DrinkWare13.webp");
+ const drink14= require("~/assets/images/DrinkWare14.webp");
+ const drink15= require("~/assets/images/DrinkWare15.webp");
+ const drink16= require("~/assets/images/DrinkWare16.webp");
 const imgHer = require('~/assets/images/For_Her_2000x.webp');
+
 export const items = [
   {
     id: 1,
@@ -51,7 +69,7 @@ export  interface Product {
   name: string;
   description: string;
   price: number;
-  img: ImageSourcePropType; // Đảm bảo tất cả ảnh đều dùng `require()`
+  img: ImageSourcePropType; 
   rating: number;
   reviews: number;
   colors: string[];
@@ -568,7 +586,266 @@ export  interface Product {
         images: [  bottle4, bottle5, bottle6, bottle7],
         link: "/details",
       },
+      
     ],
+    drinkWare: [
+      {
+        id: 28,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink1,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink1, drink2, drink3, drink4],
+        link: "/details",
+      },
+      {
+        id: 29,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink2,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink2, drink3, drink4, drink5],
+        link: "/details",
+      },
+      {
+        id: 30,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink3,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"], 
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink3, drink4, drink5, drink6],
+        link: "/details",
+      },
+      {
+        id: 31,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink4,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink4, drink5, drink6, drink7],
+        link: "/details", 
+      },
+      {
+        id: 32,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink5,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink5, drink6, drink7, drink8],
+        link: "/details",
+      },
+      {
+        id: 33,
+        name: "Drink ware",
+        description:  
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink6,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink6, drink7, drink8, drink9],
+        link: "/details",
+      },
+      {
+        id: 34,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink7,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink7, drink8, drink9, drink10],
+        link: "/details",
+      },
+      {
+        id: 35,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink8,
+        rating: 5,  
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink8, drink9, drink10, drink11],
+        link: "/details",
+      },  
+      {
+        id: 36,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink9,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink9, drink10, drink11, drink12],
+        link: "/details", 
+      },
+      {
+        id: 37,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink10,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink10, drink11, drink12, drink13],
+        link: "/details", 
+      },
+      {
+        id: 38,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink11,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink11, drink12, drink13, drink14],
+        link: "/details",
+      },
+      {
+        id: 39,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink12,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink12, drink13, drink14, drink15],
+        link: "/details",
+      },
+      {
+        id: 40,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink13,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink13, drink14, drink15, drink16],
+        link: "/details",
+      },
+      {
+        id: 41,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink14,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink14, drink15, drink16, drink1],
+        link: "/details",
+      },
+      {
+        id: 42,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink15,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink15, drink16, drink1, drink2],
+        link: "/details",
+      },
+      {
+        id: 43,
+        name: "Drink ware",
+        description:
+          "Fuck Valentine's Day I Love You Everyday - Personalized Bottle Lamps",
+        price: 26.95,
+        img: drink16,
+        rating: 5,
+        reviews: 21,
+        colors: ["black", "gray", "red"],
+        sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+        category: "Valentine's Day",
+        inStock: true,
+        images: [drink16, drink1, drink2, drink3],
+        link: "/details",
+      }
+    ]
   };
   
 export default products;

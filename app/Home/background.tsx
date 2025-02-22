@@ -30,9 +30,9 @@ const items = [
   { id: 1, link: "NightLight", img: imgCozy, title: "Cozy Glow" },
   {
     id: 2,
-    link: "NightLight",
+    link: "DrinkWare",
     img: imgDrinkware,
-    title: "Drinkware",
+    title: "DrinkWare",
   },
   { id: 3, link: "NightLight", img: Glassware, title: "Glassware" },
   { id: 4, link: "NightLight", img: imgCar, title: "Car Charm" },

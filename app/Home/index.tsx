@@ -1,7 +1,6 @@
 import { SafeAreaView, StyleSheet, View } from "react-native";
 import Background from "./background";
 import Trending from "./trending";
-import { CartProvider } from "../Cart/CartContext";
 import MothersSlider from "./sliderShow";
 import ShopAll from "./shopAll";
 import CarVisor from "./carViso";
