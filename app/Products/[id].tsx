@@ -123,7 +123,7 @@ export default function ProductDetail(): JSX.Element {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibrary({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],

@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "~/firebase.config";
@@ -19,12 +20,18 @@ import {
   updatePassword,
   User,
 } from "firebase/auth";
-import { TextInput } from "react-native"; // Sử dụng TextInput từ react-native
+import { TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Import tĩnh
-import { storage } from "~/firebase.config"; // Import tĩnh storage
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  uploadBytesResumable,
+  getStorage,
+} from "firebase/storage";
+import { storage } from "~/firebase.config";
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
@@ -53,50 +60,94 @@ export default function Profile() {
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (status !== "granted") {
       Alert.alert(
-        "Permission Denied",
-        "We need camera roll permissions to upload a profile picture."
+        "Quyền bị từ chối",
+        "Chúng tôi cần quyền truy cập thư viện ảnh để tải ảnh hồ sơ."
       );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.image, // Sử dụng ImagePicker.MediaType.image
+      mediaTypes: ["images"], // Sửa từ "image" thành "images"
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
 
-    if (!result.canceled && result.assets[0]?.uri) {
+    if (!result.canceled && result.assets[0]?.uri && user) {
       setProfileImage(result.assets[0].uri);
       await uploadProfileImage(result.assets[0].uri);
     }
   };
 
   const uploadProfileImage = async (uri: string) => {
-    if (!user) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const storageRef = ref(storage, `profileImages/${user.uid}`);
-      await uploadBytes(storageRef, blob);
-      const photoURL = await getDownloadURL(storageRef);
-      await updateProfile(user, { photoURL });
-      setProfileImage(photoURL);
-      Alert.alert("Success", "Profile picture updated successfully!");
-    } catch (error: any) {
+    if (!user) {
       Alert.alert(
-        "Error",
-        `Failed to upload profile picture: ${error.message || error}`
+        "Lỗi",
+        "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."
       );
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log("Bắt đầu tải lên với URI:", uri);
+
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(
+          `Lấy tệp thất bại với mã trạng thái: ${response.status}`
+        );
+      }
+      const blob = await response.blob();
+      console.log("Blob được tạo, kích thước:", blob.size);
+
+      const fileRef = ref(storage, `images/${user.uid}/${Date.now()}.jpg`);
+      console.log("Tham chiếu tệp:", fileRef.toString());
+
+      const uploadTask = uploadBytesResumable(fileRef, blob);
+
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log(`Tải lên được ${progress}%`);
+          },
+          (error) => {
+            console.error(
+              "Tải lên thất bại:",
+              error.code,
+              error.message,
+              error
+            );
+            reject(error);
+          },
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              console.log("Tải ảnh lên thành công:", downloadURL);
+              await updateProfile(user, { photoURL: downloadURL });
+              setProfileImage(downloadURL);
+              resolve(downloadURL);
+            } catch (err) {
+              reject(err);
+            }
+          }
+        );
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Lỗi không xác định";
+      console.error("Lỗi tải lên:", errorMessage, error);
+      Alert.alert("Lỗi", "Không thể tải ảnh lên. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
     }
   };
-
   const updateUserProfile = async () => {
     if (!user) return;
 
@@ -150,86 +201,92 @@ export default function Profile() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: textColor }]}>Profile</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: textColor }]}>Profile</Text>
 
-        <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
-          <Image
-            source={{
-              uri: profileImage || "https://via.placeholder.com/150",
-            }}
-            style={styles.avatar}
-          />
-          <Text style={[styles.changePhotoText, { color: textColor }]}>
-            Change Photo
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+            <Image
+              source={{
+                uri: profileImage || "https://via.placeholder.com/150",
+              }}
+              style={styles.avatar}
+            />
+            <Text style={[styles.changePhotoText, { color: textColor }]}>
+              Change Photo
+            </Text>
+          </TouchableOpacity>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: textColor }]}>Display Name</Text>
-          <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
-            value={displayName}
-            onChangeText={setDisplayName}
-            placeholder="Enter display name"
-            placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
-          />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: textColor }]}>
+              Display Name
+            </Text>
+            <TextInput
+              style={[styles.input, { borderColor, color: textColor }]}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Enter display name"
+              placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: textColor }]}>Email</Text>
+            <TextInput
+              style={[styles.input, { borderColor, color: textColor }]}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="Enter email"
+              placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: textColor }]}>
+              New Password
+            </Text>
+            <TextInput
+              style={[styles.input, { borderColor, color: textColor }]}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              placeholder="Enter new password"
+              placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
+            />
+          </View>
+
+          <Button
+            onPress={updateUserProfile}
+            disabled={isLoading}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? "Updating..." : "Update Profile"}
+            </Text>
+          </Button>
+
+          <Button
+            onPress={updateUserPassword}
+            disabled={isLoading || !newPassword}
+            style={[styles.button, { backgroundColor: "#4CAF50" }]}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? "Updating..." : "Change Password"}
+            </Text>
+          </Button>
+
+          <Button
+            onPress={handleLogout}
+            style={[styles.button, { backgroundColor: "#FF4444" }]}
+          >
+            <Text style={styles.buttonText}>Sign Out</Text>
+          </Button>
         </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: textColor }]}>Email</Text>
-          <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="Enter email"
-            placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: textColor }]}>New Password</Text>
-          <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-            placeholder="Enter new password"
-            placeholderTextColor={isDarkColorScheme ? "#888" : "#666"}
-          />
-        </View>
-
-        <Button
-          onPress={updateUserProfile}
-          disabled={isLoading}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? "Updating..." : "Update Profile"}
-          </Text>
-        </Button>
-
-        <Button
-          onPress={updateUserPassword}
-          disabled={isLoading || !newPassword}
-          style={[styles.button, { backgroundColor: "#4CAF50" }]}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? "Updating..." : "Change Password"}
-          </Text>
-        </Button>
-
-        <Button
-          onPress={handleLogout}
-          style={[styles.button, { backgroundColor: "#FF4444" }]}
-        >
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </Button>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

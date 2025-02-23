@@ -7,7 +7,7 @@ import {
   type Theme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, useRouter } from "expo-router"; // Thêm useRouter
+import { Stack, usePathname, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
 import { Platform, SafeAreaView } from "react-native";
@@ -34,11 +34,13 @@ const MemoizedSiteHeader = React.memo(SiteHeader);
 export { ErrorBoundary } from "expo-router";
 
 export default function RootLayout() {
+  const pathname = usePathname();
   const hasMounted = React.useRef(false);
   const { colorScheme, isDarkColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
+  const [isAuthLoaded, setIsAuthLoaded] = React.useState(false); // Thêm trạng thái xác thực
   const [user, setUser] = React.useState<any>(null);
-  const router = useRouter(); // Thêm router
+  const router = useRouter();
 
   const useIsomorphicLayoutEffect =
     Platform.OS === "web" && typeof window === "undefined"
@@ -59,17 +61,19 @@ export default function RootLayout() {
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (!currentUser) {
-        router.replace("/Login"); // Điều hướng đến Login nếu chưa đăng nhập
-      } else {
-        router.replace("/"); // Điều hướng đến trang chính nếu đã đăng nhập
+      setIsAuthLoaded(true);
+      if (!currentUser && pathname !== "/Login") {
+        router.push("/Login");
+      } else if (currentUser && pathname !== "/") {
+        router.push("/");
       }
     });
     return () => unsubscribe();
   }, [router]);
 
-  if (!isColorSchemeLoaded) {
-    return null;
+  // Chỉ render khi cả color scheme và auth đều đã tải xong
+  if (!isColorSchemeLoaded || !isAuthLoaded) {
+    return null; // Có thể thay bằng một màn hình loading nếu muốn
   }
 
   return (
@@ -96,17 +100,14 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen
-                name="Login"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
                 name="Auth/Profile"
                 options={{
-                  headerShown: false,
+                  headerTitle: () => <MemoizedSiteHeader />,
+                  headerLeft: () => null,
+                  headerRight: () => null,
                 }}
               />
+              <Stack.Screen name="Login" options={{ headerShown: false }} />
               <Stack.Screen
                 name="index"
                 options={{

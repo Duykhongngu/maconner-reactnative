@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "~/firebase.config";
@@ -42,42 +43,44 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{isRegistering ? "Register" : "Login"}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={isRegistering ? handleRegister : handleLogin}
-      >
-        <Text style={styles.buttonText}>
-          {isRegistering ? "Register" : "Login"}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => setIsRegistering(!isRegistering)}
-        style={styles.switchButton}
-      >
-        <Text style={styles.switchText}>
-          {isRegistering
-            ? "Already have an account? Login"
-            : "Don't have an account? Register"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <Text style={styles.title}>{isRegistering ? "Register" : "Login"}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={isRegistering ? handleRegister : handleLogin}
+        >
+          <Text style={styles.buttonText}>
+            {isRegistering ? "Register" : "Login"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setIsRegistering(!isRegistering)}
+          style={styles.switchButton}
+        >
+          <Text style={styles.switchText}>
+            {isRegistering
+              ? "Already have an account? Login"
+              : "Don't have an account? Register"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
