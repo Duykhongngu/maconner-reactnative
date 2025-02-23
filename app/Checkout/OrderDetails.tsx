@@ -1,4 +1,3 @@
-import type React from "react";
 import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import { useOrder } from "./OrderContext";
 import { useRouter, useLocalSearchParams } from "expo-router";

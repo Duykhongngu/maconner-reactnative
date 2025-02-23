@@ -12,10 +12,11 @@ module.exports = withNativeWind(
         "react-native-svg-transformer/expo"
       ),
     };
+
     config.resolver = {
       ...resolver,
       assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
-      sourceExts: [...resolver.sourceExts, "svg"],
+      sourceExts: [...resolver.sourceExts, "svg", "cjs"], // Thêm "cjs" vào đây
     };
 
     return config;

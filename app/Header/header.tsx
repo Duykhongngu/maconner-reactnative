@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Thêm useEffect
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
-
 import {
   Modal,
   View,
@@ -24,6 +23,8 @@ import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { useCart } from "../Cart/CartContext";
 import { useOrder } from "../Checkout/OrderContext";
+import { auth } from "~/firebase.config"; // Import auth từ Firebase
+import { onAuthStateChanged, signOut } from "firebase/auth"; // Thêm signOut
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/Products/[id]" },
@@ -51,6 +52,27 @@ function SiteHeader() {
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [user, setUser] = useState<any>(null); // Trạng thái người dùng
+
+  // Theo dõi trạng thái đăng nhập
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Hàm xử lý đăng xuất
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null); // Cập nhật trạng thái người dùng
+      setMenuVisible(false); // Đóng menu sau khi đăng xuất
+      router.replace("/Login"); // Chuyển hướng về trang đăng nhập
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeContainer}>
@@ -122,6 +144,45 @@ function SiteHeader() {
               <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
             </TouchableOpacity>
 
+            {/* Hiển thị tên người dùng hoặc "Sign In" */}
+            {user ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push("/Auth/Profile"); // Có thể thêm trang profile nếu cần
+                    setMenuVisible(false);
+                  }}
+                >
+                  <View style={styles.menuItem}>
+                    <Text style={[styles.menuText, { color: iconColor }]}>
+                      {user.email || user.displayName || "Profile"}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <View style={styles.menuItem}>
+                    <Text style={[styles.menuText, { color: iconColor }]}>
+                      Sign Out
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  router.push("/Login");
+                  setMenuVisible(false);
+                }}
+              >
+                <View style={styles.menuItem}>
+                  <Text style={[styles.menuText, { color: iconColor }]}>
+                    Sign In
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Danh sách menu hiện tại */}
             {inlineMenu.map((item, index) => (
               <TouchableOpacity
                 key={index}
@@ -180,7 +241,6 @@ const styles = StyleSheet.create({
     height: 56,
     width: "100%",
   },
-
   leftSection: {
     alignItems: "flex-start",
     marginLeft: -10,

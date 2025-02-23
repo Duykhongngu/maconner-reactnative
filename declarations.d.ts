@@ -4,3 +4,12 @@ declare module "*.svg" {
     const content: React.FC<SvgProps>;
     export default content;
   }
+  // declarations.d.ts
+declare module "expo-image-picker" {
+  namespace ImagePicker {
+    enum MediaType {
+      image = "image",
+      video = "video",
+    }
+  }
+}

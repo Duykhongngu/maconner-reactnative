@@ -13,6 +13,7 @@ import {
   FlatList,
   TextInput,
   useColorScheme,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type Product, products } from "~/app/Data/product";
@@ -20,6 +21,7 @@ import { useCart } from "~/app/Cart/CartContext";
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Footer from "../Footer/Footer";
+import * as ImagePicker from "expo-image-picker";
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,20 +30,24 @@ interface CustomerReview {
   name: string;
   rating: number;
   comment: string;
+  image?: string;
 }
 
 const STORAGE_KEY = "productReviews";
 
 const reviewsStorage = {
-  async getAll() {
+  async getAll(): Promise<Record<string, CustomerReview[]>> {
     const reviews = await AsyncStorage.getItem(STORAGE_KEY);
     return reviews ? JSON.parse(reviews) : {};
   },
-  async getForProduct(productId: string) {
+  async getForProduct(productId: string): Promise<CustomerReview[]> {
     const allReviews = await this.getAll();
     return allReviews[productId] || [];
   },
-  async saveForProduct(productId: string, reviews: CustomerReview[]) {
+  async saveForProduct(
+    productId: string,
+    reviews: CustomerReview[]
+  ): Promise<void> {
     const allReviews = await this.getAll();
     allReviews[productId] = reviews;
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allReviews));
@@ -60,17 +66,22 @@ export default function ProductDetail(): JSX.Element {
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [newReview, setNewReview] = useState({
+  const [newReview, setNewReview] = useState<{
+    name: string;
+    rating: number;
+    comment: string;
+    image: string;
+  }>({
     name: "",
     rating: 0,
     comment: "",
+    image: "",
   });
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
 
   const productImages = product ? [product.img, product.img, product.img] : [];
 
   useEffect(() => {
-    // Search for the product in all categories
     let foundProduct: Product | undefined;
     const categories = Object.keys(products);
 
@@ -105,13 +116,42 @@ export default function ProductDetail(): JSX.Element {
     }
   }, [product]);
 
-  if (!product) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Sorry, we need camera roll permissions to make this work!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibrary({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      setNewReview({ ...newReview, image: result.assets[0].uri });
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Sorry, we need camera permissions to make this work!");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      setNewReview({ ...newReview, image: result.assets[0].uri });
+    }
+  };
 
   const handleAddToCart = () => {
     if (product && selectedColor && selectedSize) {
@@ -124,14 +164,13 @@ export default function ProductDetail(): JSX.Element {
         size: selectedSize,
         image: product.img as any,
       });
-
       setQuantity(1);
     }
   };
 
   const handleSubmitReview = async () => {
     if (newReview.name && newReview.rating > 0 && newReview.comment) {
-      const newReviewData = {
+      const newReviewData: CustomerReview = {
         id: Date.now(),
         ...newReview,
       };
@@ -140,7 +179,7 @@ export default function ProductDetail(): JSX.Element {
         const updatedReviews = [...customerReviews, newReviewData];
         await reviewsStorage.saveForProduct(id, updatedReviews);
         setCustomerReviews(updatedReviews);
-        setNewReview({ name: "", rating: 0, comment: "" });
+        setNewReview({ name: "", rating: 0, comment: "", image: "" });
       } catch (error) {
         console.error("Failed to save review:", error);
         alert("Failed to save review. Please try again.");
@@ -166,6 +205,13 @@ export default function ProductDetail(): JSX.Element {
         </View>
       </View>
       <Text style={styles.reviewComment}>{item.comment}</Text>
+      {item.image && (
+        <Image
+          source={{ uri: item.image }}
+          style={styles.reviewImage}
+          resizeMode="cover"
+        />
+      )}
     </View>
   );
 
@@ -184,25 +230,19 @@ export default function ProductDetail(): JSX.Element {
 
   const isDarkMode = colorScheme === "dark";
 
-  // Update the suggested products section to show products from the same category
-  const getSuggestedProducts = () => {
+  const getSuggestedProducts = (): Product[] => {
     if (!product) return [];
-
-    // Find which category the current product belongs to
     let productCategory = "";
     Object.entries(products).forEach(([category, productList]) => {
       if (productList.find((p) => p.id === product.id)) {
         productCategory = category;
       }
     });
-
-    // Get other products from the same category
     return products[productCategory]
       .filter((p) => p.id !== product.id)
       .slice(0, 6);
   };
 
-  // Update the suggested products rendering
   const renderSuggestedProducts = () => (
     <View style={styles.sectionContainer}>
       <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
@@ -222,6 +262,14 @@ export default function ProductDetail(): JSX.Element {
     </View>
   );
 
+  if (!product) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView
       style={[styles.container, isDarkMode && styles.darkContainer]}
@@ -231,7 +279,6 @@ export default function ProductDetail(): JSX.Element {
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
-        {/* Image Gallery */}
         <View style={styles.imageContainer}>
           <ScrollView
             horizontal
@@ -252,7 +299,6 @@ export default function ProductDetail(): JSX.Element {
               />
             ))}
           </ScrollView>
-          {/* Pagination Dots */}
           <View style={styles.paginationContainer}>
             {productImages.map((_, index) => (
               <View
@@ -267,7 +313,6 @@ export default function ProductDetail(): JSX.Element {
         </View>
 
         <View style={styles.contentContainer}>
-          {/* Product Info */}
           <View style={styles.productInfoContainer}>
             <Text style={[styles.productName, isDarkMode && styles.darkText]}>
               {product.name}
@@ -282,7 +327,6 @@ export default function ProductDetail(): JSX.Element {
             </Text>
           </View>
 
-          {/* Color Selection */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Color
@@ -302,7 +346,6 @@ export default function ProductDetail(): JSX.Element {
             </View>
           </View>
 
-          {/* Size Selection */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Size
@@ -330,7 +373,6 @@ export default function ProductDetail(): JSX.Element {
             </View>
           </View>
 
-          {/* Quantity */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Quantity
@@ -340,7 +382,7 @@ export default function ProductDetail(): JSX.Element {
                 onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 style={styles.quantityButton}
               >
-                <Text style={[styles.quantityButtonText]}>-</Text>
+                <Text style={styles.quantityButtonText}>-</Text>
               </TouchableOpacity>
               <Text
                 style={[
@@ -354,12 +396,11 @@ export default function ProductDetail(): JSX.Element {
                 onPress={() => setQuantity((prev) => prev + 1)}
                 style={styles.quantityButton}
               >
-                <Text style={[styles.quantityButtonText]}>+</Text>
+                <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Customer Reviews */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Customer Reviews
@@ -372,7 +413,6 @@ export default function ProductDetail(): JSX.Element {
             />
           </View>
 
-          {/* Review Submission Form */}
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Leave a Review
@@ -410,6 +450,28 @@ export default function ProductDetail(): JSX.Element {
               style={styles.input}
               multiline
             />
+            <View style={styles.imagePickerContainer}>
+              <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
+                <Text style={styles.imageButtonText}>Choose Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={takePhoto} style={styles.imageButton}>
+                <Text style={styles.imageButtonText}>Take Photo</Text>
+              </TouchableOpacity>
+            </View>
+            {newReview.image ? (
+              <View style={styles.previewContainer}>
+                <Image
+                  source={{ uri: newReview.image }}
+                  style={styles.previewImage}
+                />
+                <TouchableOpacity
+                  onPress={() => setNewReview({ ...newReview, image: "" })}
+                  style={styles.removeImageButton}
+                >
+                  <Text style={styles.removeImageText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
             <TouchableOpacity
               onPress={handleSubmitReview}
               style={styles.submitButton}
@@ -423,7 +485,6 @@ export default function ProductDetail(): JSX.Element {
         <Footer />
       </ScrollView>
 
-      {/* Fixed Bottom Buttons */}
       <View style={styles.bottomContainer}>
         <TouchableOpacity
           onPress={handleAddToCart}
@@ -452,7 +513,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: "relative",
-    height: height * 0.5, // 50% of screen height
+    height: height * 0.5,
   },
   productImage: {
     width: width,
@@ -569,7 +630,7 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     padding: 20,
-    paddingBottom: 34, // Extra padding for iPhone bottom area
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: "#F0F0F0",
     backgroundColor: "#fff",
@@ -611,6 +672,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
+  reviewImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginTop: 8,
+  },
   suggestedProductItem: {
     width: 150,
     marginRight: 16,
@@ -625,7 +692,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#000",
-    marginBottom: 4,
   },
   suggestedProductPrice: {
     fontSize: 14,
@@ -637,12 +703,6 @@ const styles = StyleSheet.create({
   },
   darkSuggestedProductList: {
     backgroundColor: "#333",
-  },
-  darkSuggestedProductName: {
-    color: "#fff",
-  },
-  darkSuggestedProductPrice: {
-    color: "#FF6B00",
   },
   input: {
     borderWidth: 1,
@@ -660,5 +720,43 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  imagePickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  imageButton: {
+    backgroundColor: "#FF6B00",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  imageButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  previewContainer: {
+    marginBottom: 10,
+    position: "relative",
+  },
+  previewImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 5,
+    borderRadius: 4,
+  },
+  removeImageText: {
+    color: "#fff",
+    fontSize: 12,
   },
 });
