@@ -18,7 +18,6 @@ import {
 } from "firebase/auth";
 import { useColorScheme } from "~/lib/useColorScheme";
 
-// Định nghĩa các theme
 const themes = {
   light: {
     background: "#fff",
@@ -41,31 +40,29 @@ const themes = {
 };
 
 export default function Login() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [isRegistering, setIsRegistering] = useState<boolean>(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
   const router = useRouter();
   const { isDarkColorScheme } = useColorScheme();
-
-  // Chọn theme dựa trên chế độ sáng/tối
   const theme = isDarkColorScheme ? themes.dark : themes.light;
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/home" as any);
+      router.replace("/home");
     } catch (error: any) {
-      Alert.alert("Đăng nhập thất bại", error.message);
+      Alert.alert("Login Failed", error.message);
     }
   };
 
   const handleRegister = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Thành công", "Tài khoản đã được tạo!");
+      Alert.alert("Success", "Account created!");
       setIsRegistering(false);
     } catch (error: any) {
-      Alert.alert("Đăng ký thất bại", error.message);
+      Alert.alert("Registration Failed", error.message);
     }
   };
 
@@ -73,7 +70,7 @@ export default function Login() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Text style={[styles.title, { color: theme.text }]}>
-          {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
+          {isRegistering ? "Register" : "Login"}
         </Text>
         <TextInput
           style={[
@@ -92,7 +89,7 @@ export default function Login() {
             styles.input,
             { borderColor: theme.border, color: theme.text },
           ]}
-          placeholder="Mật khẩu"
+          placeholder="Password"
           placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
@@ -103,7 +100,7 @@ export default function Login() {
           onPress={isRegistering ? handleRegister : handleLogin}
         >
           <Text style={[styles.buttonText, { color: theme.buttonText }]}>
-            {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
+            {isRegistering ? "Register" : "Login"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -111,9 +108,7 @@ export default function Login() {
           style={styles.switchButton}
         >
           <Text style={[styles.switchText, { color: theme.link }]}>
-            {isRegistering
-              ? "Đã có tài khoản? Đăng nhập"
-              : "Chưa có tài khoản? Đăng ký"}
+            {isRegistering ? "Have an account? Login" : "No account? Register"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -128,11 +123,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
+  title: { fontSize: 28, fontWeight: "bold", marginBottom: 20 },
   input: {
     width: "100%",
     borderWidth: 1,
@@ -141,20 +132,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
   },
-  button: {
-    padding: 15,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  switchButton: {
-    marginTop: 20,
-  },
-  switchText: {
-    fontSize: 14,
-  },
+  button: { padding: 15, borderRadius: 8, width: "100%", alignItems: "center" },
+  buttonText: { fontSize: 16, fontWeight: "bold" },
+  switchButton: { marginTop: 20 },
+  switchText: { fontSize: 14 },
 });

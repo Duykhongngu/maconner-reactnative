@@ -17,7 +17,7 @@
     "@firebase/analytics": "^0.10.11",
     "@hookform/resolvers": "^4.0.0",
     "@radix-ui/react-dialog": "^1.1.6",
-    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-firebase/app": "^21.11.0",
     "@react-native-google-signin/google-signin": "^13.2.0",
     "@react-navigation/native": "^7.0.14",
@@ -33,6 +33,7 @@
     "@rn-primitives/types": "~1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "expo": "~52.0.37",
     "expo-camera": "~16.0.17",
     "expo-font": "~13.0.3",
     "expo-image-picker": "~16.0.6",
@@ -60,8 +61,7 @@
     "tailwindcss": "3.3.5",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
-    "zustand": "^4.5.6",
-    "expo": "~52.0.37"
+    "zustand": "^4.5.6"
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",

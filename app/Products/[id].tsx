@@ -22,6 +22,8 @@ import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Footer from "../Footer/Footer";
 import * as ImagePicker from "expo-image-picker";
+import { auth } from "~/firebase.config"; // Import Firebase auth
+import { onAuthStateChanged } from "firebase/auth"; // Import onAuthStateChanged
 
 const { width, height } = Dimensions.get("window");
 
@@ -78,8 +80,25 @@ export default function ProductDetail(): JSX.Element {
     image: "",
   });
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
+  const [user, setUser] = useState<any>(null); // State để lưu thông tin người dùng
 
   const productImages = product ? [product.img, product.img, product.img] : [];
+
+  // Theo dõi trạng thái đăng nhập
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setNewReview((prev) => ({
+          ...prev,
+          name: currentUser.displayName || currentUser.email || "Anonymous",
+        }));
+      } else {
+        setNewReview((prev) => ({ ...prev, name: "" }));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     let foundProduct: Product | undefined;
@@ -169,7 +188,7 @@ export default function ProductDetail(): JSX.Element {
   };
 
   const handleSubmitReview = async () => {
-    if (newReview.name && newReview.rating > 0 && newReview.comment) {
+    if (newReview.rating > 0 && newReview.comment) {
       const newReviewData: CustomerReview = {
         id: Date.now(),
         ...newReview,
@@ -179,13 +198,18 @@ export default function ProductDetail(): JSX.Element {
         const updatedReviews = [...customerReviews, newReviewData];
         await reviewsStorage.saveForProduct(id, updatedReviews);
         setCustomerReviews(updatedReviews);
-        setNewReview({ name: "", rating: 0, comment: "", image: "" });
+        setNewReview({
+          name: user?.displayName || user?.email || "Anonymous",
+          rating: 0,
+          comment: "",
+          image: "",
+        });
       } catch (error) {
         console.error("Failed to save review:", error);
         alert("Failed to save review. Please try again.");
       }
     } else {
-      alert("Please fill in all fields.");
+      alert("Please provide a rating and comment.");
     }
   };
 
@@ -417,14 +441,22 @@ export default function ProductDetail(): JSX.Element {
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
               Leave a Review
             </Text>
-            <TextInput
-              placeholder="Your Name"
-              value={newReview.name}
-              onChangeText={(text) =>
-                setNewReview({ ...newReview, name: text })
-              }
-              style={styles.input}
-            />
+            {user ? (
+              <Text
+                style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
+              >
+                {newReview.name}
+              </Text>
+            ) : (
+              <TextInput
+                placeholder="Your Name"
+                value={newReview.name}
+                onChangeText={(text) =>
+                  setNewReview({ ...newReview, name: text })
+                }
+                style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
+              />
+            )}
             <View style={styles.ratingContainer}>
               {[...Array(5)].map((_, index) => (
                 <TouchableOpacity
@@ -447,7 +479,7 @@ export default function ProductDetail(): JSX.Element {
               onChangeText={(text) =>
                 setNewReview({ ...newReview, comment: text })
               }
-              style={styles.input}
+              style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
               multiline
             />
             <View style={styles.imagePickerContainer}>
@@ -499,6 +531,7 @@ export default function ProductDetail(): JSX.Element {
   );
 }
 
+// Styles giữ nguyên như cũ
 const styles = StyleSheet.create({
   container: {
     flex: 1,

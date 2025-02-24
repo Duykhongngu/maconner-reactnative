@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react"; // Thêm useEffect
+import { useState, useEffect } from "react";
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
 import {
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
+  Alert, // Thêm Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -23,8 +24,8 @@ import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { useCart } from "../Cart/CartContext";
 import { useOrder } from "../Checkout/OrderContext";
-import { auth } from "~/firebase.config"; // Import auth từ Firebase
-import { onAuthStateChanged, signOut } from "firebase/auth"; // Thêm signOut
+import { auth } from "~/firebase.config";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/Products/[id]" },
@@ -52,11 +53,15 @@ function SiteHeader() {
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [user, setUser] = useState<any>(null); // Trạng thái người dùng
+  const [user, setUser] = useState<any>(null);
 
   // Theo dõi trạng thái đăng nhập
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      console.log(
+        "Auth state changed:",
+        currentUser ? "Logged in" : "Logged out"
+      );
       setUser(currentUser);
     });
     return () => unsubscribe();
@@ -65,12 +70,20 @@ function SiteHeader() {
   // Hàm xử lý đăng xuất
   const handleLogout = async () => {
     try {
+      setMenuVisible(false); // Close menu first
+      console.log("Bắt đầu đăng xuất...");
       await signOut(auth);
-      setUser(null); // Cập nhật trạng thái người dùng
-      setMenuVisible(false); // Đóng menu sau khi đăng xuất
-      router.replace("/");
-    } catch (error) {
+      console.log("Đăng xuất thành công");
+      setUser(null);
+
+      // Add a small delay before navigation
+      setTimeout(() => {
+        console.log("Chuyển hướng về trang đăng nhập...");
+        router.push("/"); // Use push instead of replace
+      }, 100);
+    } catch (error: any) {
       console.error("Lỗi khi đăng xuất:", error);
+      Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
 
@@ -109,7 +122,6 @@ function SiteHeader() {
               onPress={() => router.push("/Checkout/OrderStatus" as any)}
             >
               <Truck size={26} color={iconColor} />
-
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{totalOrders}</Text>
               </View>
@@ -120,7 +132,6 @@ function SiteHeader() {
               onPress={() => router.push("/Cart/CartPages" as any)}
             >
               <ShoppingCart size={26} color={iconColor} />
-
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{totalItems}</Text>
               </View>
@@ -149,13 +160,15 @@ function SiteHeader() {
               <>
                 <TouchableOpacity
                   onPress={() => {
-                    router.push("/Auth/Profile"); // Có thể thêm trang profile nếu cần
                     setMenuVisible(false);
+                    setTimeout(() => {
+                      router.push("/Auth/Profile");
+                    }, 100);
                   }}
                 >
                   <View style={styles.menuItem}>
                     <Text style={[styles.menuText, { color: iconColor }]}>
-                      {user.displayName || user.displayName || "Profile"}
+                      {user.displayName || "Profile"}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -170,8 +183,10 @@ function SiteHeader() {
             ) : (
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/");
                   setMenuVisible(false);
+                  setTimeout(() => {
+                    router.push("/");
+                  }, 100);
                 }}
               >
                 <View style={styles.menuItem}>
