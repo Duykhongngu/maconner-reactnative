@@ -60,7 +60,8 @@
     "tailwindcss": "3.3.5",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
-    "zustand": "^4.5.6"
+    "zustand": "^4.5.6",
+    "expo": "~52.0.37"
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",

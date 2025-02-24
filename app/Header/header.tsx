@@ -68,7 +68,7 @@ function SiteHeader() {
       await signOut(auth);
       setUser(null); // Cập nhật trạng thái người dùng
       setMenuVisible(false); // Đóng menu sau khi đăng xuất
-      router.replace("/"); // Chuyển hướng về trang đăng nhập
+      router.replace("/");
     } catch (error) {
       console.error("Lỗi khi đăng xuất:", error);
     }
@@ -155,7 +155,7 @@ function SiteHeader() {
                 >
                   <View style={styles.menuItem}>
                     <Text style={[styles.menuText, { color: iconColor }]}>
-                      {user.email || user.displayName || "Profile"}
+                      {user.displayName || user.displayName || "Profile"}
                     </Text>
                   </View>
                 </TouchableOpacity>
