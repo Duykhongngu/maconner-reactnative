@@ -58,24 +58,6 @@ export default function RootLayout() {
     hasMounted.current = true;
   }, []);
 
-  React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthLoaded(true);
-      if (!currentUser && pathname !== "/Login") {
-        router.push("/Login");
-      } else if (currentUser && pathname !== "/") {
-        router.push("/");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
-
-  // Chỉ render khi cả color scheme và auth đều đã tải xong
-  if (!isColorSchemeLoaded || !isAuthLoaded) {
-    return null; // Có thể thay bằng một màn hình loading nếu muốn
-  }
-
   return (
     <OrderProvider>
       <CartProvider>
@@ -107,9 +89,9 @@ export default function RootLayout() {
                   headerRight: () => null,
                 }}
               />
-              <Stack.Screen name="Login" options={{ headerShown: false }} />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen
-                name="index"
+                name="home"
                 options={{
                   headerTitle: () => <MemoizedSiteHeader />,
                   headerLeft: () => null,

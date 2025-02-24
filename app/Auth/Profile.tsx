@@ -54,7 +54,7 @@ export default function Profile() {
       setEmail(currentUser.email || "");
       setProfileImage(currentUser.photoURL || null);
     } else {
-      router.replace("/Login");
+      router.replace("/index" as any);
     }
   }, [router]);
 
@@ -190,7 +190,7 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.replace("/Login");
+      router.replace("/index" as any);
     } catch (error: any) {
       console.error("Lỗi khi đăng xuất:", error.message || error);
     }

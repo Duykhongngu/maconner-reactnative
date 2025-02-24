@@ -119,7 +119,7 @@ const OrderStatus: React.FC = () => {
           ))
         )}
 
-        <Button style={styles.button} onPress={() => router.push("/")}>
+        <Button style={styles.button} onPress={() => router.push("/home")}>
           <Text
             style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
           >

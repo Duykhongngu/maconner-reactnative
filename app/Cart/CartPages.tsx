@@ -43,7 +43,7 @@ const CartPages: React.FC = () => {
             variant="normal"
             size="lg"
             style={styles.keepShoppingButton}
-            onPress={() => router.push("/")}
+            onPress={() => router.push("/home")}
           >
             <Text style={styles.keepShoppingButtonText}>Keep Shopping</Text>
           </Button>

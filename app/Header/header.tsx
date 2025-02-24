@@ -68,7 +68,7 @@ function SiteHeader() {
       await signOut(auth);
       setUser(null); // Cập nhật trạng thái người dùng
       setMenuVisible(false); // Đóng menu sau khi đăng xuất
-      router.replace("/Login"); // Chuyển hướng về trang đăng nhập
+      router.replace("/"); // Chuyển hướng về trang đăng nhập
     } catch (error) {
       console.error("Lỗi khi đăng xuất:", error);
     }
@@ -89,7 +89,7 @@ function SiteHeader() {
 
         {/* Center Section */}
         <View style={styles.centerSection}>
-          <TouchableOpacity onPress={() => router.push("/")}>
+          <TouchableOpacity onPress={() => router.push("/home")}>
             <Logo width={160} height={30} />
           </TouchableOpacity>
         </View>
@@ -170,7 +170,7 @@ function SiteHeader() {
             ) : (
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/Login");
+                  router.push("/");
                   setMenuVisible(false);
                 }}
               >
