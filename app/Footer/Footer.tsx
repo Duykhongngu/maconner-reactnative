@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
     height: 44,
+    color: "white",
   },
   button: {
     backgroundColor: "#fb6718",

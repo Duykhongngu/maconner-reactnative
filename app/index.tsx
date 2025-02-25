@@ -17,7 +17,10 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { useColorScheme } from "~/lib/useColorScheme";
+import { db } from "~/firebase.config"; // Nhập Firestore
+import { doc, setDoc, getDoc } from "firebase/firestore"; // Các hàm Firestore
 
+// Định nghĩa các theme
 const themes = {
   light: {
     background: "#fff",
@@ -40,29 +43,79 @@ const themes = {
 };
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [name, setName] = useState<string>(""); // State cho tên hiển thị (displayName)
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const router = useRouter();
   const { isDarkColorScheme } = useColorScheme();
+
+  // Chọn theme dựa trên chế độ sáng/tối
   const theme = isDarkColorScheme ? themes.dark : themes.light;
 
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/home");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Lấy dữ liệu người dùng từ Firestore (bao gồm role)
+      const userDoc = await getDoc(doc(db, "accounts", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const userRole = userData.role;
+
+        // Phân quyền dựa trên role
+        if (userRole === 0) {
+          // Role 0: Admin, chuyển hướng đến màn hình admin
+          router.replace("/Admin/home" as any);
+        } else if (userRole === 1) {
+          // Role 1: User, chuyển hướng đến màn hình user
+          router.replace("/home" as any);
+        } else {
+          Alert.alert("Lỗi", "Role không hợp lệ.");
+        }
+      } else {
+        Alert.alert(
+          "Lỗi",
+          "Không tìm thấy thông tin người dùng trong Firestore."
+        );
+      }
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message);
+      Alert.alert("Đăng nhập thất bại", error.message);
+      console.log("Error details:", error); // Log chi tiết lỗi
     }
   };
 
   const handleRegister = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Success", "Account created!");
+      // Tạo tài khoản trong Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Lưu thông tin người dùng vào Firestore với role cố định là 1 (user)
+      await setDoc(doc(db, "accounts", user.uid), {
+        email: email,
+        displayName: name,
+        role: 1, // Chỉ cho phép tạo tài khoản user (role = 1)
+        createdAt: new Date().toISOString(),
+      });
+
+      Alert.alert("Thành công", "Tài khoản user đã được tạo!");
       setIsRegistering(false);
+      setEmail("");
+      setPassword("");
+      setName("");
     } catch (error: any) {
-      Alert.alert("Registration Failed", error.message);
+      Alert.alert("Đăng ký thất bại", error.message);
+      console.log("Error details:", error); // Log chi tiết lỗi
     }
   };
 
@@ -70,8 +123,23 @@ export default function Login() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Text style={[styles.title, { color: theme.text }]}>
-          {isRegistering ? "Register" : "Login"}
+          {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
         </Text>
+
+        {isRegistering && (
+          <TextInput
+            style={[
+              styles.input,
+              { borderColor: theme.border, color: theme.text },
+            ]}
+            placeholder="Tên hiển thị (Display Name)"
+            placeholderTextColor={theme.placeholder}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+          />
+        )}
+
         <TextInput
           style={[
             styles.input,
@@ -89,7 +157,7 @@ export default function Login() {
             styles.input,
             { borderColor: theme.border, color: theme.text },
           ]}
-          placeholder="Password"
+          placeholder="Mật khẩu"
           placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
@@ -100,7 +168,7 @@ export default function Login() {
           onPress={isRegistering ? handleRegister : handleLogin}
         >
           <Text style={[styles.buttonText, { color: theme.buttonText }]}>
-            {isRegistering ? "Register" : "Login"}
+            {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -108,7 +176,9 @@ export default function Login() {
           style={styles.switchButton}
         >
           <Text style={[styles.switchText, { color: theme.link }]}>
-            {isRegistering ? "Have an account? Login" : "No account? Register"}
+            {isRegistering
+              ? "Đã có tài khoản? Đăng nhập"
+              : "Chưa có tài khoản? Đăng ký"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -123,7 +193,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 20 },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
   input: {
     width: "100%",
     borderWidth: 1,
@@ -132,8 +206,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
   },
-  button: { padding: 15, borderRadius: 8, width: "100%", alignItems: "center" },
-  buttonText: { fontSize: 16, fontWeight: "bold" },
-  switchButton: { marginTop: 20 },
-  switchText: { fontSize: 14 },
+  button: {
+    padding: 15,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  switchButton: {
+    marginTop: 20,
+  },
+  switchText: {
+    fontSize: 14,
+  },
 });

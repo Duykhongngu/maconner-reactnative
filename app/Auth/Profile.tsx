@@ -26,6 +26,8 @@ import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "~/firebase.config";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore"; // Nhập Firestore functions
+import { db } from "~/firebase.config"; // Nhập Firestore instance
 
 // Định nghĩa các theme
 const themes = {
@@ -67,28 +69,57 @@ export default function Profile() {
       setDisplayName(currentUser.displayName || "");
       setEmail(currentUser.email || "");
       setProfileImage(currentUser.photoURL || null);
+
+      // Lấy dữ liệu từ Firestore khi component mount
+      fetchUserDataFromFirestore(currentUser.uid);
     } else {
       router.replace("/index" as any);
     }
   }, [router]);
 
+  // Hàm lấy dữ liệu người dùng từ Firestore
+  const fetchUserDataFromFirestore = async (uid: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, "accounts", uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setDisplayName(userData.displayName || "");
+        setProfileImage(userData.profileImage || null); // Lấy URL ảnh từ Firestore
+      }
+    } catch (error) {
+      console.log("Error fetching user data from Firestore:", error);
+      Alert.alert("Lỗi", "Không thể tải thông tin người dùng từ Firestore.");
+    }
+  };
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Quyền bị từ chối", "Cần quyền truy cập thư viện ảnh.");
+      Alert.alert(
+        "Quyền bị từ chối",
+        "Cần quyền truy cập thư viện ảnh. Vui lòng cấp quyền trong cài đặt."
+      );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7, // Giảm chất lượng để tối ưu kích thước file
+      });
 
-    if (!result.canceled && result.assets[0]?.uri && user) {
-      setProfileImage(result.assets[0].uri);
-      await uploadProfileImage(result.assets[0].uri);
+      if (!result.canceled && result.assets[0]?.uri && user) {
+        console.log("Selected image URI:", result.assets[0].uri);
+        setProfileImage(result.assets[0].uri);
+        await uploadProfileImage(result.assets[0].uri);
+      } else {
+        console.log("Image selection canceled or failed:", result);
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+      Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
     }
   };
 
@@ -97,26 +128,53 @@ export default function Profile() {
 
     try {
       setIsLoading(true);
+      console.log("Starting to upload image, URI:", uri);
+
       const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
       const blob = await response.blob();
+      console.log("Blob created successfully, size:", blob.size);
+
       const fileRef = ref(storage, `images/${user.uid}/${Date.now()}.jpg`);
       const uploadTask = uploadBytesResumable(fileRef, blob);
 
       await new Promise((resolve, reject) => {
         uploadTask.on(
           "state_changed",
-          null,
-          (error) => reject(error),
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log("Upload progress:", progress + "%");
+          },
+          (error) => {
+            console.log("Upload error:", error);
+            reject(error);
+          },
           async () => {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log("Image uploaded, download URL:", downloadURL);
+
             await updateProfile(user, { photoURL: downloadURL });
             setProfileImage(downloadURL);
+
+            // Lưu URL ảnh vào Firestore
+            await updateDoc(doc(db, "accounts", user.uid), {
+              profileImage: downloadURL,
+            });
+            console.log("Profile image URL saved to Firestore");
+
             resolve(downloadURL);
           }
         );
       });
     } catch (error) {
-      Alert.alert("Lỗi", "Không thể tải ảnh lên.");
+      console.log("Error in uploadProfileImage:", error);
+      Alert.alert(
+        "Lỗi",
+        "Không thể tải ảnh lên. Vui lòng kiểm tra: \n- Kết nối internet\n- Quyền truy cập Storage\n- Dung lượng file (< 5MB)"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -129,9 +187,16 @@ export default function Profile() {
     try {
       await updateProfile(user, { displayName });
       if (email && email !== user.email) await updateEmail(user, email);
+
+      // Cập nhật tên hiển thị vào Firestore
+      await updateDoc(doc(db, "accounts", user.uid), {
+        displayName: displayName,
+      });
+
       Alert.alert("Thành công", "Hồ sơ đã được cập nhật!");
       setUser({ ...user, displayName, email });
     } catch (error: any) {
+      console.log("Error updating profile:", error);
       Alert.alert("Lỗi", `Cập nhật hồ sơ thất bại: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -147,6 +212,7 @@ export default function Profile() {
       Alert.alert("Thành công", "Mật khẩu đã được cập nhật!");
       setNewPassword("");
     } catch (error: any) {
+      console.log("Error updating password:", error);
       Alert.alert("Lỗi", `Cập nhật mật khẩu thất bại: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -155,7 +221,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.replace("/index" as any);
+    router.replace("/" as any);
   };
 
   if (!user) {

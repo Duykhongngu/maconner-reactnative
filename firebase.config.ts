@@ -1,7 +1,7 @@
 import { getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // Nhập Firestore
+import { getStorage } from "firebase/storage"; // Nhập Storage (chỉ nhập một lần)
 import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -21,6 +21,12 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
+
+// Khởi tạo Firestore
+export const db = getFirestore(app);
+
+// Khởi tạo Storage (chỉ khai báo một lần, không thêm declare module)
+export const storage = getStorage(app);
 
 let analytics: any;
 isSupported().then((supported) => {
@@ -46,4 +52,3 @@ const logCustomEvent = async () => {
 };
 
 export { auth, analytics, logCustomEvent };
-export const storage = getStorage(app);
