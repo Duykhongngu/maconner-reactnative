@@ -61,7 +61,9 @@ const Background = () => {
           {memoizedItems.map((item) => (
             <TouchableOpacity
               key={item.id}
-              onPress={() => router.push(`/Collections/${item.link}` as any)}
+              onPress={() =>
+                router.push(`/user/Collections/${item.link}` as any)
+              }
               style={[
                 styles.item,
                 { width: iconSize, backgroundColor: itemBackgroundColor },

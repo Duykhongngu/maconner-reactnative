@@ -57,7 +57,7 @@ const MothersSlider: React.FC = () => {
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
         <TouchableOpacity
-          onPress={() => router.push(`/Collections/NightLight` as any)}
+          onPress={() => router.push(`/user/Collections/NightLight` as any)}
           style={styles.button}
         >
           <Text style={styles.buttonText}>{item.buttonText}</Text>

@@ -8,7 +8,7 @@ import BottleLamp from "./bottleLamp";
 import Recipient from "./recipient";
 import ByProducts from "./byProducts";
 import HappyCustomers from "./HappyCustomer";
-import Footer from "../Footer/Footer";
+import Footer from "../../Footer/Footer";
 
 function HomePage() {
   return (

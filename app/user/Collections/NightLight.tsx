@@ -14,7 +14,7 @@ import { useWindowDimensions } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import Footer from "../Footer/Footer";
+import Footer from "../../Footer/Footer";
 
 function NightLights() {
   const router = useRouter();
@@ -49,7 +49,7 @@ function NightLights() {
                 {paginatedProducts.map((item) => (
                   <TouchableOpacity
                     key={item.id}
-                    onPress={() => router.push(`/Products/${item.id}`)}
+                    onPress={() => router.push(`/user/Products/${item.id}`)}
                     style={[
                       styles.productCard,
                       { backgroundColor: cardBgColor, borderColor },

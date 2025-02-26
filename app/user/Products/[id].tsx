@@ -17,13 +17,15 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type Product, products } from "~/app/Data/product";
-import { useCart } from "~/app/Cart/CartContext";
+
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Footer from "../Footer/Footer";
+
 import * as ImagePicker from "expo-image-picker";
 import { auth } from "~/firebase.config"; // Import Firebase auth
 import { onAuthStateChanged } from "firebase/auth"; // Import onAuthStateChanged
+import { useCart } from "../Cart/CartContext";
+import Footer from "~/app/Footer/Footer";
 
 const { width, height } = Dimensions.get("window");
 
@@ -242,7 +244,7 @@ export default function ProductDetail(): JSX.Element {
   const renderSuggestedProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.suggestedProductItem}
-      onPress={() => router.push(`/Products/${item.id}`)}
+      onPress={() => router.push(`/user/Products/${item.id}`)}
     >
       <Image source={item.img} style={styles.suggestedProductImage} />
       <Text style={styles.suggestedProductName} numberOfLines={2}>

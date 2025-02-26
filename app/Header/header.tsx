@@ -22,21 +22,22 @@ import {
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-import { useCart } from "../Cart/CartContext";
-import { useOrder } from "../Checkout/OrderContext";
+
+import { useOrder } from "../user/Checkout/OrderContext";
 import { auth } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useCart } from "../user/Cart/CartContext";
 
 const inlineMenu = [
-  { title: "Valentine's Day", link: "/Products/[id]" },
-  { title: "Occasions", link: "/Products/[id]" },
-  { title: "Recipients", link: "/Products/[id]" },
-  { title: "Interests", link: "/Products/[id]" },
-  { title: "Home & Kitchen", link: "/Products/[id]" },
-  { title: "Clothing & Jewelry", link: "/Products/[id]" },
-  { title: "Drinkware & Barware", link: "/Products/[id]" },
-  { title: "Accessories", link: "/Products/[id]" },
-  { title: "Happy Customers", link: "/Products/[id]" },
+  { title: "Valentine's Day", link: "/user/Products/[id]" },
+  { title: "Occasions", link: "/user/Products/[id]" },
+  { title: "Recipients", link: "/user/Products/[id]" },
+  { title: "Interests", link: "/user/Products/[id]" },
+  { title: "Home & Kitchen", link: "/user/Products/[id]" },
+  { title: "Clothing & Jewelry", link: "/user/Products/[id]" },
+  { title: "Drinkware & Barware", link: "/user/Products/[id]" },
+  { title: "Accessories", link: "/user/Products/[id]" },
+  { title: "Happy Customers", link: "/user/Products/[id]" },
 ];
 
 function SiteHeader() {
@@ -58,10 +59,6 @@ function SiteHeader() {
   // Theo dõi trạng thái đăng nhập
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log(
-        "Auth state changed:",
-        currentUser ? "Logged in" : "Logged out"
-      );
       setUser(currentUser);
     });
     return () => unsubscribe();
@@ -102,7 +99,7 @@ function SiteHeader() {
 
         {/* Center Section */}
         <View style={styles.centerSection}>
-          <TouchableOpacity onPress={() => router.push("/home")}>
+          <TouchableOpacity onPress={() => router.push("/user/home")}>
             <Logo width={160} height={30} />
           </TouchableOpacity>
         </View>
@@ -119,7 +116,7 @@ function SiteHeader() {
 
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => router.push("/Checkout/OrderStatus" as any)}
+              onPress={() => router.push("/user/Checkout/OrderStatus" as any)}
             >
               <Truck size={26} color={iconColor} />
               <View style={styles.badge}>
@@ -129,7 +126,7 @@ function SiteHeader() {
 
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => router.push("/Cart/CartPages" as any)}
+              onPress={() => router.push("/user/Cart/CartPages" as any)}
             >
               <ShoppingCart size={26} color={iconColor} />
               <View style={styles.badge}>
@@ -162,7 +159,7 @@ function SiteHeader() {
                   onPress={() => {
                     setMenuVisible(false);
                     setTimeout(() => {
-                      router.push("/Auth/Profile");
+                      router.push("/user/Auth/Profile");
                     }, 100);
                   }}
                 >

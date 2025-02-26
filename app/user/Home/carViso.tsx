@@ -15,7 +15,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native";
-import products from "../Data/product";
+import products from "../../Data/product";
 import { Button } from "~/components/ui/button";
 import {
   Car,
@@ -26,7 +26,7 @@ import {
   Shirt,
 } from "lucide-react-native";
 
-const slider = require("~/assets/images/Gifts_For_Pet_Lovers.png");
+const slider = require("~/assets/images/Car_Visor_Clips.png");
 
 interface Category {
   id: number;
@@ -45,23 +45,22 @@ interface PetLove {
 export const petLover = [
   {
     id: 1,
-    title: "Pet Lover Gifts",
-    subtitle: "Purr-fect Presents for Pet Owners",
+    title: "Car Visor Clips",
+    subtitle: "A Small Touch for Every Drive",
     image: slider,
     buttonText: "SHOP ALL",
   },
 ];
 export const contents = [
-  { id: 1, title: "Mason jar light" },
-  { id: 2, title: "Mug", link: "leatherBelt" },
-  { id: 3, title: "Wine glass" },
-  { id: 4, title: "Acrylic plaque" },
-  { id: 5, title: "Low-waisted brief" },
+  { id: 1, title: "For couples" },
+  { id: 2, title: "For family" },
+  { id: 3, title: "For pet lovers" },
+  { id: 4, title: "For friends" },
 ];
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-const ShopAll: React.FC = () => {
+const CarVisor: React.FC = () => {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const colorScheme = useColorScheme();
@@ -82,7 +81,10 @@ const ShopAll: React.FC = () => {
       <View style={styles.textContainer}>
         <Text style={styles.bannerTitle}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity
+          onPress={() => router.push(`/Collections/NightLight` as any)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>{item.buttonText}</Text>
         </TouchableOpacity>
       </View>
@@ -106,21 +108,19 @@ const ShopAll: React.FC = () => {
     let displayProducts: typeof products.trendingProducts = [];
 
     switch (activeTab) {
-      case "Mason jar light":
+      case "For couples":
         displayProducts = products.trendingProducts.slice(0, 4);
         break;
-      case "Mug":
+      case "For family":
         displayProducts = products.leatherBelt;
         break;
-      case "Wine glass":
+      case "For pet lovers":
         displayProducts = products.visorClip;
         break;
-      case "Acrylic plaque":
+      case "For friends":
         displayProducts = products.trendingProducts.slice(0, 4);
         break;
-      case "Low-waisted brief":
-        displayProducts = products.leatherBelt;
-        break;
+
       default:
         displayProducts = products.leatherBelt;
         break;
@@ -131,7 +131,7 @@ const ShopAll: React.FC = () => {
         {displayProducts.map((item) => (
           <TouchableOpacity
             key={item.id}
-            onPress={() => router.push(`/Products/${item.id}`)}
+            onPress={() => router.push(`/user/Products/${item.id}`)}
             style={[
               styles.productCard,
               { backgroundColor: cardBgColor, borderColor },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginBottom: 20,
-    justifyContent: "center",
+
     gap: 12,
   },
   scrollContent: {
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   showMoreButton: {
     backgroundColor: "#ccc",
     paddingVertical: 12,
-
+    height: 40,
     borderRadius: 25,
     minWidth: 120,
   },
@@ -417,4 +417,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ShopAll;
+export default CarVisor;

@@ -12,7 +12,7 @@ import { Card } from "~/components/ui/card";
 import { PackageOpen, Trash2 } from "lucide-react-native";
 import { useCart } from "./CartContext";
 import { router } from "expo-router";
-import Footer from "../Footer/Footer";
+import Footer from "~/app/Footer/Footer";
 
 const CartPages: React.FC = () => {
   const { isDarkColorScheme } = useColorScheme();
@@ -43,7 +43,7 @@ const CartPages: React.FC = () => {
             variant="normal"
             size="lg"
             style={styles.keepShoppingButton}
-            onPress={() => router.push("/home")}
+            onPress={() => router.push("/user/home")}
           >
             <Text style={styles.keepShoppingButtonText}>Keep Shopping</Text>
           </Button>

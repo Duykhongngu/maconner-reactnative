@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
       <View>
         <Text>This screen doesn't exist.</Text>
 
-        <Link href="/home">
+        <Link href="/user/home">
           <Text>Go to home screen!</Text>
         </Link>
       </View>

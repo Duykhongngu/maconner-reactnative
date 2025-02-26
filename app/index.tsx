@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -17,10 +17,9 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { db } from "~/firebase.config"; // Nhập Firestore
-import { doc, setDoc, getDoc } from "firebase/firestore"; // Các hàm Firestore
+import { db } from "~/firebase.config";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
-// Định nghĩa các theme
 const themes = {
   light: {
     background: "#fff",
@@ -45,12 +44,11 @@ const themes = {
 export default function Login() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [name, setName] = useState<string>(""); // State cho tên hiển thị (displayName)
+  const [name, setName] = useState<string>("");
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const router = useRouter();
   const { isDarkColorScheme } = useColorScheme();
 
-  // Chọn theme dựa trên chế độ sáng/tối
   const theme = isDarkColorScheme ? themes.dark : themes.light;
 
   const handleLogin = async () => {
@@ -62,19 +60,15 @@ export default function Login() {
       );
       const user = userCredential.user;
 
-      // Lấy dữ liệu người dùng từ Firestore (bao gồm role)
       const userDoc = await getDoc(doc(db, "accounts", user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         const userRole = userData.role;
 
-        // Phân quyền dựa trên role
         if (userRole === 0) {
-          // Role 0: Admin, chuyển hướng đến màn hình admin
-          router.replace("/Admin/home" as any);
+          router.replace("/admin/home" as any);
         } else if (userRole === 1) {
-          // Role 1: User, chuyển hướng đến màn hình user
-          router.replace("/home" as any);
+          router.replace("/user/home" as any);
         } else {
           Alert.alert("Lỗi", "Role không hợp lệ.");
         }
@@ -86,13 +80,12 @@ export default function Login() {
       }
     } catch (error: any) {
       Alert.alert("Đăng nhập thất bại", error.message);
-      console.log("Error details:", error); // Log chi tiết lỗi
+      console.log("Error details:", error);
     }
   };
 
   const handleRegister = async () => {
     try {
-      // Tạo tài khoản trong Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -100,11 +93,10 @@ export default function Login() {
       );
       const user = userCredential.user;
 
-      // Lưu thông tin người dùng vào Firestore với role cố định là 1 (user)
       await setDoc(doc(db, "accounts", user.uid), {
         email: email,
         displayName: name,
-        role: 1, // Chỉ cho phép tạo tài khoản user (role = 1)
+        role: 1,
         createdAt: new Date().toISOString(),
       });
 
@@ -115,7 +107,7 @@ export default function Login() {
       setName("");
     } catch (error: any) {
       Alert.alert("Đăng ký thất bại", error.message);
-      console.log("Error details:", error); // Log chi tiết lỗi
+      console.log("Error details:", error);
     }
   };
 

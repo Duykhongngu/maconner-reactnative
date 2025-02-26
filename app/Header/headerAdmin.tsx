@@ -22,10 +22,11 @@ import {
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-import { useCart } from "../Cart/CartContext";
-import { useOrder } from "../Checkout/OrderContext";
+
+import { useOrder } from "../user/Checkout/OrderContext";
 import { auth } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useCart } from "../user/Cart/CartContext";
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/Products/[id]" },
@@ -102,41 +103,9 @@ function AdminHeader() {
 
         {/* Center Section */}
         <View style={styles.centerSection}>
-          <TouchableOpacity onPress={() => router.push("/home")}>
+          <TouchableOpacity onPress={() => router.push("/admin/home")}>
             <Logo width={160} height={30} />
           </TouchableOpacity>
-        </View>
-
-        {/* Right Section */}
-        <View style={styles.rightSection}>
-          <View style={styles.iconGroup}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setIsSearchOpen(true)}
-            >
-              <SearchIcon size={26} color={iconColor} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push("/Checkout/OrderStatus" as any)}
-            >
-              <Truck size={26} color={iconColor} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{totalOrders}</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push("/Cart/CartPages" as any)}
-            >
-              <ShoppingCart size={26} color={iconColor} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{totalItems}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Menu Modal */}
@@ -162,7 +131,7 @@ function AdminHeader() {
                   onPress={() => {
                     setMenuVisible(false);
                     setTimeout(() => {
-                      router.push("/Auth/Profile");
+                      router.push("/user/Auth/Profile");
                     }, 100);
                   }}
                 >
@@ -266,12 +235,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
   },
-  rightSection: {
-    width: 80,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginLeft: 16,
-  },
+
   iconGroup: {
     flexDirection: "row",
     alignItems: "center",
@@ -282,24 +246,7 @@ const styles = StyleSheet.create({
     padding: 8,
     position: "relative",
   },
-  badge: {
-    position: "absolute",
-    top: 0,
-    right: 2,
-    backgroundColor: "#ff0000",
-    borderRadius: 8,
-    minWidth: 17,
-    height: 17,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 2,
-  },
-  badgeText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
-    alignItems: "center",
-  },
+
   modalContainer: {
     flex: 1,
     backgroundColor: "white",

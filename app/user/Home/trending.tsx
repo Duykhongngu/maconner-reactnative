@@ -31,7 +31,7 @@ function Trending() {
             return (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => router.push(`/Products/${item.id}`)}
+                onPress={() => router.push(`/user/Products/${item.id}`)}
                 style={[
                   styles.productCard,
                   { backgroundColor: cardBgColor, borderColor },
@@ -53,7 +53,7 @@ function Trending() {
         </View>
         <View style={styles.showMoreContainer}>
           <Button
-            onPress={() => router.push(`/Collections/NightLight` as any)}
+            onPress={() => router.push(`/user/Collections/NightLight` as any)}
             variant="secondary"
             style={styles.showMoreButton}
           >

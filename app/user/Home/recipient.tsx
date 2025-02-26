@@ -8,12 +8,12 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import { products } from "../Data/product";
+import { products } from "../../Data/product";
 import { useWindowDimensions } from "react-native";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 
-function ByProducts() {
+function Recipient() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { isDarkColorScheme } = useColorScheme();
@@ -27,14 +27,14 @@ function ByProducts() {
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: "#F97316" }]}>
-          Shop By Product
+          Shop By Recipients
         </Text>
         <View style={styles.productContainer}>
           {products.trendingProducts.map((item) => {
             return (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => router.push(`/Products/${item.id}`)}
+                onPress={() => router.push(`/user/Products/${item.id}`)}
                 style={[
                   styles.productCard,
                   { backgroundColor: cardBgColor, borderColor },
@@ -79,14 +79,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   productCard: {
-    borderRadius: 10,
-    padding: 5,
+    borderRadius: 9999,
+    padding: 16,
     width: "48%",
   },
   productImage: {
     width: "100%",
-    height: 150,
-    borderRadius: 10,
+    height: 130,
+    borderRadius: 9999,
   },
   productDescription: {
     marginTop: 8,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 12,
-    borderRadius: 99999,
+    borderRadius: 9999,
     width: "40%",
     height: 50,
   },
@@ -114,4 +114,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ByProducts;
+export default Recipient;

@@ -15,7 +15,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native";
-import products from "../Data/product";
+import products from "../../Data/product";
 import { Button } from "~/components/ui/button";
 import {
   Car,
@@ -131,7 +131,7 @@ const BottleLamp: React.FC = () => {
         {displayProducts.map((item) => (
           <TouchableOpacity
             key={item.id}
-            onPress={() => router.push(`/Products/${item.id}`)}
+            onPress={() => router.push(`/user/Products/${item.id}`)}
             style={[
               styles.productCard,
               { backgroundColor: cardBgColor, borderColor },

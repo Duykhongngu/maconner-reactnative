@@ -10,7 +10,7 @@ import { useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import Footer from "../Footer/Footer";
+import Footer from "../../Footer/Footer";
 
 interface OrderItem {
   id: string;

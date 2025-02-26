@@ -1,6 +1,5 @@
 import { ScrollView, SafeAreaView, StyleSheet, View } from "react-native";
-import HomePage from "~/app/Home/index";
-import Footer from "./Footer/Footer";
+import HomePage from "~/app/user/Home/index";
 
 export default function Screen() {
   return (
