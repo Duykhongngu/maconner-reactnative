@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
-  Alert, // Thêm Alert
+  Alert,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -22,7 +23,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-
 import { useOrder } from "../user/Checkout/OrderContext";
 import { auth } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -43,35 +43,24 @@ function AdminHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [profileMenuVisible, setProfileMenuVisible] = useState(false);
 
-  // Theo dõi trạng thái đăng nhập
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log(
-        "Auth state changed:",
-        currentUser ? "Logged in" : "Logged out"
-      );
       setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
-  // Hàm xử lý đăng xuất
   const handleLogout = async () => {
     try {
-      setMenuVisible(false); // Close menu first
-      console.log("Bắt đầu đăng xuất...");
+      setProfileMenuVisible(false);
       await signOut(auth);
-      console.log("Đăng xuất thành công");
       setUser(null);
-
-      // Add a small delay before navigation
       setTimeout(() => {
-        console.log("Chuyển hướng về trang đăng nhập...");
-        router.push("/"); // Use push instead of replace
+        router.push("/");
       }, 100);
     } catch (error: any) {
-      console.error("Lỗi khi đăng xuất:", error);
       Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
@@ -96,6 +85,61 @@ function AdminHeader() {
           </TouchableOpacity>
         </View>
 
+        {/* Right Section - User Profile */}
+        <View style={styles.rightSection}>
+          {user && (
+            <TouchableOpacity
+              onPress={() => setProfileMenuVisible(true)}
+              style={styles.profileButton}
+            >
+              <Image
+                source={{
+                  uri: user.photoURL || "https://via.placeholder.com/40",
+                }}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Profile Menu Modal */}
+        <Modal
+          visible={profileMenuVisible}
+          transparent={true}
+          animationType="fade"
+          style={[styles.modalContainer, isDarkColorScheme && styles.darkModal]}
+          onRequestClose={() => setProfileMenuVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setProfileMenuVisible(false)}
+          >
+            <View
+              style={[
+                styles.profileMenuModal,
+                isDarkColorScheme && styles.darkModal,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setProfileMenuVisible(false);
+                  router.push("/admin/AccountsManage/Accounts");
+                }}
+              >
+                <Text style={[styles.menuText, { color: iconColor }]}>
+                  {user?.displayName || "Tài khoản"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogout}>
+                <Text style={[styles.menuText, { color: iconColor }]}>
+                  Đăng xuất
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         {/* Menu Modal */}
         <Modal visible={menuVisible} transparent animationType="slide">
           <View
@@ -111,50 +155,6 @@ function AdminHeader() {
               <ChevronLeft size={24} color={iconColor} />
               <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
             </TouchableOpacity>
-
-            {/* Hiển thị tên người dùng hoặc "Sign In" */}
-            {user ? (
-              <>
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuVisible(false);
-                    setTimeout(() => {
-                      router.push("/admin/AccountsManage/Accounts");
-                    }, 100);
-                  }}
-                >
-                  <View style={styles.menuItem}>
-                    <Text style={[styles.menuText, { color: iconColor }]}>
-                      {user.displayName || "Profile"}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleLogout}>
-                  <View style={styles.menuItem}>
-                    <Text style={[styles.menuText, { color: iconColor }]}>
-                      Sign Out
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  setMenuVisible(false);
-                  setTimeout(() => {
-                    router.push("/");
-                  }, 100);
-                }}
-              >
-                <View style={styles.menuItem}>
-                  <Text style={[styles.menuText, { color: iconColor }]}>
-                    Sign In
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* Danh sách menu hiện tại */}
           </View>
         </Modal>
 
@@ -208,25 +208,48 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
   },
-
-  iconGroup: {
-    flexDirection: "row",
+  rightSection: {
+    marginLeft: 20,
     alignItems: "center",
+  },
+  profileButton: {
+    padding: 8,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Lớp phủ mờ
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+  },
+  profileMenuModal: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 60, // Đặt ngay dưới header
+    marginRight: 16,
+    width: 150,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  darkModal: {
+    backgroundColor: "#1c1c1c",
   },
   iconButton: {
     padding: 8,
     position: "relative",
   },
-
   modalContainer: {
     flex: 1,
     backgroundColor: "white",
     marginRight: 10,
-  },
-  darkModal: {
-    backgroundColor: "#1c1c1c",
   },
   closeButton: {
     flexDirection: "row",
@@ -247,6 +270,7 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     fontWeight: "500",
+    paddingVertical: 8,
   },
   searchHeader: {
     padding: 16,

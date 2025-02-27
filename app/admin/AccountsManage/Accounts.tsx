@@ -32,19 +32,19 @@ import { useColorScheme } from "~/lib/useColorScheme";
 const themes = {
   light: {
     background: "#fff",
-    text: "#FF9E80",
+    text: "#FF6B00",
     border: "#ccc",
     placeholder: "#666",
-    button: "#FF9E80",
+    button: "#FF6B00",
     buttonText: "#fff",
     listItem: "#f9f9f9",
   },
   dark: {
     background: "#1c1c1c",
-    text: "#FF9E80",
+    text: "#FF6B00",
     border: "#333",
     placeholder: "#888",
-    button: "#FF9E80",
+    button: "#FF6B00",
     buttonText: "#fff",
     listItem: "#2d2d2d",
   },
