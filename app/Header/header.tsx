@@ -27,6 +27,7 @@ import { useOrder } from "../user/Checkout/OrderContext";
 import { auth } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
+import { set } from "react-hook-form";
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
@@ -39,7 +40,9 @@ const inlineMenu = [
   { title: "Accessories", link: "/user/Products/[id]" },
   { title: "Happy Customers", link: "/user/Products/[id]" },
 ];
-
+interface User {
+  name: string;
+}
 function SiteHeader() {
   const { isDarkColorScheme } = useColorScheme();
   const iconColor = isDarkColorScheme ? "white" : "black";
@@ -83,7 +86,20 @@ function SiteHeader() {
       Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
-
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setUser((prev: User) => ({
+          ...prev,
+          name: currentUser.displayName || currentUser.email || "Anonymous",
+        }));
+      } else {
+        setUser((prev: User) => ({ ...prev, name: "" }));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
   return (
     <SafeAreaView style={styles.safeContainer}>
       <View style={styles.container}>

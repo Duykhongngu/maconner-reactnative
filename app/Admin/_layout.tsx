@@ -13,8 +13,8 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="home" />
-      {/* <Stack.Screen name="dashboard" />
-      <Stack.Screen name="users" /> */}
+      {/* <Stack.Screen name="dashboard" /> */}
+      <Stack.Screen name="AccountsManage/Accounts" />
     </Stack>
   );
 }

@@ -18,8 +18,7 @@ import { TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "~/firebase.config";
+import axios from "axios"; // Thêm để gửi request lên Cloudinary
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "~/firebase.config";
 
@@ -55,17 +54,28 @@ export default function Profile() {
 
   const theme = isDarkColorScheme ? themes.dark : themes.light;
 
+  // Cấu hình Cloudinary
+  const CLOUDINARY_URL =
+    "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload"; // Thay dpyzwrsni bằng cloud_name của bạn
+  const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset"; // Thay bằng upload_preset của bạn, đảm bảo ở chế độ Unsigned
+
   useEffect(() => {
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      setUser(currentUser);
-      setDisplayName(currentUser.displayName || "");
-      setEmail(currentUser.email || "");
-      setProfileImage(currentUser.photoURL || null);
-      fetchUserDataFromFirestore(currentUser.uid);
-    } else {
-      router.replace("/" as any);
-    }
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        setDisplayName(currentUser.displayName || "");
+        setEmail(currentUser.email || "");
+        setProfileImage(currentUser.photoURL || null);
+        fetchUserDataFromFirestore(currentUser.uid);
+      } else {
+        setUser(null);
+        setDisplayName("");
+        setEmail("");
+        setProfileImage(null);
+        router.replace("/" as any);
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
   const fetchUserDataFromFirestore = async (uid: string) => {
@@ -75,6 +85,9 @@ export default function Profile() {
         const userData = userDoc.data();
         setDisplayName(userData.displayName || "");
         setProfileImage(userData.profileImage || null);
+      } else {
+        // Nếu không có dữ liệu trong Firestore, tạo mới
+        await saveUserToFirestore(uid);
       }
     } catch (error) {
       console.log("Error fetching user data from Firestore:", error);
@@ -82,7 +95,28 @@ export default function Profile() {
     }
   };
 
+  const saveUserToFirestore = async (uid: string) => {
+    if (!user) return;
+
+    try {
+      await setDoc(doc(db, "accounts", uid), {
+        displayName: user.displayName || "",
+        email: user.email || "",
+        profileImage: user.photoURL || null,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.log("Error saving user to Firestore:", error);
+      Alert.alert("Lỗi", "Không thể lưu thông tin người dùng vào Firestore.");
+    }
+  };
+
   const pickImage = async () => {
+    if (!user) {
+      Alert.alert("Lỗi", "Vui lòng đăng nhập để cập nhật ảnh.");
+      return;
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
@@ -100,9 +134,9 @@ export default function Profile() {
         quality: 0.7,
       });
 
-      if (!result.canceled && result.assets[0]?.uri && user) {
+      if (!result.canceled && result.assets[0]?.uri) {
         setProfileImage(result.assets[0].uri);
-        await uploadProfileImage(result.assets[0].uri);
+        await uploadProfileImageToCloudinary(result.assets[0].uri);
       }
     } catch (error) {
       console.log("Error picking image:", error);
@@ -110,35 +144,44 @@ export default function Profile() {
     }
   };
 
-  const uploadProfileImage = async (uri: string) => {
-    if (!user) return;
+  const uploadProfileImageToCloudinary = async (
+    uri: string
+  ): Promise<string> => {
+    if (!user) {
+      throw new Error("No user authenticated");
+    }
+
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      type: "image/jpeg",
+      name: "profile_image.jpg",
+    } as any);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
     try {
       setIsLoading(true);
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileRef = ref(storage, `images/${user.uid}/${Date.now()}.jpg`);
-      const uploadTask = uploadBytesResumable(fileRef, blob);
-
-      await new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          null,
-          (error) => reject(error),
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            await updateProfile(user, { photoURL: downloadURL });
-            setProfileImage(downloadURL);
-            await updateDoc(doc(db, "accounts", user.uid), {
-              profileImage: downloadURL,
-            });
-            resolve(downloadURL);
-          }
-        );
+      const response = await axios.post(CLOUDINARY_URL, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+      const imageUrl = response.data.secure_url;
+
+      // Cập nhật photoURL trong Firebase Authentication
+      await updateProfile(user, { photoURL: imageUrl });
+
+      // Cập nhật profileImage trong Firestore
+      await updateDoc(doc(db, "accounts", user.uid), {
+        profileImage: imageUrl,
+      });
+
+      setProfileImage(imageUrl);
+      return imageUrl;
     } catch (error) {
-      console.log("Error in uploadProfileImage:", error);
-      Alert.alert("Lỗi", "Không thể tải ảnh lên.");
+      console.error("Upload failed:", error);
+      throw new Error(
+        "Failed to upload image to Cloudinary: " +
+          (error instanceof Error ? error.message : String(error))
+      );
     } finally {
       setIsLoading(false);
     }
@@ -150,9 +193,10 @@ export default function Profile() {
     setIsLoading(true);
     try {
       await updateProfile(user, { displayName });
-      // Xóa phần updateEmail để không cho phép sửa email
       await updateDoc(doc(db, "accounts", user.uid), {
         displayName: displayName,
+        email: user.email, // Giữ email không đổi
+        profileImage: profileImage || user.photoURL || null,
       });
 
       Alert.alert("Thành công", "Hồ sơ đã được cập nhật!");

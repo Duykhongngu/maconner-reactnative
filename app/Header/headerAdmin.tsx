@@ -28,18 +28,6 @@ import { auth } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
 
-const inlineMenu = [
-  { title: "Valentine's Day", link: "/Products/[id]" },
-  { title: "Occasions", link: "/Products/[id]" },
-  { title: "Recipients", link: "/Products/[id]" },
-  { title: "Interests", link: "/Products/[id]" },
-  { title: "Home & Kitchen", link: "/Products/[id]" },
-  { title: "Clothing & Jewelry", link: "/Products/[id]" },
-  { title: "Drinkware & Barware", link: "/Products/[id]" },
-  { title: "Accessories", link: "/Products/[id]" },
-  { title: "Happy Customers", link: "/Products/[id]" },
-];
-
 function AdminHeader() {
   const { isDarkColorScheme } = useColorScheme();
   const iconColor = isDarkColorScheme ? "white" : "black";
@@ -131,7 +119,7 @@ function AdminHeader() {
                   onPress={() => {
                     setMenuVisible(false);
                     setTimeout(() => {
-                      router.push("/user/Auth/Profile");
+                      router.push("/admin/AccountsManage/Accounts");
                     }, 100);
                   }}
                 >
@@ -167,21 +155,6 @@ function AdminHeader() {
             )}
 
             {/* Danh sách menu hiện tại */}
-            {inlineMenu.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  router.push(item.link as any);
-                  setMenuVisible(false);
-                }}
-              >
-                <View style={styles.menuItem}>
-                  <Text style={[styles.menuText, { color: iconColor }]}>
-                    {item.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
           </View>
         </Modal>
 
