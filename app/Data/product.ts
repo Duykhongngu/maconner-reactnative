@@ -90,7 +90,7 @@ export  interface Product {
         price: 19.95,
         img: trend1,
         rating: 5,
-        reviews: 20,
+        reviews: 15,
         colors: ["black", "gray", "red"],
         sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
         category: "Valentine's Day",

@@ -64,7 +64,7 @@ export default function Profile() {
       setProfileImage(currentUser.photoURL || null);
       fetchUserDataFromFirestore(currentUser.uid);
     } else {
-      router.replace("/index" as any);
+      router.replace("/" as any);
     }
   }, [router]);
 

@@ -17,20 +17,26 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type Product, products } from "~/app/Data/product";
-
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import * as ImagePicker from "expo-image-picker";
-import { auth } from "~/firebase.config"; // Import Firebase auth
-import { onAuthStateChanged } from "firebase/auth"; // Import onAuthStateChanged
+import { auth, db } from "~/firebase.config";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
+import axios from "axios";
 import { useCart } from "../Cart/CartContext";
 import Footer from "~/app/Footer/Footer";
 
 const { width, height } = Dimensions.get("window");
 
 interface CustomerReview {
-  id: number;
+  id: string; // Đổi sang string để khớp với Firestore document ID
   name: string;
   rating: number;
   comment: string;
@@ -38,26 +44,8 @@ interface CustomerReview {
 }
 
 const STORAGE_KEY = "productReviews";
-
-const reviewsStorage = {
-  async getAll(): Promise<Record<string, CustomerReview[]>> {
-    const reviews = await AsyncStorage.getItem(STORAGE_KEY);
-    return reviews ? JSON.parse(reviews) : {};
-  },
-  async getForProduct(productId: string): Promise<CustomerReview[]> {
-    const allReviews = await this.getAll();
-    return allReviews[productId] || [];
-  },
-  async saveForProduct(
-    productId: string,
-    reviews: CustomerReview[]
-  ): Promise<void> {
-    const allReviews = await this.getAll();
-    allReviews[productId] = reviews;
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allReviews));
-  },
-};
-
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
+const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset";
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -82,11 +70,10 @@ export default function ProductDetail(): JSX.Element {
     image: "",
   });
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
-  const [user, setUser] = useState<any>(null); // State để lưu thông tin người dùng
+  const [user, setUser] = useState<any>(null);
 
   const productImages = product ? [product.img, product.img, product.img] : [];
 
-  // Theo dõi trạng thái đăng nhập
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -105,12 +92,10 @@ export default function ProductDetail(): JSX.Element {
   useEffect(() => {
     let foundProduct: Product | undefined;
     const categories = Object.keys(products);
-
     for (const category of categories) {
       foundProduct = products[category].find((p) => p.id === Number(id));
       if (foundProduct) break;
     }
-
     if (foundProduct) {
       setProduct(foundProduct);
       setSelectedColor(foundProduct.colors[0]);
@@ -118,17 +103,45 @@ export default function ProductDetail(): JSX.Element {
     }
   }, [id]);
 
+  // Load reviews từ Firestore
   useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        const productReviews = await reviewsStorage.getForProduct(id);
-        setCustomerReviews(productReviews);
-      } catch (error) {
-        console.error("Failed to load reviews:", error);
-      }
-    };
+    if (!id) return;
 
-    loadReviews();
+    const q = query(collection(db, "reviews"), where("productId", "==", id));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const reviewsData: CustomerReview[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          rating: doc.data().rating,
+          comment: doc.data().comment,
+          image: doc.data().image || undefined,
+        }));
+        setCustomerReviews(reviewsData);
+
+        // Backup vào AsyncStorage (tuỳ chọn)
+        const saveToAsyncStorage = async () => {
+          try {
+            const allReviews = await AsyncStorage.getItem(STORAGE_KEY);
+            const parsedReviews = allReviews ? JSON.parse(allReviews) : {};
+            parsedReviews[id] = reviewsData;
+            await AsyncStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify(parsedReviews)
+            );
+          } catch (error) {
+            console.error("Failed to save reviews to AsyncStorage:", error);
+          }
+        };
+        saveToAsyncStorage();
+      },
+      (error) => {
+        console.error("Error fetching reviews:", error);
+      }
+    );
+
+    return () => unsubscribe();
   }, [id]);
 
   useEffect(() => {
@@ -143,14 +156,12 @@ export default function ProductDetail(): JSX.Element {
       Alert.alert("Sorry, we need camera roll permissions to make this work!");
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
     if (!result.canceled && result.assets[0]?.uri) {
       setNewReview({ ...newReview, image: result.assets[0].uri });
     }
@@ -162,15 +173,33 @@ export default function ProductDetail(): JSX.Element {
       Alert.alert("Sorry, we need camera permissions to make this work!");
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
     if (!result.canceled && result.assets[0]?.uri) {
       setNewReview({ ...newReview, image: result.assets[0].uri });
+    }
+  };
+
+  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      type: "image/jpeg",
+      name: "review_image.jpg",
+    } as any);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      const response = await axios.post(CLOUDINARY_URL, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data.secure_url;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      throw new Error("Failed to upload image");
     }
   };
 
@@ -191,15 +220,23 @@ export default function ProductDetail(): JSX.Element {
 
   const handleSubmitReview = async () => {
     if (newReview.rating > 0 && newReview.comment) {
-      const newReviewData: CustomerReview = {
-        id: Date.now(),
-        ...newReview,
-      };
-
       try {
-        const updatedReviews = [...customerReviews, newReviewData];
-        await reviewsStorage.saveForProduct(id, updatedReviews);
-        setCustomerReviews(updatedReviews);
+        let imageUrl = "";
+        if (newReview.image) {
+          imageUrl = await uploadImageToCloudinary(newReview.image);
+        }
+
+        const reviewData = {
+          productId: id,
+          name: newReview.name,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          image: imageUrl || null,
+          createdAt: new Date().toISOString(),
+        };
+
+        await addDoc(collection(db, "reviews"), reviewData);
+
         setNewReview({
           name: user?.displayName || user?.email || "Anonymous",
           rating: 0,
@@ -434,7 +471,7 @@ export default function ProductDetail(): JSX.Element {
             <FlatList
               data={customerReviews}
               renderItem={renderReviewItem}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) => item.id}
               scrollEnabled={false}
             />
           </View>
@@ -533,7 +570,6 @@ export default function ProductDetail(): JSX.Element {
   );
 }
 
-// Styles giữ nguyên như cũ
 const styles = StyleSheet.create({
   container: {
     flex: 1,
