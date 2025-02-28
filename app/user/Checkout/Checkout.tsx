@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -7,6 +8,7 @@ import {
   TextInput,
   StyleSheet,
   Appearance,
+  Alert,
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,9 +18,13 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { useCart } from "../Cart/CartContext";
-import { useOrder } from "./OrderContext"; // Import OrderContext
-import { useRouter } from "expo-router"; // Import useRouter
+import { useOrder } from "./OrderContext";
+import { useRouter } from "expo-router";
+import { auth, db } from "~/firebase.config";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 
+// Định nghĩa schema cho form
 const formSchema = z.object({
   name: z.string().min(2, { message: "Tên phải có ít nhất 2 ký tự" }),
   email: z.string().email({ message: "Email không hợp lệ" }),
@@ -33,19 +39,22 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const CheckoutScreen: React.FC = () => {
-  const { cartItems, clearCart } = useCart(); // Lấy clearCart từ CartContext
-  const { addOrder, setCurrentOrder } = useOrder(); // Lấy setOrder từ OrderContext
+  const { cartItems, clearCart } = useCart();
+  const { setCurrentOrder } = useOrder();
+  const router = useRouter();
+
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const shippingFee = 30; // Assuming a fixed shipping fee
+  const shippingFee = 30;
   const total = subtotal + shippingFee;
 
   const {
     control,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,33 +67,88 @@ const CheckoutScreen: React.FC = () => {
     },
   });
 
-  const router = useRouter(); // Initialize router
+  // Lấy thông tin người dùng từ Firestore dựa trên userId khi đăng nhập
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const userDocRef = doc(db, "accounts", currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            reset({
+              name: userData.displayName || "",
+              email: userData.email || "",
+              phone: userData.phone || "",
+              address: userData.address || "",
+              country: userData.country || "",
+              paymentMethod: "credit",
+            });
+          } else {
+            console.log("Không tìm thấy thông tin người dùng trong Firestore");
+            Alert.alert(
+              "Thông báo",
+              "Không tìm thấy thông tin người dùng. Vui lòng điền thông tin thủ công."
+            );
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+          Alert.alert("Lỗi", "Không thể tải thông tin người dùng.");
+        }
+      } else {
+        Alert.alert("Lỗi", "Bạn cần đăng nhập để tiếp tục đặt hàng.");
+        router.replace("/" as any);
+      }
+    });
 
-  // CheckoutScreen.tsx
+    return () => unsubscribe();
+  }, [reset, router]);
+
+  // Xử lý submit form và lưu đơn hàng lên Firestore với userId
   async function onSubmit(values: FormData) {
+    if (!auth.currentUser) {
+      Alert.alert("Lỗi", "Bạn cần đăng nhập để đặt hàng.");
+      router.replace("/" as any);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      Alert.alert("Lỗi", "Giỏ hàng của bạn đang trống!");
+      return;
+    }
+
     try {
       const orderData = {
+        userId: auth.currentUser.uid, // Gắn userId của tài khoản đăng nhập
         ...values,
         cartItems,
-        total,
+        subtotal: subtotal.toFixed(2),
+        shippingFee: shippingFee.toFixed(2),
+        total, // Giữ total dưới dạng number để khớp với Order type
+        date: new Date().toISOString(),
+        status: "pending" as const,
       };
 
-      // Use addOrder to create new order and get the result
-      const newOrder = await addOrder(orderData);
+      // Lưu đơn hàng vào collection 'orderManager'
+      const docRef = await addDoc(collection(db, "orderManager"), orderData);
+      const newOrder = { id: docRef.id, ...orderData };
 
-      // Update current order with the new order
+      // Cập nhật current order trong OrderContext
       setCurrentOrder(newOrder);
 
-      // Clear the cart after successful order
+      // Xóa giỏ hàng sau khi đặt hàng thành công
       clearCart();
 
-      // Navigate to order status page
-      router.push("/Checkout/OrderStatus" as any);
+      // Điều hướng sang trang trạng thái đơn hàng
+      router.replace("/user/Checkout/OrderStatus");
+
+      console.log("Đơn hàng đã được lưu với ID:", docRef.id);
     } catch (error) {
-      console.error("Error saving order:", error);
+      console.error("Lỗi khi lưu đơn hàng:", error);
+      Alert.alert("Lỗi", "Không thể lưu đơn hàng. Vui lòng thử lại.");
     }
   }
-  // Xác định chế độ sáng/tối
+
   const colorScheme = Appearance.getColorScheme();
   const isDarkMode = colorScheme === "dark";
 
@@ -183,7 +247,7 @@ const CheckoutScreen: React.FC = () => {
             control={control}
             name="country"
             render={({ field: { onChange, onBlur, value } }) => (
-              <View>
+              <View className="mb-4">
                 <Text
                   className="mb-2 font-medium"
                   style={isDarkMode ? styles.darkText : styles.lightText}
@@ -198,7 +262,9 @@ const CheckoutScreen: React.FC = () => {
                   value={value}
                 />
                 {errors.country && (
-                  <Text style={{ color: "red" }}>{errors.country.message}</Text>
+                  <Text className="text-red-500 text-sm mt-1">
+                    {errors.country.message}
+                  </Text>
                 )}
               </View>
             )}
@@ -229,7 +295,6 @@ const CheckoutScreen: React.FC = () => {
               </View>
             )}
           />
-          {/* Country selection would typically be a Picker in React Native */}
         </CardContent>
       </Card>
 
@@ -359,7 +424,7 @@ const CheckoutScreen: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                ${(subtotal + shippingFee).toFixed(2)}
+                ${total.toFixed(2)}
               </Text>
             </View>
           </View>
@@ -369,14 +434,7 @@ const CheckoutScreen: React.FC = () => {
       <Button
         style={styles.checkoutButton}
         className="w-full mt-4 mb-1"
-        onPress={() => {
-          handleSubmit(
-            (values) => {
-              onSubmit(values);
-            },
-            (errors) => {}
-          )();
-        }}
+        onPress={handleSubmit(onSubmit)}
       >
         <Text style={styles.checkoutButtonText}>Đặt hàng</Text>
       </Button>
@@ -403,6 +461,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     padding: 10,
     borderRadius: 5,
+    borderWidth: 1,
   },
   lightInput: {
     borderColor: "#000000",
@@ -410,6 +469,7 @@ const styles = StyleSheet.create({
     color: "#000000",
     padding: 10,
     borderRadius: 5,
+    borderWidth: 1,
   },
   checkoutButton: {
     marginTop: 16,

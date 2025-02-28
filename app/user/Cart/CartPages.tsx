@@ -64,26 +64,28 @@ const CartPages: React.FC = () => {
             ]}
           >
             <Image
-              source={
-                typeof item.image === "string"
-                  ? { uri: item.image }
-                  : item.image
-              }
+              source={{ uri: item.image }}
               style={styles.cartItemImage}
+              onError={(e) =>
+                console.error("Cart item image error:", e.nativeEvent.error)
+              }
             />
 
             <View style={styles.cartItemDetails}>
               <Text style={[styles.cartItemName, { color: textColor }]}>
-                Name: {item.name}
+                {item.name}
               </Text>
               <Text style={[styles.cartItemPrice, { color: "#F97316" }]}>
-                Price: ${item.price.toFixed(2)} USD
+                ${item.price.toFixed(2)} USD
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Color: {item.color}
+                Color: {item.color || "Not specified"}
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
                 Size: {item.size}
+              </Text>
+              <Text style={[styles.cartItemInfo, { color: textColor }]}>
+                Quantity: {item.quantity}
               </Text>
 
               <View style={styles.quantityContainer}>
@@ -150,7 +152,7 @@ const CartPages: React.FC = () => {
           variant="normal"
           size="lg"
           style={styles.checkoutButton}
-          onPress={() => router.push("/Checkout/Checkout" as any)}
+          onPress={() => router.push("/user/Checkout/Checkout" as any)}
         >
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </Button>

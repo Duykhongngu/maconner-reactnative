@@ -21,14 +21,19 @@ export interface CartItem {
 
 export interface Order {
   id: string;
+  date: string; // Thuộc tính bắt buộc
   cartItems: CartItem[];
   total: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  country: string;
-  date: string;
+
+  userId?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  paymentMethod?: "credit" | "cod";
+  subtotal?: string;
+  shippingFee?: string;
   status: "pending" | "completed" | "cancelled";
 }
 interface OrderContextType {

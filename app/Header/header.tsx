@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
-  Alert, // Thêm Alert
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -22,12 +22,10 @@ import {
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-
-import { useOrder } from "../user/Checkout/OrderContext";
-import { auth } from "~/firebase.config";
+import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
-import { set } from "react-hook-form";
+import { collection, query, where, getDocs } from "firebase/firestore"; // Sử dụng getDocs thay vì onSnapshot
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
@@ -40,9 +38,11 @@ const inlineMenu = [
   { title: "Accessories", link: "/user/Products/[id]" },
   { title: "Happy Customers", link: "/user/Products/[id]" },
 ];
+
 interface User {
   name: string;
 }
+
 function SiteHeader() {
   const { isDarkColorScheme } = useColorScheme();
   const iconColor = isDarkColorScheme ? "white" : "black";
@@ -51,41 +51,13 @@ function SiteHeader() {
     (total, item) => total + item.quantity,
     0
   );
-  const { orders } = useOrder();
-  const totalOrders = orders.length;
-
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [totalOrders, setTotalOrders] = useState(0); // State để lưu số lượng đơn hàng từ Firebase
 
   // Theo dõi trạng thái đăng nhập
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Hàm xử lý đăng xuất
-  const handleLogout = async () => {
-    try {
-      setMenuVisible(false); // Close menu first
-      console.log("Bắt đầu đăng xuất...");
-      await signOut(auth);
-      console.log("Đăng xuất thành công");
-      setUser(null);
-
-      // Add a small delay before navigation
-      setTimeout(() => {
-        console.log("Chuyển hướng về trang đăng nhập...");
-        router.push("/"); // Use push instead of replace
-      }, 100);
-    } catch (error: any) {
-      console.error("Lỗi khi đăng xuất:", error);
-      Alert.alert("Lỗi đăng xuất", error.message);
-    }
-  };
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -100,6 +72,57 @@ function SiteHeader() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Lấy số lượng đơn hàng từ Firebase dựa trên userId
+  useEffect(() => {
+    const fetchOrdersCount = async () => {
+      if (auth.currentUser) {
+        try {
+          const q = query(
+            collection(db, "orderManager"),
+            where("userId", "==", auth.currentUser.uid)
+          );
+          const querySnapshot = await getDocs(q);
+          setTotalOrders(querySnapshot.docs.length);
+        } catch (error) {
+          console.error("Lỗi khi lấy số lượng đơn hàng từ Firebase:", error);
+          Alert.alert("Lỗi", "Không thể tải số lượng đơn hàng.");
+          setTotalOrders(0);
+        }
+      } else {
+        setTotalOrders(0); // Nếu chưa đăng nhập, đặt số lượng về 0
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      fetchOrdersCount();
+    });
+
+    // Gọi lần đầu khi component mount
+    fetchOrdersCount();
+
+    return () => unsubscribe();
+  }, []);
+
+  // Hàm xử lý đăng xuất
+  const handleLogout = async () => {
+    try {
+      setMenuVisible(false);
+      console.log("Bắt đầu đăng xuất...");
+      await signOut(auth);
+      console.log("Đăng xuất thành công");
+      setUser(null);
+
+      setTimeout(() => {
+        console.log("Chuyển hướng về trang đăng nhập...");
+        router.push("/");
+      }, 100);
+    } catch (error: any) {
+      console.error("Lỗi khi đăng xuất:", error);
+      Alert.alert("Lỗi đăng xuất", error.message);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeContainer}>
       <View style={styles.container}>

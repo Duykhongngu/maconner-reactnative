@@ -1,24 +1,86 @@
-import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
-import { useOrder } from "./OrderContext";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import Footer from "../../Footer/Footer";
+import { db } from "~/firebase.config"; // Đảm bảo đã cấu hình Firebase
+import { doc, getDoc } from "firebase/firestore";
+
+// Định nghĩa interface cho chi tiết đơn hàng từ Firebase
+interface FirebaseOrder {
+  id: string;
+  date: string;
+  total: number;
+  status: "pending" | "completed" | "cancelled";
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  paymentMethod?: "credit" | "cod";
+  userId?: string;
+  cartItems: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    color: string;
+    size: string;
+    image: string;
+  }[];
+  subtotal?: string;
+  shippingFee?: string;
+}
 
 const OrderDetailsScreen: React.FC = () => {
-  const { getOrder } = useOrder();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
   const { id } = useLocalSearchParams();
+  const [order, setOrder] = useState<FirebaseOrder | null>(null); // State để lưu chi tiết đơn hàng
 
-  const order = getOrder(id as string);
+  // Lấy chi tiết đơn hàng từ Firestore
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!id) return;
+
+      try {
+        const orderRef = doc(db, "orderManager", id as string);
+        const orderSnap = await getDoc(orderRef);
+
+        if (orderSnap.exists()) {
+          setOrder({ id: orderSnap.id, ...orderSnap.data() } as FirebaseOrder);
+        } else {
+          console.log("Không tìm thấy đơn hàng trong Firestore");
+          setOrder(null);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+        Alert.alert("Lỗi", "Không thể tải chi tiết đơn hàng.");
+      }
+    };
+
+    fetchOrder();
+  }, [id]);
 
   if (!order) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>Order not found</Text>
+      <View
+        style={[
+          styles.container,
+          isDarkMode ? styles.darkBackground : styles.lightBackground,
+        ]}
+      >
+        <Text
+          style={[
+            styles.message,
+            isDarkMode ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Không tìm thấy đơn hàng
+        </Text>
       </View>
     );
   }
@@ -56,7 +118,7 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Tên: {order.name}
+            Tên: {order.name || "Không có thông tin"}
           </Text>
         </View>
         <View style={styles.infoContainer}>
@@ -71,7 +133,7 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Email: {order.email}
+            Email: {order.email || "Không có thông tin"}
           </Text>
         </View>
         <View style={styles.infoContainer}>
@@ -86,7 +148,7 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Số điện thoại: {order.phone}
+            Số điện thoại: {order.phone || "Không có thông tin"}
           </Text>
         </View>
         <View style={styles.infoContainer}>
@@ -101,7 +163,7 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Địa chỉ: {order.address}
+            Địa chỉ: {order.address || "Không có thông tin"}
           </Text>
         </View>
         <View style={styles.infoContainer}>
@@ -116,11 +178,11 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Quốc gia: {order.country}
+            Quốc gia: {order.country || "Không có thông tin"}
           </Text>
         </View>
 
-        {/* Sử dụng ScrollView để render cartItems */}
+        {/* Hiển thị cartItems */}
         {order.cartItems.map((item) => (
           <View
             key={`${item.id}-${item.color}-${item.size}`}
@@ -220,6 +282,7 @@ const styles = StyleSheet.create({
   successMessage: {
     fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 10,
   },
   title: {
     fontSize: 24,

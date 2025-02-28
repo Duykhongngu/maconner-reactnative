@@ -5,7 +5,7 @@ import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   Image,
   FlatList,
   StyleSheet,
@@ -14,12 +14,20 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Platform,
+  Modal,
 } from "react-native";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "~/firebase.config";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import { Picker } from "@react-native-picker/picker";
 
 interface Product {
   id: string;
@@ -29,6 +37,7 @@ interface Product {
   name: string;
   price: number;
   size: string;
+  color: string;
 }
 
 interface CategoryOption {
@@ -46,10 +55,12 @@ const ProductManagementScreen = () => {
     name: "",
     price: 0,
     size: "xs",
+    color: "", // Để trống để người dùng nhập
   });
-
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const categories: CategoryOption[] = [
     { label: "Select Category", value: "" },
@@ -67,7 +78,13 @@ const ProductManagementScreen = () => {
       const querySnapshot = await getDocs(collection(db, "products"));
       const allProducts = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(),
+        category: doc.data().category || "",
+        inStock: doc.data().inStock !== false,
+        link: doc.data().link || "",
+        name: doc.data().name || "",
+        price: Number(doc.data().price) || 0,
+        size: doc.data().size || "xs",
+        color: doc.data().color || "Not specified", // Giá trị mặc định nếu không có màu
       })) as Product[];
       setProducts(allProducts);
     } catch (error) {
@@ -80,26 +97,52 @@ const ProductManagementScreen = () => {
 
   const uploadImage = async (imageUri: string): Promise<string> => {
     try {
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
+      console.log("Starting uploadImage with URI:", imageUri);
+
+      if (!imageUri) {
+        throw new Error("Invalid image URI: URI is empty");
+      }
 
       const formData = new FormData();
-      formData.append("file", blob, "upload.jpg");
-      formData.append("upload_preset", "your-upload-preset");
 
+      const fileName = imageUri.split("/").pop() || "upload.jpg";
+      const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
+
+      formData.append("file", {
+        uri: imageUri,
+        type: fileType,
+        name: fileName,
+      } as any);
+      formData.append("upload_preset", "marconer");
+
+      console.log("Sending request to Cloudinary...");
       const cloudinaryResponse = await axios.post(
-        `https://api.cloudinary.com/v1_1/your-cloud-name/image/upload`,
+        `https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
+          timeout: 30000,
         }
       );
 
-      setImageUrl(cloudinaryResponse.data.secure_url);
+      console.log(
+        "Upload successful, URL:",
+        cloudinaryResponse.data.secure_url
+      );
       return cloudinaryResponse.data.secure_url;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      Alert.alert("Error", "Failed to upload image. Please try again.");
+    } catch (error: unknown) {
+      console.error("Error in uploadImage:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error details:", {
+          message: error.message,
+          code: error.code,
+          response: error.response ? error.response.data : "No response",
+        });
+      } else if (error instanceof Error) {
+        console.error("Other error:", error.message);
+      } else {
+        console.error("Unknown error:", error);
+      }
       return "";
     }
   };
@@ -119,24 +162,36 @@ const ProductManagementScreen = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+        quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets[0].uri) {
-        setNewProduct({ ...newProduct, link: result.assets[0].uri });
+        console.log("Image picked successfully, URI:", result.assets[0].uri);
+        setLoading(true);
+        const uploadedUrl = await uploadImage(result.assets[0].uri);
+        if (uploadedUrl) {
+          console.log("Image uploaded to Cloudinary, URL:", uploadedUrl);
+          setNewProduct({ ...newProduct, link: uploadedUrl });
+          setImageUrl(uploadedUrl);
+        } else {
+          Alert.alert("Error", "Failed to upload image to Cloudinary.");
+        }
+      } else {
+        console.log("Image picking canceled or failed");
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      console.error("Error in pickImage:", error);
+      Alert.alert("Error", "Failed to pick or upload image. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.category) {
+    if (!newProduct.name || !newProduct.category || !newProduct.color) {
       Alert.alert(
         "Missing Information",
-        "Please fill in at least the name and category fields"
+        "Please fill in the name, category, and color fields"
       );
       return;
     }
@@ -145,25 +200,13 @@ const ProductManagementScreen = () => {
 
     const productData = {
       ...newProduct,
-      price: Number(newProduct.price) || 0,
+      price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
     };
 
     try {
       await addDoc(collection(db, "products"), productData);
-
       await fetchProducts();
-
-      setNewProduct({
-        category: "",
-        id: "",
-        inStock: true,
-        link: "",
-        name: "",
-        price: 0,
-        size: "xs",
-      });
-      setImageUrl("");
-
+      resetForm();
       Alert.alert("Success", "Product added successfully!");
     } catch (error) {
       console.error("Error adding product:", error);
@@ -173,45 +216,232 @@ const ProductManagementScreen = () => {
     }
   };
 
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setNewProduct({ ...product });
+    setImageUrl(product.link);
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+
+    if (!newProduct.name || !newProduct.category || !newProduct.color) {
+      Alert.alert(
+        "Missing Information",
+        "Please fill in the name, category, and color fields"
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    const productData = {
+      ...newProduct,
+      price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
+    };
+
+    try {
+      const productRef = doc(db, "products", editingProduct.id);
+      await updateDoc(productRef, productData);
+      await fetchProducts();
+      resetForm();
+      Alert.alert("Success", "Product updated successfully!");
+    } catch (error) {
+      console.error("Error updating product:", error);
+      Alert.alert("Error", "Failed to update product. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this product?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const productRef = doc(db, "products", productId);
+              await deleteDoc(productRef);
+              await fetchProducts();
+              Alert.alert("Success", "Product deleted successfully!");
+            } catch (error) {
+              console.error("Error deleting product:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete product. Please try again."
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const resetForm = () => {
+    setNewProduct({
+      category: "",
+      id: "",
+      inStock: true,
+      link: "",
+      name: "",
+      price: 0,
+      size: "xs",
+      color: "",
+    });
+    setImageUrl("");
+    setEditingProduct(null);
+  };
+
   const renderProduct = ({ item }: { item: Product }) => (
     <View style={styles.productItem}>
       <Text style={styles.productName}>
-        {item.name} - ${item.price.toFixed(2)}
+        {item.name} - ${(item.price ?? 0).toFixed(2)}
       </Text>
       {item.link && (
-        <Image source={{ uri: item.link }} style={styles.productImage} />
+        <Image
+          source={{ uri: item.link }}
+          style={styles.productImage}
+          onError={(e) =>
+            console.error("Image loading error:", e.nativeEvent.error)
+          }
+        />
       )}
       <Text>Category: {item.category}</Text>
       <Text>Size: {item.size}</Text>
+      <Text>Color: {item.color}</Text>
       <Text>In Stock: {item.inStock ? "Yes" : "No"}</Text>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => handleEditProduct(item)}
+        >
+          <Text style={styles.editButtonText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteProduct(item.id)}
+        >
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
+  const SizeButton = ({
+    size,
+    selected,
+    onPress,
+  }: {
+    size: string;
+    selected: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.sizeButton, selected && styles.selectedSizeButton]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.sizeButtonText,
+          selected && styles.selectedSizeButtonText,
+        ]}
+      >
+        {size}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderCategorySelector = () => {
+    const selectedCategory = categories.find(
+      (cat) => cat.value === newProduct.category
+    );
+
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.categorySelector}
+          onPress={() => setShowCategoryModal(true)}
+        >
+          <Text
+            style={[
+              styles.categorySelectorText,
+              !selectedCategory?.label && styles.categorySelectorPlaceholder,
+            ]}
+          >
+            {selectedCategory?.label || "Select Category"}
+          </Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={showCategoryModal}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Category</Text>
+
+              <ScrollView style={styles.categoryList}>
+                {categories.map((category) => (
+                  <TouchableOpacity
+                    key={category.value}
+                    style={[
+                      styles.categoryItem,
+                      newProduct.category === category.value &&
+                        styles.selectedCategoryItem,
+                    ]}
+                    onPress={() => {
+                      setNewProduct({
+                        ...newProduct,
+                        category: category.value,
+                      });
+                      setShowCategoryModal(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryItemText,
+                        newProduct.category === category.value &&
+                          styles.selectedCategoryItemText,
+                      ]}
+                    >
+                      {category.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowCategoryModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.header}>Product Management</Text>
 
         <View style={styles.formContainer}>
-          <Text style={styles.sectionLabel}> Category:</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={newProduct.category}
-              onValueChange={(value: string) =>
-                setNewProduct({ ...newProduct, category: value })
-              }
-              style={styles.picker}
-            >
-              {categories.map((category) => (
-                <Picker.Item
-                  key={category.value}
-                  label={category.label}
-                  value={category.value}
-                />
-              ))}
-            </Picker>
-          </View>
-          <Text style={styles.sectionLabel}> Product Name:</Text>
+          <Text style={styles.sectionLabel}>Category:</Text>
+          {renderCategorySelector()}
+
+          <Text style={styles.sectionLabel}>Product Name:</Text>
           <TextInput
             placeholder="Product Name"
             value={newProduct.name}
@@ -220,7 +450,8 @@ const ProductManagementScreen = () => {
             }
             style={styles.input}
           />
-          <Text style={styles.sectionLabel}> Price:</Text>
+
+          <Text style={styles.sectionLabel}>Price:</Text>
           <TextInput
             placeholder="Price (e.g., 12.50)"
             value={newProduct.price === 0 ? "" : newProduct.price.toString()}
@@ -228,14 +459,25 @@ const ProductManagementScreen = () => {
               if (text === "" || /^\d*\.?\d*$/.test(text)) {
                 setNewProduct({
                   ...newProduct,
-                  price: text === "" ? 0 : parseFloat(text) || 0,
+                  price: text === "" ? 0 : Number.parseFloat(text) || 0,
                 });
               }
             }}
             keyboardType="decimal-pad"
             style={styles.input}
           />
-          <Text style={styles.sectionLabel}> Image Products:</Text>
+
+          <Text style={styles.sectionLabel}>Color:</Text>
+          <TextInput
+            placeholder="Enter color (e.g., Red, Blue)"
+            value={newProduct.color}
+            onChangeText={(text: string) =>
+              setNewProduct({ ...newProduct, color: text })
+            }
+            style={styles.input}
+          />
+
+          <Text style={styles.sectionLabel}>Image Products:</Text>
           <View style={styles.imageInputContainer}>
             <TextInput
               placeholder="Image URL (or pick an image)"
@@ -245,14 +487,26 @@ const ProductManagementScreen = () => {
               }
               style={[styles.input, styles.imageImageInput]}
             />
-            <Button title="Pick" onPress={pickImage} color="#007AFF" />
+            <TouchableOpacity
+              style={styles.pickButton}
+              onPress={pickImage}
+              disabled={loading}
+            >
+              <Text style={styles.pickButtonText}>Pick</Text>
+            </TouchableOpacity>
           </View>
 
           {newProduct.link ? (
-            <Image
-              source={{ uri: newProduct.link }}
-              style={styles.previewImage}
-            />
+            <View style={styles.imagePreviewContainer}>
+              <Image
+                source={{ uri: newProduct.link }}
+                style={styles.previewImage}
+                onError={() => {
+                  Alert.alert("Error", "Failed to load image preview");
+                  setNewProduct({ ...newProduct, link: "" });
+                }}
+              />
+            </View>
           ) : null}
 
           <View style={styles.switchContainer}>
@@ -262,6 +516,9 @@ const ProductManagementScreen = () => {
               onValueChange={(value: boolean) =>
                 setNewProduct({ ...newProduct, inStock: value })
               }
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              thumbColor={newProduct.inStock ? "#007AFF" : "#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
             />
           </View>
 
@@ -269,22 +526,62 @@ const ProductManagementScreen = () => {
             <Text style={styles.sectionLabel}>Size:</Text>
             <View style={styles.sizeContainer}>
               {["xs", "s", "m", "l", "xl", "2xl"].map((size) => (
-                <Button
+                <SizeButton
                   key={size}
-                  title={size}
+                  size={size}
+                  selected={newProduct.size === size}
                   onPress={() => setNewProduct({ ...newProduct, size })}
-                  color={newProduct.size === size ? "#007AFF" : "#666"}
                 />
               ))}
             </View>
           </View>
 
-          <Button
-            title={loading ? "Adding..." : "Add Product"}
-            onPress={handleAddProduct}
-            disabled={loading || !newProduct.category || !newProduct.name}
-            color="#fff200"
-          />
+          {editingProduct ? (
+            <>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleUpdateProduct}
+                disabled={
+                  loading ||
+                  !newProduct.category ||
+                  !newProduct.name ||
+                  !newProduct.color
+                }
+              >
+                <Text style={styles.addButtonText}>
+                  {loading ? "Updating..." : "Update Product"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelEditButton}
+                onPress={resetForm}
+              >
+                <Text style={styles.cancelEditButtonText}>Cancel Edit</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                (loading ||
+                  !newProduct.category ||
+                  !newProduct.name ||
+                  !newProduct.color) &&
+                  styles.disabledButton,
+              ]}
+              onPress={handleAddProduct}
+              disabled={
+                loading ||
+                !newProduct.category ||
+                !newProduct.name ||
+                !newProduct.color
+              }
+            >
+              <Text style={styles.addButtonText}>
+                {loading ? "Adding..." : "Add Product"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {loading && (
@@ -329,26 +626,86 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  pickerContainer: {
+  categorySelector: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
-    marginVertical: 5,
+    padding: 15,
     backgroundColor: "#fff",
+    marginVertical: 5,
   },
-  picker: {
-    height: 50,
-    width: "100%",
+  categorySelectorText: {
+    fontSize: 16,
+    color: "#000",
+  },
+  categorySelectorPlaceholder: {
+    color: "#999",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    padding: 20,
+    maxHeight: "70%",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#333",
+  },
+  categoryList: {
+    marginBottom: 15,
+  },
+  categoryItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  selectedCategoryItem: {
+    backgroundColor: "#f0f8ff",
+  },
+  categoryItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  selectedCategoryItemText: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  cancelButton: {
+    padding: 15,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 12,
+    padding: 15,
     marginVertical: 5,
     borderRadius: 5,
     backgroundColor: "#fff",
@@ -363,18 +720,37 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
   },
-  previewImage: {
-    width: 150,
-    height: 150,
-    resizeMode: "contain",
-    alignSelf: "center",
+  pickButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pickButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  imagePreviewContainer: {
+    alignItems: "center",
     marginVertical: 10,
     borderRadius: 5,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "#f0f0f0",
+  },
+  previewImage: {
+    width: 200,
+    height: 200,
+    resizeMode: "contain",
   },
   switchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: 15,
   },
   switchLabel: {
     fontSize: 16,
@@ -387,11 +763,62 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
     color: "#333",
+    fontWeight: "500",
   },
   sizeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 5,
+    gap: 8,
+  },
+  sizeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#f0f0f0",
+    minWidth: 45,
+    alignItems: "center",
+  },
+  selectedSizeButton: {
+    backgroundColor: "#007AFF",
+    borderColor: "#0056b3",
+  },
+  sizeButtonText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  selectedSizeButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  addButton: {
+    backgroundColor: "#fff200",
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "#000",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: "#f0f0f0",
+    opacity: 0.7,
+  },
+  cancelEditButton: {
+    backgroundColor: "#FF4444",
+    paddingVertical: 15,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  cancelEditButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   productItem: {
     padding: 15,
@@ -400,6 +827,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 5,
     backgroundColor: "#fff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   productName: {
     fontWeight: "bold",
@@ -411,6 +849,35 @@ const styles = StyleSheet.create({
     height: 100,
     resizeMode: "contain",
     marginVertical: 10,
+    backgroundColor: "#f9f9f9",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+    gap: 10,
+  },
+  editButton: {
+    backgroundColor: "#FFD700",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  editButtonText: {
+    color: "#000",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  deleteButton: {
+    backgroundColor: "#FF4444",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 18,

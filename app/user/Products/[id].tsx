@@ -12,11 +12,9 @@ import {
   StyleSheet,
   FlatList,
   TextInput,
-  useColorScheme,
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { type Product, products } from "~/app/Data/product";
 import { Star } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -28,15 +26,34 @@ import {
   query,
   where,
   onSnapshot,
+  getDocs,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import axios from "axios";
 import { useCart } from "../Cart/CartContext";
 import Footer from "~/app/Footer/Footer";
 
+// Định nghĩa interface cho colorScheme (dựa trên useColorScheme)
+interface ColorScheme {
+  colorScheme: "light" | "dark";
+}
+
 const { width, height } = Dimensions.get("window");
 
+interface Product {
+  id: string;
+  category: string;
+  inStock: boolean;
+  link: string;
+  name: string;
+  price: number;
+  size: string;
+  color: string; // Thêm trường color
+}
+
 interface CustomerReview {
-  id: string; // Đổi sang string để khớp với Firestore document ID
+  id: string;
   name: string;
   rating: number;
   comment: string;
@@ -46,17 +63,17 @@ interface CustomerReview {
 const STORAGE_KEY = "productReviews";
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
 const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset";
+
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const colorScheme = useColorScheme();
 
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [newReview, setNewReview] = useState<{
     name: string;
@@ -71,9 +88,95 @@ export default function ProductDetail(): JSX.Element {
   });
   const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
 
-  const productImages = product ? [product.img, product.img, product.img] : [];
+  useEffect(() => {
+    const fetchColorScheme = async () => {
+      try {
+        const scheme = await AsyncStorage.getItem("colorScheme");
+        setColorScheme(scheme === "dark" ? "dark" : "light");
+      } catch (error) {
+        console.error("Failed to fetch color scheme:", error);
+        setColorScheme("light");
+      }
+    };
 
+    fetchColorScheme();
+  }, []);
+
+  // Lấy dữ liệu sản phẩm từ Firestore
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+
+      try {
+        const productRef = doc(db, "products", id);
+        const productSnap = await getDoc(productRef);
+
+        if (productSnap.exists()) {
+          const productData = {
+            id: productSnap.id,
+            category: productSnap.data().category || "",
+            inStock: productSnap.data().inStock !== false,
+            link: productSnap.data().link || "",
+            name: productSnap.data().name || "",
+            price: Number(productSnap.data().price) || 0,
+            size: productSnap.data().size || "xs",
+            color: productSnap.data().color || "default", // Lấy color từ Firestore
+          } as Product;
+
+          setProduct(productData);
+          setSelectedSize(productData.size);
+        } else {
+          console.error("Product not found");
+          Alert.alert("Error", "Product not found.");
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        Alert.alert("Error", "Failed to load product details.");
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  // Lấy sản phẩm gợi ý cùng danh mục
+  useEffect(() => {
+    const fetchSuggestedProducts = async () => {
+      if (!product) return;
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        const allProducts = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          category: doc.data().category || "",
+          inStock: doc.data().inStock !== false,
+          link: doc.data().link || "",
+          name: doc.data().name || "",
+          price: Number(doc.data().price) || 0,
+          size: doc.data().size || "xs",
+          color: doc.data().color || "default",
+        })) as Product[];
+
+        // Lọc sản phẩm cùng danh mục nhưng khác ID
+        const suggested = allProducts
+          .filter(
+            (p) =>
+              p.category.toLowerCase() === product.category.toLowerCase() &&
+              p.id !== product.id
+          )
+          .slice(0, 6); // Lấy tối đa 6 sản phẩm gợi ý
+
+        setSuggestedProducts(suggested);
+      } catch (error) {
+        console.error("Error fetching suggested products:", error);
+      }
+    };
+
+    fetchSuggestedProducts();
+  }, [product]);
+
+  // Kiểm tra trạng thái người dùng
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -88,20 +191,6 @@ export default function ProductDetail(): JSX.Element {
     });
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    let foundProduct: Product | undefined;
-    const categories = Object.keys(products);
-    for (const category of categories) {
-      foundProduct = products[category].find((p) => p.id === Number(id));
-      if (foundProduct) break;
-    }
-    if (foundProduct) {
-      setProduct(foundProduct);
-      setSelectedColor(foundProduct.colors[0]);
-      setSelectedSize(foundProduct.sizes ? foundProduct.sizes[0] : null);
-    }
-  }, [id]);
 
   // Load reviews từ Firestore
   useEffect(() => {
@@ -204,15 +293,15 @@ export default function ProductDetail(): JSX.Element {
   };
 
   const handleAddToCart = () => {
-    if (product && selectedColor && selectedSize) {
+    if (product && selectedSize) {
       addToCart({
-        id: product.id.toString(),
+        id: product.id,
         name: product.name,
         price: product.price,
         quantity: quantity,
-        color: selectedColor,
         size: selectedSize,
-        image: product.img as any,
+        color: product.color, // Sử dụng color từ Firestore
+        image: product.link,
       });
       setQuantity(1);
     }
@@ -283,7 +372,13 @@ export default function ProductDetail(): JSX.Element {
       style={styles.suggestedProductItem}
       onPress={() => router.push(`/user/Products/${item.id}`)}
     >
-      <Image source={item.img} style={styles.suggestedProductImage} />
+      <Image
+        source={{ uri: item.link }}
+        style={styles.suggestedProductImage}
+        onError={(e) =>
+          console.error("Suggested product image error:", e.nativeEvent.error)
+        }
+      />
       <Text style={styles.suggestedProductName} numberOfLines={2}>
         {item.name}
       </Text>
@@ -293,28 +388,15 @@ export default function ProductDetail(): JSX.Element {
 
   const isDarkMode = colorScheme === "dark";
 
-  const getSuggestedProducts = (): Product[] => {
-    if (!product) return [];
-    let productCategory = "";
-    Object.entries(products).forEach(([category, productList]) => {
-      if (productList.find((p) => p.id === product.id)) {
-        productCategory = category;
-      }
-    });
-    return products[productCategory]
-      .filter((p) => p.id !== product.id)
-      .slice(0, 6);
-  };
-
   const renderSuggestedProducts = () => (
     <View style={styles.sectionContainer}>
       <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
         You May Also Like
       </Text>
       <FlatList
-        data={getSuggestedProducts()}
+        data={suggestedProducts}
         renderItem={renderSuggestedProduct}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={[
@@ -332,6 +414,8 @@ export default function ProductDetail(): JSX.Element {
       </View>
     );
   }
+
+  const productImages = [product.link, product.link, product.link]; // Firestore chỉ có 1 link ảnh, nên lặp lại để tạo hiệu ứng slide
 
   return (
     <SafeAreaView
@@ -356,9 +440,12 @@ export default function ProductDetail(): JSX.Element {
             {productImages.map((image, index) => (
               <Image
                 key={index}
-                source={image}
+                source={{ uri: image }}
                 style={styles.productImage}
                 resizeMode="cover"
+                onError={(e) =>
+                  console.error("Product image error:", e.nativeEvent.error)
+                }
               />
             ))}
           </ScrollView>
@@ -386,27 +473,8 @@ export default function ProductDetail(): JSX.Element {
             <Text
               style={[styles.productDescription, isDarkMode && styles.darkText]}
             >
-              {product.description}
+              Category: {product.category}
             </Text>
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Color
-            </Text>
-            <View style={styles.colorContainer}>
-              {product.colors.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  onPress={() => setSelectedColor(color)}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    selectedColor === color && styles.colorOptionSelected,
-                  ]}
-                />
-              ))}
-            </View>
           </View>
 
           <View style={styles.sectionContainer}>
@@ -414,26 +482,34 @@ export default function ProductDetail(): JSX.Element {
               Size
             </Text>
             <View style={styles.sizeContainer}>
-              {product.sizes?.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  onPress={() => setSelectedSize(size)}
+              <TouchableOpacity
+                onPress={() => setSelectedSize(product.size)}
+                style={[
+                  styles.sizeOption,
+                  selectedSize === product.size && styles.sizeOptionSelected,
+                ]}
+              >
+                <Text
                   style={[
-                    styles.sizeOption,
-                    selectedSize === size && styles.sizeOptionSelected,
+                    styles.sizeText,
+                    selectedSize === product.size && styles.sizeTextSelected,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.sizeText,
-                      selectedSize === size && styles.sizeTextSelected,
-                    ]}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                  {product.size}
+                </Text>
+              </TouchableOpacity>
             </View>
+          </View>
+
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+              Color
+            </Text>
+            <Text
+              style={[styles.productDescription, isDarkMode && styles.darkText]}
+            >
+              {product.color}
+            </Text>
           </View>
 
           <View style={styles.sectionContainer}>
@@ -641,21 +717,6 @@ const styles = StyleSheet.create({
   },
   darkText: {
     color: "#fff",
-  },
-  colorContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  colorOptionSelected: {
-    borderColor: "#FF6B00",
   },
   sizeContainer: {
     flexDirection: "row",

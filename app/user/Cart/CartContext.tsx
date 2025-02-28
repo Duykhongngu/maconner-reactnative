@@ -1,14 +1,15 @@
 "use client";
 
-import type React from "react";
 import {
   createContext,
   useContext,
   useState,
-  type ReactNode,
   useEffect,
+  ReactNode,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth, db } from "~/firebase.config";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export interface CartItem {
   id: string;
@@ -17,7 +18,7 @@ export interface CartItem {
   quantity: number;
   color: string;
   size: string;
-  image: string | any;
+  image: string;
 }
 
 interface CartContextType {
@@ -29,7 +30,7 @@ interface CartContextType {
     color: string,
     size: string,
     quantity: number
-  ) => void; // Add this method
+  ) => void;
   clearCart: () => void;
 }
 
@@ -40,52 +41,73 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  // Lấy giỏ hàng từ Firestore khi người dùng đăng nhập
   useEffect(() => {
-    loadCartItems();
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const cartRef = doc(db, "carts", currentUser.uid);
+          const cartSnap = await getDoc(cartRef);
+          if (cartSnap.exists()) {
+            setCartItems(cartSnap.data().items || []);
+          } else {
+            setCartItems([]); // Nếu không có giỏ hàng, khởi tạo rỗng
+            await setDoc(cartRef, { items: [] }, { merge: true }); // Tạo tài liệu rỗng nếu chưa tồn tại
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy giỏ hàng từ Firestore:", error);
+          setCartItems([]); // Đặt giỏ hàng rỗng nếu có lỗi
+        }
+      } else {
+        setCartItems([]); // Nếu không đăng nhập, giỏ hàng rỗng
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const loadCartItems = async () => {
-    try {
-      const savedCartItems = await AsyncStorage.getItem("cartItems");
-      if (savedCartItems) {
-        setCartItems(JSON.parse(savedCartItems));
+  // Lưu giỏ hàng vào Firestore
+  const saveCartToFirestore = async (items: CartItem[]) => {
+    if (auth.currentUser) {
+      try {
+        const cartRef = doc(db, "carts", auth.currentUser.uid);
+        await setDoc(cartRef, { items }, { merge: true });
+      } catch (error) {
+        console.error("Lỗi khi lưu giỏ hàng vào Firestore:", error);
       }
-    } catch (error) {
-      console.error("Error loading cart items:", error);
-    }
-  };
-
-  const saveCartItems = async (updatedCartItems: CartItem[]) => {
-    try {
-      await AsyncStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-      setCartItems(updatedCartItems);
-    } catch (error) {
-      console.error("Error saving cart items:", error);
-      throw new Error("Failed to save cart items");
     }
   };
 
   const addToCart = (item: CartItem) => {
-    const existingItem = cartItems.find(
-      (i) => i.id === item.id && i.color === item.color && i.size === item.size
-    );
-    if (existingItem) {
-      const updatedCartItems = cartItems.map((i) =>
-        i.id === item.id && i.color === item.color && i.size === item.size
-          ? { ...i, quantity: i.quantity + item.quantity } // Cập nhật số lượng
-          : i
+    setCartItems((prevItems) => {
+      const existingItem = prevItems.find(
+        (i) =>
+          i.id === item.id && i.color === item.color && i.size === item.size
       );
-      saveCartItems(updatedCartItems);
-    } else {
-      saveCartItems([...cartItems, item]); // Thêm sản phẩm mới
-    }
+      let updatedItems;
+      if (existingItem) {
+        updatedItems = prevItems.map((i) =>
+          i.id === item.id && i.color === item.color && i.size === item.size
+            ? { ...i, quantity: i.quantity + item.quantity }
+            : i
+        );
+      } else {
+        updatedItems = [...prevItems, item];
+      }
+      saveCartToFirestore(updatedItems);
+      return updatedItems;
+    });
   };
 
   const removeFromCart = (id: string, color: string, size: string) => {
-    const updatedCartItems = cartItems.filter(
-      (item) => !(item.id === id && item.color === color && item.size === size)
-    );
-    saveCartItems(updatedCartItems);
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.filter(
+        (item) =>
+          !(item.id === id && item.color === color && item.size === size)
+      );
+      saveCartToFirestore(updatedItems);
+      return updatedItems;
+    });
   };
 
   const updateCartQuantity = (
@@ -94,16 +116,23 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     size: string,
     quantity: number
   ) => {
-    const updatedCartItems = cartItems.map((item) =>
-      item.id === id && item.color === color && item.size === size
-        ? { ...item, quantity }
-        : item
-    );
-    saveCartItems(updatedCartItems);
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.map((item) =>
+        item.id === id && item.color === color && item.size === size
+          ? { ...item, quantity: Math.max(1, quantity) } // Đảm bảo quantity không âm
+          : item
+      );
+      saveCartToFirestore(updatedItems);
+      return updatedItems;
+    });
   };
 
   const clearCart = () => {
-    saveCartItems([]);
+    setCartItems([]);
+    if (auth.currentUser) {
+      const cartRef = doc(db, "carts", auth.currentUser.uid);
+      setDoc(cartRef, { items: [] }, { merge: true });
+    }
   };
 
   return (
@@ -112,7 +141,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         cartItems,
         addToCart,
         removeFromCart,
-        updateCartQuantity, // Add this to the context provider
+        updateCartQuantity,
         clearCart,
       }}
     >
@@ -129,4 +158,4 @@ export const useCart = () => {
   return context;
 };
 
-export default CartContext;
+export default CartProvider;

@@ -86,7 +86,7 @@ export default function HappyCustomers() {
             Delighted Shoppers!
           </Text>
           <Button
-            onPress={() => router.push(`/Collections/NightLight` as any)}
+            onPress={() => router.push(`user/Collections/NightLight` as any)}
             variant="secondary"
             style={styles.button}
           >
