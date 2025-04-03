@@ -17,17 +17,15 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import { db } from "~/firebase.config";
 import * as ImagePicker from "expo-image-picker";
-import axios from "axios";
+
+import {
+  fetchProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  uploadImage,
+} from "~/service/products";
 
 interface Product {
   id: string;
@@ -69,119 +67,17 @@ const ProductManagementScreen = () => {
   ];
 
   useEffect(() => {
-    fetchProducts();
+    fetchProductsData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProductsData = async () => {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const allProducts = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        category: doc.data().category || "",
-        inStock: doc.data().inStock !== false,
-        link: doc.data().link || "",
-        name: doc.data().name || "",
-        price: Number(doc.data().price) || 0,
-        size: doc.data().size || "xs",
-        color: doc.data().color || "Not specified", // Giá trị mặc định nếu không có màu
-      })) as Product[];
+      const allProducts = await fetchProducts();
       setProducts(allProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
       Alert.alert("Error", "Failed to load products. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const uploadImage = async (imageUri: string): Promise<string> => {
-    try {
-      console.log("Starting uploadImage with URI:", imageUri);
-
-      if (!imageUri) {
-        throw new Error("Invalid image URI: URI is empty");
-      }
-
-      const formData = new FormData();
-
-      const fileName = imageUri.split("/").pop() || "upload.jpg";
-      const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
-
-      formData.append("file", {
-        uri: imageUri,
-        type: fileType,
-        name: fileName,
-      } as any);
-      formData.append("upload_preset", "marconer");
-
-      console.log("Sending request to Cloudinary...");
-      const cloudinaryResponse = await axios.post(
-        `https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          timeout: 30000,
-        }
-      );
-
-      console.log(
-        "Upload successful, URL:",
-        cloudinaryResponse.data.secure_url
-      );
-      return cloudinaryResponse.data.secure_url;
-    } catch (error: unknown) {
-      console.error("Error in uploadImage:", error);
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          message: error.message,
-          code: error.code,
-          response: error.response ? error.response.data : "No response",
-        });
-      } else if (error instanceof Error) {
-        console.error("Other error:", error.message);
-      } else {
-        console.error("Unknown error:", error);
-      }
-      return "";
-    }
-  };
-
-  const pickImage = async () => {
-    try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "We need camera roll permissions to upload images."
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0].uri) {
-        console.log("Image picked successfully, URI:", result.assets[0].uri);
-        setLoading(true);
-        const uploadedUrl = await uploadImage(result.assets[0].uri);
-        if (uploadedUrl) {
-          console.log("Image uploaded to Cloudinary, URL:", uploadedUrl);
-          setNewProduct({ ...newProduct, link: uploadedUrl });
-          setImageUrl(uploadedUrl);
-        } else {
-          Alert.alert("Error", "Failed to upload image to Cloudinary.");
-        }
-      } else {
-        console.log("Image picking canceled or failed");
-      }
-    } catch (error) {
-      console.error("Error in pickImage:", error);
-      Alert.alert("Error", "Failed to pick or upload image. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -197,15 +93,14 @@ const ProductManagementScreen = () => {
     }
 
     setLoading(true);
-
     const productData = {
       ...newProduct,
       price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
     };
 
     try {
-      await addDoc(collection(db, "products"), productData);
-      await fetchProducts();
+      await addProduct(productData);
+      await fetchProductsData();
       resetForm();
       Alert.alert("Success", "Product added successfully!");
     } catch (error) {
@@ -234,16 +129,14 @@ const ProductManagementScreen = () => {
     }
 
     setLoading(true);
-
     const productData = {
       ...newProduct,
       price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
     };
 
     try {
-      const productRef = doc(db, "products", editingProduct.id);
-      await updateDoc(productRef, productData);
-      await fetchProducts();
+      await updateProduct(editingProduct.id, productData);
+      await fetchProductsData();
       resetForm();
       Alert.alert("Success", "Product updated successfully!");
     } catch (error) {
@@ -266,9 +159,8 @@ const ProductManagementScreen = () => {
           onPress: async () => {
             setLoading(true);
             try {
-              const productRef = doc(db, "products", productId);
-              await deleteDoc(productRef);
-              await fetchProducts();
+              await deleteProduct(productId);
+              await fetchProductsData();
               Alert.alert("Success", "Product deleted successfully!");
             } catch (error) {
               console.error("Error deleting product:", error);
@@ -430,6 +322,43 @@ const ProductManagementScreen = () => {
         </Modal>
       </View>
     );
+  };
+
+  const pickImage = async () => {
+    try {
+      // Yêu cầu quyền truy cập thư viện ảnh
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Lỗi", "Cần cấp quyền truy cập thư viện ảnh để tiếp tục");
+        return;
+      }
+
+      // Mở thư viện ảnh để chọn
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setLoading(true);
+        try {
+          // Upload ảnh và lấy URL
+          const uploadedUrl = await uploadImage(result.assets[0].uri);
+          setNewProduct({ ...newProduct, link: uploadedUrl });
+        } catch (error) {
+          console.error("Lỗi khi tải ảnh lên:", error);
+          Alert.alert("Lỗi", "Không thể tải ảnh lên. Vui lòng thử lại.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi chọn ảnh:", error);
+      Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
+    }
   };
 
   return (

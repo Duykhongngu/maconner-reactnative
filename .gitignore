@@ -2,12 +2,13 @@
 
 # dependencies
 node_modules/
-
+# API config
+api.config.ts
 # Expo
 .expo/
 dist/
 web-build/
-
+.env
 # Native
 *.orig.*
 *.jks
@@ -16,7 +17,7 @@ web-build/
 *.key
 *.mobileprovision
 #
-
+firebase.config.ts
 # Metro
 .metro-health-check*
 

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Alert,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -23,9 +24,17 @@ import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { auth, db } from "~/firebase.config";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
-import { collection, query, where, getDocs } from "firebase/firestore"; // Sử dụng getDocs thay vì onSnapshot
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { logout } from "~/service/api/auth";
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
@@ -55,25 +64,40 @@ function SiteHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [totalOrders, setTotalOrders] = useState(0); // State để lưu số lượng đơn hàng từ Firebase
+  const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    photoURL: string;
+    displayName: string;
+  } | null>(null);
+  const [totalOrders, setTotalOrders] = useState(0);
 
-  // Theo dõi trạng thái đăng nhập
   useEffect(() => {
+    const fetchUserProfile = async (uid: string) => {
+      try {
+        const userDoc = await getDoc(doc(db, "accounts", uid));
+        if (userDoc.exists()) {
+          setUserProfile({
+            photoURL: userDoc.data().profileImage,
+            displayName: userDoc.data().displayName || "User",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        setUser((prev: User) => ({
-          ...prev,
-          name: currentUser.displayName || currentUser.email || "Anonymous",
-        }));
+      if (currentUser?.uid) {
+        fetchUserProfile(currentUser.uid);
       } else {
-        setUser((prev: User) => ({ ...prev, name: "" }));
+        setUserProfile(null);
       }
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Lấy số lượng đơn hàng từ Firebase dựa trên userId
   useEffect(() => {
     const fetchOrdersCount = async () => {
       if (auth.currentUser) {
@@ -90,7 +114,7 @@ function SiteHeader() {
           setTotalOrders(0);
         }
       } else {
-        setTotalOrders(0); // Nếu chưa đăng nhập, đặt số lượng về 0
+        setTotalOrders(0);
       }
     };
 
@@ -98,27 +122,20 @@ function SiteHeader() {
       fetchOrdersCount();
     });
 
-    // Gọi lần đầu khi component mount
     fetchOrdersCount();
 
     return () => unsubscribe();
   }, []);
 
-  // Hàm xử lý đăng xuất
   const handleLogout = async () => {
     try {
-      setMenuVisible(false);
-      console.log("Bắt đầu đăng xuất...");
-      await signOut(auth);
-      console.log("Đăng xuất thành công");
+      setProfileMenuVisible(false);
+      await logout();
       setUser(null);
-
       setTimeout(() => {
-        console.log("Chuyển hướng về trang đăng nhập...");
-        router.push("/");
+        router.replace("/");
       }, 100);
     } catch (error: any) {
-      console.error("Lỗi khi đăng xuất:", error);
       Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
@@ -132,14 +149,14 @@ function SiteHeader() {
             onPress={() => setMenuVisible(true)}
             style={styles.iconButton}
           >
-            <MenuIcon size={26} color={iconColor} />
+            <MenuIcon size={24} color={iconColor} />
           </TouchableOpacity>
         </View>
 
         {/* Center Section */}
         <View style={styles.centerSection}>
           <TouchableOpacity onPress={() => router.push("/user/home")}>
-            <Logo width={160} height={30} />
+            <Logo width={140} height={28} />
           </TouchableOpacity>
         </View>
 
@@ -150,30 +167,97 @@ function SiteHeader() {
               style={styles.iconButton}
               onPress={() => setIsSearchOpen(true)}
             >
-              <SearchIcon size={26} color={iconColor} />
+              <SearchIcon size={24} color={iconColor} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push("/user/Checkout/OrderStatus" as any)}
             >
-              <Truck size={26} color={iconColor} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{totalOrders}</Text>
-              </View>
+              <Truck size={24} color={iconColor} />
+              {totalOrders > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{totalOrders}</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push("/user/Cart/CartPages" as any)}
             >
-              <ShoppingCart size={26} color={iconColor} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{totalItems}</Text>
-              </View>
+              <ShoppingCart size={24} color={iconColor} />
+              {totalItems > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{totalItems}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setProfileMenuVisible(true)}
+            style={styles.profileButton}
+          >
+            <Image
+              source={{
+                uri: userProfile?.photoURL || "https://via.placeholder.com/36",
+              }}
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
         </View>
+
+        {/* Profile Menu Modal */}
+        <Modal
+          visible={profileMenuVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setProfileMenuVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setProfileMenuVisible(false)}
+          >
+            <View
+              style={[
+                styles.profileMenu,
+                isDarkColorScheme && styles.darkProfileMenu,
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.profileMenuItem}
+                onPress={() => {
+                  setProfileMenuVisible(false);
+                  router.push("/user/profile");
+                }}
+              >
+                <Text
+                  style={[
+                    styles.profileMenuText,
+                    isDarkColorScheme && styles.darkText,
+                  ]}
+                >
+                  {userProfile?.displayName || user?.displayName || "User"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.profileMenuItem}
+                onPress={handleLogout}
+              >
+                <Text
+                  style={[
+                    styles.profileMenuText,
+                    isDarkColorScheme && styles.darkText,
+                  ]}
+                >
+                  Đăng xuất
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Menu Modal */}
         <Modal visible={menuVisible} transparent animationType="slide">
@@ -191,49 +275,7 @@ function SiteHeader() {
               <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
             </TouchableOpacity>
 
-            {/* Hiển thị tên người dùng hoặc "Sign In" */}
-            {user ? (
-              <>
-                <TouchableOpacity
-                  onPress={() => {
-                    setMenuVisible(false);
-                    setTimeout(() => {
-                      router.push("/user/Auth/Profile");
-                    }, 100);
-                  }}
-                >
-                  <View style={styles.menuItem}>
-                    <Text style={[styles.menuText, { color: iconColor }]}>
-                      {user.displayName || "Profile"}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleLogout}>
-                  <View style={styles.menuItem}>
-                    <Text style={[styles.menuText, { color: iconColor }]}>
-                      Sign Out
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  setMenuVisible(false);
-                  setTimeout(() => {
-                    router.push("/");
-                  }, 100);
-                }}
-              >
-                <View style={styles.menuItem}>
-                  <Text style={[styles.menuText, { color: iconColor }]}>
-                    Sign In
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* Danh sách menu hiện tại */}
+            {/* Menu list */}
             {inlineMenu.map((item, index) => (
               <TouchableOpacity
                 key={index}
@@ -243,7 +285,12 @@ function SiteHeader() {
                 }}
               >
                 <View style={styles.menuItem}>
-                  <Text style={[styles.menuText, { color: iconColor }]}>
+                  <Text
+                    style={[
+                      styles.menuText,
+                      isDarkColorScheme && styles.darkText,
+                    ]}
+                  >
                     {item.title}
                   </Text>
                 </View>
@@ -266,7 +313,7 @@ function SiteHeader() {
                 onPress={() => setIsSearchOpen(false)}
                 style={styles.cancelButton}
               >
-                <ChevronLeft size={26} color={iconColor} />
+                <ChevronLeft size={24} color={iconColor} />
                 <Text style={{ color: iconColor }}>Cancel</Text>
               </Button>
             </View>
@@ -288,35 +335,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
     height: 56,
     width: "100%",
   },
   leftSection: {
     alignItems: "flex-start",
-    marginLeft: -10,
   },
   centerSection: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row",
   },
   rightSection: {
-    width: 80,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    marginLeft: 16,
   },
   iconGroup: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 20,
-    padding: 4,
+    marginRight: 8,
   },
   iconButton: {
-    padding: 8,
+    padding: 4,
     position: "relative",
+  },
+  profileButton: {
+    padding: 4,
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#f0f0f0",
   },
   badge: {
     position: "absolute",
@@ -324,22 +375,20 @@ const styles = StyleSheet.create({
     right: 2,
     backgroundColor: "#ff0000",
     borderRadius: 8,
-    minWidth: 17,
-    height: 17,
+    minWidth: 16,
+    height: 16,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 2,
   },
   badgeText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: "bold",
-    alignItems: "center",
   },
   modalContainer: {
     flex: 1,
     backgroundColor: "white",
-    marginRight: 10,
   },
   darkModal: {
     backgroundColor: "#1c1c1c",
@@ -363,6 +412,10 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     fontWeight: "500",
+    color: "black",
+  },
+  darkText: {
+    color: "white",
   },
   searchHeader: {
     padding: 16,
@@ -376,6 +429,36 @@ const styles = StyleSheet.create({
   cancelButton: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+  },
+  profileMenu: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 60,
+    marginRight: 16,
+    width: 150,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  darkProfileMenu: {
+    backgroundColor: "#1c1c1c",
+  },
+  profileMenuItem: {
+    paddingVertical: 8,
+  },
+  profileMenuText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "black",
   },
 });
 

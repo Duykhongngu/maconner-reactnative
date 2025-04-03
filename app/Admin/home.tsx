@@ -30,6 +30,11 @@ function HomeAdmin() {
       route: "/admin/AccountsManage/Accounts",
     },
     {
+      title: "Category Products Management",
+      icon: isDarkMode ? ("cube-outline" as IconName) : ("cube" as IconName),
+      route: "/admin/CategoryProductManagement/CategoryProduct",
+    },
+    {
       title: "Products Management",
       icon: isDarkMode ? ("cube-outline" as IconName) : ("cube" as IconName),
       route: "/admin/ProductsManagement/products",
@@ -37,7 +42,7 @@ function HomeAdmin() {
     {
       title: "Order Management",
       icon: isDarkMode ? ("cart-outline" as IconName) : ("cart" as IconName),
-      route: "/admin/AccountsManage/Accounts",
+      route: "/admin/OrderManage/OrderManager",
     },
 
     {

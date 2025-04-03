@@ -81,27 +81,15 @@ export default function RootLayout() {
           >
             <Stack
               screenOptions={{
-                headerBackVisible: false,
                 headerShown: false,
+                contentStyle: {
+                  backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+                },
               }}
             >
-              {/* Hiển thị màn hình dựa trên userRole */}
-              {userRole === null && (
-                <Stack.Screen
-                  name="index"
-                  options={{
-                    headerShown: false,
-                    headerTitleAlign: "center",
-                    headerTitle: undefined,
-                  }}
-                />
-              )}
-              {userRole === 1 && (
-                <Stack.Screen name="user" options={{ headerShown: false }} />
-              )}
-              {userRole === 0 && (
-                <Stack.Screen name="admin" options={{ headerShown: false }} />
-              )}
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="admin" options={{ headerShown: false }} />
+              <Stack.Screen name="user" options={{ headerShown: false }} />
             </Stack>
           </SafeAreaView>
         </ThemeProvider>

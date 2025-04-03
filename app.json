@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "marconer-reacnative",
-    "slug": "marconer-reacnative",
+    "name": "Duy dang ngu",
+    "slug": "maconer-reactnative",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/imageapp.jpg",
@@ -20,7 +20,9 @@
           "photosPermission": "The app needs access to your photos to let you upload review images.",
           "cameraPermission": "The app needs access to your camera to let you take review photos."
         }
-      ]
+      ],
+      "expo-router",
+      "expo-font"
     ],
     "assetBundlePatterns": [
       "**/*"
@@ -37,18 +39,16 @@
         "foregroundImage": "./assets/images/imageapp.jpg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.duynguroi1504.marconerreacnative"
+      "package": "com.duynguroi1504.marconerreacnative",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/imageapp.jpg"
     },
-    "plugins": [
-      "expo-router",
-      "expo-font"
-    
-    ],
     "experiments": {
       "typedRoutes": true
     },
@@ -60,8 +60,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "aeea9b67-da41-41dc-9899-2a3ad191fd3f"
+        "projectId": "344399a1-a42e-47e7-84a8-a7936cdc467a"
       }
-    }
+    },
+    "owner": "duynguroi1504"
   }
 }

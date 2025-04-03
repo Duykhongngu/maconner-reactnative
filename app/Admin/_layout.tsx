@@ -1,5 +1,6 @@
-import { Stack, Tabs } from "expo-router";
+import { Stack } from "expo-router";
 import AdminHeader from "~/app/Header/headerAdmin";
+import { View } from "react-native";
 
 export default function AdminLayout() {
   return (
@@ -12,9 +13,30 @@ export default function AdminLayout() {
         headerRight: () => null,
       }}
     >
-      <Stack.Screen name="home" />
-      {/* <Stack.Screen name="dashboard" /> */}
-      <Stack.Screen name="AccountsManage/Accounts" />
+      <Stack.Screen
+        name="home"
+        options={{
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="AccountsManage/Accounts"
+        options={{
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="OrderManage/OrderManager"
+        options={{
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="ProductsManagement/products"
+        options={{
+          headerShown: true,
+        }}
+      />
     </Stack>
   );
 }
