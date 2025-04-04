@@ -1,29 +1,14 @@
-import { ScrollView, SafeAreaView, StyleSheet, View } from "react-native";
+import { ScrollView, SafeAreaView, View } from "react-native";
 import HomePage from "~/app/user/Home/index";
 
 export default function Screen() {
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.content}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1">
           <HomePage />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
-  contentContainer: {
-    flexGrow: 1,
-    fontFamily: "Poppins",
-  },
-  content: {
-    flex: 1,
-  },
-});

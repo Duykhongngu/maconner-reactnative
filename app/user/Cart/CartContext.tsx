@@ -17,20 +17,15 @@ export interface CartItem {
   price: number;
   quantity: number;
   color: string;
-  size: string;
   image: string;
+  description: string;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string, color: string, size: string) => void;
-  updateCartQuantity: (
-    id: string,
-    color: string,
-    size: string,
-    quantity: number
-  ) => void;
+  removeFromCart: (id: string, color: string) => void;
+  updateCartQuantity: (id: string, color: string, quantity: number) => void;
   clearCart: () => void;
 }
 
@@ -71,7 +66,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     if (auth.currentUser) {
       try {
         const cartRef = doc(db, "carts", auth.currentUser.uid);
-        await setDoc(cartRef, { items }, { merge: true });
+        // Kiểm tra và loại bỏ các thuộc tính không hợp lệ
+        const validItems = items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          color: item.color || "default", // Đảm bảo color không undefined
+          image: item.image,
+          description: item.description || "", // Đảm bảo description không undefined
+        }));
+        await setDoc(cartRef, { items: validItems }, { merge: true });
       } catch (error) {
         console.error("Lỗi khi lưu giỏ hàng vào Firestore:", error);
       }
@@ -79,47 +84,52 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const addToCart = (item: CartItem) => {
+    // Đảm bảo item.color không bị undefined hoặc null
+    const safeItem = {
+      ...item,
+      color: item.color || "Default",
+    };
+
     setCartItems((prevItems) => {
+      // Tìm sản phẩm có cùng id và màu sắc
       const existingItem = prevItems.find(
-        (i) =>
-          i.id === item.id && i.color === item.color && i.size === item.size
+        (i) => i.id === safeItem.id && i.color === safeItem.color
       );
+
       let updatedItems;
       if (existingItem) {
+        // Nếu sản phẩm đã tồn tại, cập nhật số lượng
         updatedItems = prevItems.map((i) =>
-          i.id === item.id && i.color === item.color && i.size === item.size
-            ? { ...i, quantity: i.quantity + item.quantity }
+          i.id === safeItem.id && i.color === safeItem.color
+            ? { ...i, quantity: i.quantity + safeItem.quantity }
             : i
         );
       } else {
-        updatedItems = [...prevItems, item];
+        // Nếu sản phẩm chưa tồn tại, thêm mới
+        updatedItems = [...prevItems, safeItem];
       }
+
+      // Lưu giỏ hàng vào Firestore
       saveCartToFirestore(updatedItems);
       return updatedItems;
     });
   };
 
-  const removeFromCart = (id: string, color: string, size: string) => {
+  const removeFromCart = (id: string, color: string) => {
     setCartItems((prevItems) => {
       const updatedItems = prevItems.filter(
-        (item) =>
-          !(item.id === id && item.color === color && item.size === size)
+        (item) => !(item.id === id && item.color === color)
       );
       saveCartToFirestore(updatedItems);
       return updatedItems;
     });
   };
 
-  const updateCartQuantity = (
-    id: string,
-    color: string,
-    size: string,
-    quantity: number
-  ) => {
+  const updateCartQuantity = (id: string, color: string, quantity: number) => {
     setCartItems((prevItems) => {
       const updatedItems = prevItems.map((item) =>
-        item.id === id && item.color === color && item.size === size
-          ? { ...item, quantity: Math.max(1, quantity) } // Đảm bảo quantity không âm
+        item.id === id && item.color === color
+          ? { ...item, quantity: Math.max(1, quantity) }
           : item
       );
       saveCartToFirestore(updatedItems);

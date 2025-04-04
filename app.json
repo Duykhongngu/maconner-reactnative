@@ -13,12 +13,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    
     "plugins": [
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app needs access to your photos to let you upload review images.",
-          "cameraPermission": "The app needs access to your camera to let you take review photos."
+          "photosPermission": "Ứng dụng cần quyền truy cập vào thư viện ảnh của bạn.",
+          "cameraPermission": "Ứng dụng cần quyền truy cập vào máy ảnh của bạn."
         }
       ],
       "expo-router",
@@ -41,7 +42,21 @@
       },
       "package": "com.duynguroi1504.marconerreacnative",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA"
+      ],
+      "intentFilters": [
+        {
+          "action": "android.intent.action.VIEW",
+          "category": ["android.intent.category.DEFAULT", "android.intent.category.BROWSABLE"],
+          "data": {
+            "scheme": "file",
+            "host": "*",
+            "pathPattern": ".*",
+            "mimeType": "image/*"
+          }
+        }
       ]
     },
     "web": {
@@ -61,6 +76,7 @@
       },
       "eas": {
         "projectId": "344399a1-a42e-47e7-84a8-a7936cdc467a"
+        
       }
     },
     "owner": "duynguroi1504"

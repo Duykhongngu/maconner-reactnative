@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   Image,
   TextInput,
   ScrollView,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, db } from "~/firebase.config";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "~/components/ui/button";
@@ -20,32 +21,10 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import {
   fetchAccounts,
   uploadImageToCloudinary,
-  updateAccount,
   deleteAccount,
 } from "~/service/accounts";
 import type { Account } from "~/service/accounts";
-
-// Định nghĩa các theme
-const themes = {
-  light: {
-    background: "#fff",
-    text: "#000",
-    border: "#ccc",
-    placeholder: "#666",
-    button: "#FF6B00",
-    buttonText: "#fff",
-    listItem: "#f9f9f9",
-  },
-  dark: {
-    background: "#1c1c1c",
-    text: "#fff",
-    border: "#333",
-    placeholder: "#888",
-    button: "#FF6B00",
-    buttonText: "#fff",
-    listItem: "#2d2d2d",
-  },
-};
+import { Moon, Sun } from "lucide-react-native";
 
 export default function ProfileAdminManage() {
   const [user, setUser] = useState<User | null>(null);
@@ -56,13 +35,14 @@ export default function ProfileAdminManage() {
     password: "",
     role: 0,
     profileImage: "",
+    phone_number: "",
+    address: "",
   });
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
-  const { isDarkColorScheme } = useColorScheme();
 
-  const theme = isDarkColorScheme ? themes.dark : themes.light;
+  const { isDarkColorScheme } = useColorScheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -96,8 +76,13 @@ export default function ProfileAdminManage() {
   const handleUpdateAccount = async (account: Account) => {
     if (!editingAccount) return;
 
-    if (!newAccount.displayName || !newAccount.email) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ tên hiển thị và email.");
+    if (
+      !newAccount.displayName ||
+      !newAccount.email ||
+      !newAccount.phone_number ||
+      !newAccount.address
+    ) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
       return;
     }
 
@@ -109,6 +94,8 @@ export default function ProfileAdminManage() {
         email: newAccount.email,
         profileImage: newAccount.profileImage || null,
         role: newAccount.role,
+        phone_number: newAccount.phone_number,
+        address: newAccount.address,
       };
       console.log("Dữ liệu gửi đến Firestore:", updatedData);
       await updateDoc(docRef, updatedData);
@@ -124,6 +111,8 @@ export default function ProfileAdminManage() {
           password: "",
           role: 0,
           profileImage: "",
+          phone_number: "",
+          address: "",
         });
         Alert.alert(
           "Thành công",
@@ -157,18 +146,24 @@ export default function ProfileAdminManage() {
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Quyền bị từ chối", "Cần quyền truy cập thư viện ảnh.");
-      return;
-    }
-
     try {
+      // Kiểm tra quyền truy cập
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Quyền bị từ chối", "Cần quyền truy cập thư viện ảnh.");
+        return;
+      }
+
+      // Sử dụng cấu hình cũ hơn cho máy ảo Android
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        // Thêm các tùy chọn này để tương thích với máy ảo cũ hơn
+        exif: false,
+        base64: false,
       });
 
       if (!result.canceled && result.assets[0]?.uri) {
@@ -190,7 +185,61 @@ export default function ProfileAdminManage() {
       }
     } catch (error) {
       console.error("Lỗi khi chọn ảnh:", error);
-      Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
+      Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại sau.");
+
+      // Thử phương pháp thay thế nếu phương pháp chính thất bại
+      try {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status === "granted") {
+          Alert.alert(
+            "Thông báo",
+            "Đang thử phương pháp thay thế. Bạn có muốn chụp ảnh thay vì chọn từ thư viện?",
+            [
+              {
+                text: "Hủy",
+                style: "cancel",
+              },
+              {
+                text: "Đồng ý",
+                onPress: async () => {
+                  try {
+                    const cameraResult = await ImagePicker.launchCameraAsync({
+                      allowsEditing: true,
+                      aspect: [1, 1],
+                      quality: 0.7,
+                    });
+
+                    if (!cameraResult.canceled && cameraResult.assets[0]?.uri) {
+                      setIsLoading(true);
+                      const imageUrl = await uploadImageToCloudinary(
+                        cameraResult.assets[0].uri
+                      );
+                      setNewAccount((prev) => ({
+                        ...prev,
+                        profileImage: imageUrl,
+                      }));
+                      if (editingAccount) {
+                        setEditingAccount(
+                          (prev) => prev && { ...prev, profileImage: imageUrl }
+                        );
+                      }
+                      setIsLoading(false);
+                    }
+                  } catch (cameraError) {
+                    console.error("Lỗi khi chụp ảnh:", cameraError);
+                    Alert.alert(
+                      "Lỗi",
+                      "Không thể chụp ảnh. Vui lòng thử lại sau."
+                    );
+                  }
+                },
+              },
+            ]
+          );
+        }
+      } catch (fallbackError) {
+        console.error("Lỗi khi thử phương pháp thay thế:", fallbackError);
+      }
     }
   };
 
@@ -202,12 +251,16 @@ export default function ProfileAdminManage() {
       password: "",
       role: account.role,
       profileImage: account.profileImage || "",
+      phone_number: account.phone_number || "",
+      address: account.address || "",
     });
   };
 
   const renderAccountItem = ({ item }: { item: Account }) => (
     <View
-      className={`flex-row items-center p-4 rounded-lg mb-2 ${theme.listItem}`}
+      className={`flex-row items-center p-4 rounded-lg mb-2 ${
+        isDarkColorScheme ? "bg-black" : "bg-white"
+      }`}
       key={item.id}
     >
       <Image
@@ -215,11 +268,25 @@ export default function ProfileAdminManage() {
         className="w-12 h-12 rounded-full mr-3"
       />
       <View className="flex-1">
-        <Text className={`text-lg font-semibold ${theme.text}`}>
+        <Text
+          className={`text-lg font-semibold ${
+            isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+          }`}
+        >
           {item.displayName}
         </Text>
-        <Text className={`text-sm ${theme.text}`}>{item.email}</Text>
-        <Text className={`text-sm ${theme.text}`}>
+        <Text
+          className={`text-sm ${
+            isDarkColorScheme ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          {item.email}
+        </Text>
+        <Text
+          className={`text-sm ${
+            isDarkColorScheme ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
           Role: {item.role === 0 ? "Admin" : "User"}
         </Text>
       </View>
@@ -228,13 +295,21 @@ export default function ProfileAdminManage() {
           onPress={() => handleEdit(item)}
           className="bg-yellow-400 p-2 rounded"
         >
-          <Text className={`font-bold ${theme.text}`}>Sửa</Text>
+          <Text
+            className={`font-bold ${
+              isDarkColorScheme ? "text-gray-800" : "text-gray-800"
+            }`}
+          >
+            Sửa
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => handleDeleteAccount(item.id)}
-          className="bg-red-500 p-2 rounded"
+          className={`${
+            isDarkColorScheme ? "bg-red-700" : "bg-red-500"
+          } p-2 rounded`}
         >
-          <Text className={`font-bold ${theme.buttonText}`}>Xóa</Text>
+          <Text className="font-bold text-white">Xóa</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -242,32 +317,58 @@ export default function ProfileAdminManage() {
 
   if (!user) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text className={`${theme.text}`}>Đang tải...</Text>
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDarkColorScheme ? "bg-black" : "bg-white"
+        }`}
+      >
+        <Text
+          className={`${isDarkColorScheme ? "text-gray-100" : "text-gray-800"}`}
+        >
+          Đang tải...
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView className={`flex-1 ${theme.background}`}>
-      <View className="p-5">
-        <Text className={`text-2xl font-bold mb-5 ${theme.text}`}>
+    <ScrollView
+      className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
+    >
+      <View
+        className={`${isDarkColorScheme ? "bg-black" : "bg-orange-500"} p-5  `}
+      >
+        <Text className="text-2xl font-bold text-white mb-0">
           Quản Lý Tài Khoản
         </Text>
+      </View>
 
+      <View className="p-5">
         {editingAccount && (
-          <View className={`mb-5 p-4 rounded-lg ${theme.listItem}`}>
+          <View
+            className={`mb-5 p-4 rounded-lg ${
+              isDarkColorScheme ? "bg-black" : "bg-white"
+            }`}
+          >
             <TextInput
-              className={`border rounded-lg p-2 mb-2 ${theme.border} ${theme.text}`}
+              className={`border rounded-lg p-2 mb-2 ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              }`}
               value={newAccount.displayName}
               onChangeText={(text) =>
                 setNewAccount({ ...newAccount, displayName: text })
               }
               placeholder="Tên hiển thị"
-              placeholderTextColor={theme.placeholder}
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
             />
             <TextInput
-              className={`border rounded-lg p-2 mb-2 ${theme.border} ${theme.text}`}
+              className={`border rounded-lg p-2 mb-2 ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              }`}
               value={newAccount.email}
               onChangeText={(text) =>
                 setNewAccount({ ...newAccount, email: text })
@@ -275,21 +376,60 @@ export default function ProfileAdminManage() {
               placeholder="Email"
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholderTextColor={theme.placeholder}
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
             />
-            <View className="flex-row items-center mb-2">
-              <Text className={`text-lg font-semibold ${theme.text}`}>
+            <TextInput
+              className={`border rounded-lg p-2 mb-2 ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              }`}
+              value={newAccount.phone_number}
+              onChangeText={(text) =>
+                setNewAccount({ ...newAccount, phone_number: text })
+              }
+              placeholder="Số điện thoại"
+              keyboardType="phone-pad"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+            />
+            <TextInput
+              className={`border rounded-lg p-2 mb-2 ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              }`}
+              value={newAccount.address}
+              onChangeText={(text) =>
+                setNewAccount({ ...newAccount, address: text })
+              }
+              placeholder="Địa chỉ"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+            />
+            <View className="flex-row items-center  gap-2 mb-2">
+              <Text
+                className={`text-lg font-semibold ${
+                  isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+                }`}
+              >
                 Vai trò
               </Text>
               <TouchableOpacity
                 onPress={() => setNewAccount({ ...newAccount, role: 0 })}
                 className={`p-2 rounded-lg mr-2 ${
-                  newAccount.role === 0 ? theme.button : theme.border
+                  newAccount.role === 0
+                    ? "bg-orange-500"
+                    : isDarkColorScheme
+                    ? "bg-gray-700 border border-gray-600"
+                    : "bg-gray-200"
                 }`}
               >
                 <Text
                   className={`font-bold ${
-                    newAccount.role === 0 ? theme.buttonText : theme.text
+                    newAccount.role === 0
+                      ? "text-white"
+                      : isDarkColorScheme
+                      ? "text-gray-300"
+                      : "text-gray-700"
                   }`}
                 >
                   Admin
@@ -298,12 +438,20 @@ export default function ProfileAdminManage() {
               <TouchableOpacity
                 onPress={() => setNewAccount({ ...newAccount, role: 1 })}
                 className={`p-2 rounded-lg ${
-                  newAccount.role === 1 ? theme.button : theme.border
+                  newAccount.role === 1
+                    ? "bg-orange-500"
+                    : isDarkColorScheme
+                    ? "bg-gray-700 border border-gray-600"
+                    : "bg-gray-200"
                 }`}
               >
                 <Text
                   className={`font-bold ${
-                    newAccount.role === 1 ? theme.buttonText : theme.text
+                    newAccount.role === 1
+                      ? "text-white"
+                      : isDarkColorScheme
+                      ? "text-gray-300"
+                      : "text-gray-700"
                   }`}
                 >
                   User
@@ -312,24 +460,24 @@ export default function ProfileAdminManage() {
             </View>
             <TouchableOpacity
               onPress={pickImage}
-              className={`p-2 rounded-lg ${theme.button}`}
+              className="p-2 rounded-lg bg-orange-500"
             >
-              <Text className={`font-bold ${theme.buttonText}`}>
+              <Text className="font-bold text-white">
                 {newAccount.profileImage ? "Thay đổi ảnh" : "Chọn ảnh"}
               </Text>
             </TouchableOpacity>
             {newAccount.profileImage && (
               <Image
                 source={{ uri: newAccount.profileImage }}
-                className="w-24 h-24 rounded-lg mb-2"
+                className="w-24 h-24 rounded-lg my-2 self-center"
               />
             )}
             <Button
               onPress={() => handleUpdateAccount(editingAccount)}
               disabled={isLoading}
-              className={`mt-2 p-3 rounded-lg ${theme.button}`}
+              className="mt-2 p-3 rounded-lg bg-orange-500"
             >
-              <Text className={`font-bold ${theme.buttonText}`}>
+              <Text className="font-bold text-white">
                 {isLoading ? "Đang xử lý..." : "Cập nhật"}
               </Text>
             </Button>
@@ -342,11 +490,13 @@ export default function ProfileAdminManage() {
                   password: "",
                   role: 0,
                   profileImage: "",
+                  phone_number: "",
+                  address: "",
                 });
               }}
               className="mt-2 p-3 rounded-lg bg-red-500"
             >
-              <Text className={`font-bold ${theme.buttonText}`}>Hủy</Text>
+              <Text className="font-bold text-center text-white">Hủy</Text>
             </TouchableOpacity>
           </View>
         )}

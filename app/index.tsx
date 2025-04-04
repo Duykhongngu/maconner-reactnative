@@ -47,6 +47,8 @@ export default function Login() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [name, setName] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [emailForReset, setEmailForReset] = useState<string>("");
   const [isResettingPassword, setIsResettingPassword] =
@@ -90,6 +92,8 @@ export default function Login() {
       await setDoc(doc(db, "accounts", user.uid), {
         email: email,
         displayName: name,
+        phone_number: phoneNumber,
+        address: address,
         role: 1, // Vai trò mặc định là user
         createdAt: new Date().toISOString(),
       });
@@ -99,6 +103,8 @@ export default function Login() {
       setEmail("");
       setPassword("");
       setName("");
+      setPhoneNumber("");
+      setAddress("");
     } catch (error: any) {
       Alert.alert("Đăng ký thất bại", error.message);
       console.log("Error details:", error);
@@ -155,14 +161,31 @@ export default function Login() {
         </Text>
 
         {isRegistering && (
-          <TextInput
-            className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-            placeholder="Tên hiển thị (Display Name)"
-            placeholderTextColor="gray"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+          <>
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Tên hiển thị (Display Name)"
+              placeholderTextColor="gray"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Số điện thoại"
+              placeholderTextColor="gray"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Địa chỉ"
+              placeholderTextColor="gray"
+              value={address}
+              onChangeText={setAddress}
+            />
+          </>
         )}
 
         <TextInput

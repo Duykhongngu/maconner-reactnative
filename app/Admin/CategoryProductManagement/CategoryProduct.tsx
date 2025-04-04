@@ -11,6 +11,7 @@ import {
   Alert,
   SafeAreaView,
   ScrollView,
+  Switch,
 } from "react-native";
 import {
   fetchCategories,
@@ -18,6 +19,8 @@ import {
   updateCategory,
   deleteCategory,
 } from "~/service/categoryProduct";
+import { Moon, Sun } from "lucide-react-native";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 interface Category {
   id: string;
@@ -34,6 +37,9 @@ const CategoryProductScreen = () => {
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Use NativeWind color scheme
+  const { isDarkColorScheme, toggleColorScheme } = useColorScheme();
 
   useEffect(() => {
     fetchCategoriesData();
@@ -140,10 +146,24 @@ const CategoryProductScreen = () => {
   };
 
   const renderCategory = ({ item }: { item: Category }) => (
-    <View className="p-3 border-b border-orange-200 flex-row justify-between items-center">
+    <View
+      className={`p-3 border-b ${
+        isDarkColorScheme ? "border-amber-800" : "border-orange-200"
+      } flex-row justify-between items-center`}
+    >
       <View className="flex-1 pr-2">
-        <Text className="text-lg font-medium text-gray-800">{item.name}</Text>
-        <Text className="text-gray-600">{item.description}</Text>
+        <Text
+          className={`text-lg font-medium ${
+            isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+          }`}
+        >
+          {item.name}
+        </Text>
+        <Text
+          className={`${isDarkColorScheme ? "text-gray-300" : "text-gray-600"}`}
+        >
+          {item.description}
+        </Text>
       </View>
       <View className="flex flex-row">
         <TouchableOpacity
@@ -154,7 +174,9 @@ const CategoryProductScreen = () => {
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => handleDeleteCategory(item.id)}
-          className="bg-red-500 py-1.5 px-3 rounded"
+          className={`${
+            isDarkColorScheme ? "bg-red-700" : "bg-red-500"
+          } py-1.5 px-3 rounded`}
         >
           <Text className="text-white font-medium">Delete</Text>
         </TouchableOpacity>
@@ -163,38 +185,68 @@ const CategoryProductScreen = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-orange-50">
-      <View className="bg-orange-500 py-4 px-5 shadow">
-        <Text className="text-2xl font-bold text-white text-center">
-          Category Management
-        </Text>
+    <SafeAreaView
+      className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-orange-50"}`}
+    >
+      <View
+        className={`${
+          isDarkColorScheme ? "bg-b" : "bg-orange-500"
+        } py-4 px-5 shadow`}
+      >
+        <View className="flex-row justify-between items-center">
+          <Text className="text-2xl font-bold text-white mb-0">
+            Category Management
+          </Text>
+        </View>
       </View>
 
       <ScrollView className="flex-1">
         <View className="p-4">
-          <View className="bg-white rounded-lg p-4 mb-5 shadow">
-            <Text className="text-lg font-medium mb-1 text-gray-800">
+          <View
+            className={`${
+              isDarkColorScheme ? "bg-black" : "bg-white"
+            } rounded-lg p-4 mb-5 shadow`}
+          >
+            <Text
+              className={`text-lg font-medium mb-1 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
               Category Name:
             </Text>
             <TextInput
               placeholder="Enter category name"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
               value={newCategory.name}
               onChangeText={(text) =>
                 setNewCategory({ ...newCategory, name: text })
               }
-              className="border border-orange-200 p-3 rounded-md mb-4 text-base"
+              className={`border ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              } p-3 rounded-md mb-4 text-base`}
             />
 
-            <Text className="text-lg font-medium mb-1 text-gray-800">
+            <Text
+              className={`text-lg font-medium mb-1 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
               Category Description:
             </Text>
             <TextInput
               placeholder="Enter category description"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
               value={newCategory.description}
               onChangeText={(text) =>
                 setNewCategory({ ...newCategory, description: text })
               }
-              className="border border-orange-200 p-3 rounded-md mb-4 text-base min-h-[80px]"
+              className={`border ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              } p-3 rounded-md mb-4 text-base min-h-[80px]`}
               multiline={true}
               numberOfLines={3}
             />
@@ -215,9 +267,15 @@ const CategoryProductScreen = () => {
             {editingCategory && (
               <TouchableOpacity
                 onPress={resetForm}
-                className="py-3 px-4 rounded-md bg-gray-200"
+                className={`py-3 px-4 rounded-md ${
+                  isDarkColorScheme ? "bg-gray-600" : "bg-gray-200"
+                }`}
               >
-                <Text className="text-gray-700 text-center font-medium text-lg">
+                <Text
+                  className={`${
+                    isDarkColorScheme ? "text-gray-200" : "text-gray-700"
+                  } text-center font-medium text-lg`}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -230,13 +288,25 @@ const CategoryProductScreen = () => {
             </View>
           )}
 
-          <View className="bg-white rounded-lg p-4 mb-5 shadow">
-            <Text className="text-xl font-bold mb-3 text-gray-800">
+          <View
+            className={`${
+              isDarkColorScheme ? "bg-black" : "bg-white"
+            } rounded-lg p-4 mb-5 shadow`}
+          >
+            <Text
+              className={`text-xl font-bold mb-3 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
               All Categories:
             </Text>
 
             {categories.length === 0 && !loading ? (
-              <Text className="text-center py-5 text-gray-500 italic">
+              <Text
+                className={`text-center py-5 ${
+                  isDarkColorScheme ? "text-gray-400" : "text-gray-500"
+                } italic`}
+              >
                 No categories found. Add one to get started.
               </Text>
             ) : (

@@ -10,10 +10,18 @@ import {
   Image,
   ScrollView,
   SafeAreaView,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "~/firebase.config";
-import { signOut, updateProfile, updatePassword, User } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  signOut,
+  updatePassword,
+  updateProfile,
+  User,
+} from "firebase/auth";
 import { TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "~/components/ui/button";
@@ -46,9 +54,14 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isModalVisible, setModalVisible] = useState<boolean>(false);
+  const [oldPassword, setOldPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const router = useRouter();
   const { isDarkColorScheme } = useColorScheme();
 
@@ -85,6 +98,8 @@ export default function Profile() {
         const userData = userDoc.data();
         setDisplayName(userData.displayName || "");
         setProfileImage(userData.profileImage || null);
+        setPhoneNumber(userData.phone_number || "");
+        setAddress(userData.address || "");
       } else {
         // Nếu không có dữ liệu trong Firestore, tạo mới
         await saveUserToFirestore(uid);
@@ -103,6 +118,8 @@ export default function Profile() {
         displayName: user.displayName || "",
         email: user.email || "",
         profileImage: user.photoURL || null,
+        phone_number: phoneNumber,
+        address: address,
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
@@ -112,17 +129,9 @@ export default function Profile() {
   };
 
   const pickImage = async () => {
-    if (!user) {
-      Alert.alert("Lỗi", "Vui lòng đăng nhập để cập nhật ảnh.");
-      return;
-    }
-
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Quyền bị từ chối",
-        "Cần quyền truy cập thư viện ảnh. Vui lòng cấp quyền trong cài đặt."
-      );
+      Alert.alert("Quyền bị từ chối", "Cần quyền truy cập thư viện ảnh.");
       return;
     }
 
@@ -135,18 +144,33 @@ export default function Profile() {
       });
 
       if (!result.canceled && result.assets[0]?.uri) {
-        setProfileImage(result.assets[0].uri);
-        await uploadProfileImageToCloudinary(result.assets[0].uri);
+        setIsLoading(true);
+        try {
+          const imageUrl = await uploadImageToCloudinary(result.assets[0].uri);
+          setProfileImage(imageUrl);
+
+          if (user) {
+            await updateProfile(user, { photoURL: imageUrl });
+            await updateDoc(doc(db, "accounts", user.uid), {
+              profileImage: imageUrl,
+            });
+          } else {
+            Alert.alert("Lỗi", "Người dùng không hợp lệ.");
+          }
+        } catch (error) {
+          console.error("Lỗi khi upload ảnh:", error);
+          Alert.alert("Lỗi", "Không thể upload ảnh. Vui lòng thử lại.");
+        } finally {
+          setIsLoading(false);
+        }
       }
     } catch (error) {
-      console.log("Error picking image:", error);
+      console.error("Lỗi khi chọn ảnh:", error);
       Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
     }
   };
 
-  const uploadProfileImageToCloudinary = async (
-    uri: string
-  ): Promise<string> => {
+  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
     if (!user) {
       throw new Error("No user authenticated");
     }
@@ -160,7 +184,6 @@ export default function Profile() {
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
     try {
-      setIsLoading(true);
       const response = await axios.post(CLOUDINARY_URL, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -182,8 +205,6 @@ export default function Profile() {
         "Failed to upload image to Cloudinary: " +
           (error instanceof Error ? error.message : String(error))
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -195,8 +216,10 @@ export default function Profile() {
       await updateProfile(user, { displayName });
       await updateDoc(doc(db, "accounts", user.uid), {
         displayName: displayName,
-        email: user.email, // Giữ email không đổi
+        email: user.email,
         profileImage: profileImage || user.photoURL || null,
+        phone_number: phoneNumber,
+        address: address,
       });
 
       Alert.alert("Thành công", "Hồ sơ đã được cập nhật!");
@@ -209,19 +232,32 @@ export default function Profile() {
     }
   };
 
-  const updateUserPassword = async () => {
-    if (!user || !newPassword) return;
+  const handleChangePassword = async () => {
+    if (!user) return;
 
-    setIsLoading(true);
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Lỗi", "Mật khẩu mới và xác nhận mật khẩu không khớp.");
+      return;
+    }
+
     try {
+      // Xác thực mật khẩu cũ
+      const credential = EmailAuthProvider.credential(
+        user.email || "",
+        oldPassword
+      );
+      await reauthenticateWithCredential(user, credential);
+
+      // Cập nhật mật khẩu mới
       await updatePassword(user, newPassword);
       Alert.alert("Thành công", "Mật khẩu đã được cập nhật!");
+      setModalVisible(false);
+      setOldPassword("");
       setNewPassword("");
+      setConfirmPassword("");
     } catch (error: any) {
-      console.log("Error updating password:", error);
-      Alert.alert("Lỗi", `Cập nhật mật khẩu thất bại: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+      console.log("Error changing password:", error);
+      Alert.alert("Lỗi", `Không thể đổi mật khẩu: ${error.message}`);
     }
   };
 
@@ -275,7 +311,7 @@ export default function Profile() {
               { borderColor: theme.border, color: theme.text },
             ]}
             value={email}
-            editable={false} // Vô hiệu hóa chỉnh sửa
+            editable={false}
             keyboardType="email-address"
             autoCapitalize="none"
             placeholder="Nhập email"
@@ -285,17 +321,30 @@ export default function Profile() {
 
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: theme.text }]}>
-            Mật khẩu mới
+            Số điện thoại
           </Text>
           <TextInput
             style={[
               styles.input,
               { borderColor: theme.border, color: theme.text },
             ]}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-            placeholder="Nhập mật khẩu mới"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="Nhập số điện thoại"
+            placeholderTextColor={theme.placeholder}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text }]}>Địa chỉ</Text>
+          <TextInput
+            style={[
+              styles.input,
+              { borderColor: theme.border, color: theme.text },
+            ]}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Nhập địa chỉ"
             placeholderTextColor={theme.placeholder}
           />
         </View>
@@ -311,12 +360,11 @@ export default function Profile() {
         </Button>
 
         <Button
-          onPress={updateUserPassword}
-          disabled={isLoading || !newPassword}
+          onPress={() => setModalVisible(true)}
           style={[styles.button, { backgroundColor: theme.button }]}
         >
           <Text style={[styles.buttonText, { color: theme.buttonText }]}>
-            {isLoading ? "Đang cập nhật..." : "Đổi mật khẩu"}
+            Đổi mật khẩu
           </Text>
         </Button>
 
@@ -328,6 +376,56 @@ export default function Profile() {
             Đăng xuất
           </Text>
         </Button>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isModalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Đổi Mật Khẩu</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Mật khẩu cũ"
+                secureTextEntry
+                value={oldPassword}
+                onChangeText={setOldPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Mật khẩu mới"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Xác nhận mật khẩu mới"
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <Button
+                onPress={handleChangePassword}
+                style={[styles.button, { backgroundColor: theme.button }]}
+              >
+                <Text style={[styles.buttonText, { color: theme.buttonText }]}>
+                  Xác nhận
+                </Text>
+              </Button>
+              <Button
+                onPress={() => setModalVisible(false)}
+                style={[styles.button, { backgroundColor: "#FF4444" }]}
+              >
+                <Text style={[styles.buttonText, { color: theme.buttonText }]}>
+                  Hủy
+                </Text>
+              </Button>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -380,5 +478,31 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    width: "100%",
+    marginBottom: 15,
   },
 });

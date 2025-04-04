@@ -15,16 +15,15 @@ export interface CartItem {
   price: number;
   quantity: number;
   color: string;
-  size: string;
+
   image: string;
 }
 
 export interface Order {
   id: string;
-  date: string; // Thuộc tính bắt buộc
+  date: string;
   cartItems: CartItem[];
   total: number;
-
   userId?: string;
   name?: string;
   email?: string;

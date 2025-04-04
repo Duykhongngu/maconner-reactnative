@@ -10,22 +10,10 @@ import {
 import { Search, TrendingUp } from "lucide-react-native";
 import { Button } from "../../components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme"; // Import useColorScheme
+import { fetchProducts } from "~/service/products"; // Import fetchProducts
+import { useRouter } from "expo-router"; // Import useRouter để điều hướng
 
-// Mock search results data
-interface SearchResult {
-  id: number;
-  title: string;
-  category: string;
-}
-
-const mockResults: SearchResult[] = [
-  { id: 1, title: "Valentine's Day Special Gift Box", category: "Gifts" },
-  { id: 2, title: "Heart Shaped Pendant Necklace", category: "Jewelry" },
-  { id: 3, title: "Romantic Dinner Set for Two", category: "Kitchen" },
-  { id: 4, title: "Love Letter Writing Kit", category: "Stationery" },
-  { id: 5, title: "Couple's Matching Watches", category: "Accessories" },
-];
-
+// Mock trending searches data
 const trendingSearches = [
   "valentines gift for him",
   "a boy and his dog",
@@ -34,24 +22,46 @@ const trendingSearches = [
   "bottle lamp",
 ];
 
+// Định nghĩa kiểu cho sản phẩm
+interface Product {
+  id: string;
+  category: string;
+  inStock: boolean;
+  link: string;
+  name: string;
+  price: number;
+  description: string; // Đảm bảo trường này có mặt
+}
+
 export default function SearchBar() {
-  const [value, setValue] = React.useState("");
-  const [results, setResults] = React.useState<SearchResult[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const router = useRouter(); // Sử dụng hook useRouter
+  const [value, setValue] = React.useState<string>("");
+  const [results, setResults] = React.useState<Product[]>([]); // Chỉ định kiểu cho results
+  const [loading, setLoading] = React.useState<boolean>(false);
   const inputRef = React.useRef<TextInput>(null);
   const { isDarkColorScheme } = useColorScheme(); // Get the current color scheme
 
   // Simulated search function
-  const handleSearch = React.useCallback((query: string) => {
+  const handleSearch = React.useCallback(async (query: string) => {
     setLoading(true);
-    setTimeout(() => {
-      const filtered = mockResults.filter((result) =>
-        result.title.toLowerCase().includes(query.toLowerCase())
+    try {
+      const products = await fetchProducts(); // Fetch products from API
+      const filtered = products.filter((product) =>
+        product.name.toLowerCase().includes(query.toLowerCase())
       );
       setResults(filtered);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setResults([]); // Reset results on error
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   }, []);
+
+  // Hàm xử lý khi người dùng nhấn vào sản phẩm
+  const handleProductPress = (productId: string) => {
+    router.push(`/user/Products/${productId}`);
+  };
 
   React.useEffect(() => {
     if (value.length > 0) {
@@ -90,14 +100,20 @@ export default function SearchBar() {
         </View>
         {value.length > 0 && (
           <View
-            className="absolute top-12 left-0 right-0"
+            className="absolute top-12 left-0 right-0 z-50"
             style={{
               backgroundColor: isDarkColorScheme ? "#444" : "#fff", // Change background color for results
+              borderRadius: 8,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 3,
             }}
           >
             {loading ? (
               <Text className="text-center w-full h-full text-sm text-gray-500 p-4">
-                Searching...
+                Đang tìm kiếm...
               </Text>
             ) : results.length > 0 ? (
               <FlatList
@@ -105,12 +121,9 @@ export default function SearchBar() {
                 data={results}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <Button
-                    className="py-3 px-4"
-                    onPress={() => {
-                      setValue(item.title);
-                      inputRef.current?.focus();
-                    }}
+                  <TouchableOpacity
+                    className="py-3 px-4 border-b border-gray-200"
+                    onPress={() => handleProductPress(item.id)}
                     style={{
                       backgroundColor: isDarkColorScheme ? "#555" : "#fff", // Change background color for each item
                     }}
@@ -119,22 +132,27 @@ export default function SearchBar() {
                       className="text-base font-medium"
                       style={{ color: isDarkColorScheme ? "#fff" : "#000" }} // Change text color
                     >
-                      {item.title}
+                      {item.name}
                     </Text>
                     <Text
-                      className="text-xs"
+                      className="text-xs mt-1"
                       style={{
                         color: isDarkColorScheme ? "lightgray" : "gray",
                       }} // Change category text color
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
                     >
-                      {item.category}
+                      {item.description || "Không có mô tả"}
                     </Text>
-                  </Button>
+                    <Text className="text-xs mt-1 text-orange-500 font-bold">
+                      ${item.price?.toFixed(2) || "0.00"} USD
+                    </Text>
+                  </TouchableOpacity>
                 )}
               />
             ) : (
               <Text className="w-full h-full text-center text-sm text-gray-500 p-4">
-                No results found
+                Không tìm thấy kết quả
               </Text>
             )}
             <View className="p-4">
@@ -142,7 +160,7 @@ export default function SearchBar() {
                 className="text-sm font-bold mb-2"
                 style={{ color: isDarkColorScheme ? "orange" : "orange" }} // Change trending searches title color
               >
-                TRENDING SEARCHES
+                TÌM KIẾM PHỔ BIẾN
               </Text>
               {trendingSearches.map((search, index) => (
                 <Button

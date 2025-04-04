@@ -9,6 +9,8 @@ export type Account = {
   email: string;
   role: number;
   profileImage?: string;
+  phone_number?: string;
+  address?: string;
 };
 
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
@@ -24,6 +26,8 @@ export const fetchAccounts = async (callback: (accounts: Account[]) => void, onE
         email: doc.data().email || "",
         profileImage: doc.data().profileImage || "",
         role: doc.data().role || 0,
+        phone_number: doc.data().phone_number || "",
+        address: doc.data().address || "",
         createdAt: doc.data().createdAt || "",
       }));
       callback(accountsData);
@@ -54,6 +58,8 @@ export const updateAccount = async (accountId: string, accountData: {
   email: string;
   profileImage: string | null;
   role: number;
+  phone_number?: string;
+  address?: string;
 }) => {
   const docRef = doc(db, "accounts", accountId);
   await updateDoc(docRef, accountData);

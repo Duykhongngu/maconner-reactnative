@@ -18,7 +18,7 @@ import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
 import { useOrder } from "../user/Checkout/OrderContext";
 import { auth, db } from "../../firebase.config";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
 import { doc, getDoc } from "firebase/firestore";
 import { logout } from "~/service/api/auth";
@@ -77,7 +77,7 @@ function AdminHeader() {
       await logout();
       setUser(null);
       setTimeout(() => {
-        router.replace("/");
+        router.push("/");
       }, 100);
     } catch (error: any) {
       Alert.alert("Lỗi đăng xuất", error.message);
@@ -85,101 +85,106 @@ function AdminHeader() {
   };
 
   return (
-    <View className="flex-row items-center justify-between h-14 w-full">
-      <View className="items-start -ml-2.5">
-        <TouchableOpacity onPress={() => setMenuVisible(true)} className="p-2">
-          <MenuIcon size={26} color={iconColor} />
-        </TouchableOpacity>
-      </View>
-
-      <View className="flex-1 items-center justify-center flex-row">
-        <TouchableOpacity onPress={() => router.push("/admin/home")}>
-          <Logo width={160} height={30} />
-        </TouchableOpacity>
-      </View>
-
-      <View className="ml-5 items-center">
-        <TouchableOpacity
-          onPress={() => setProfileMenuVisible(true)}
-          className="p-2"
-        >
-          <Image
-            source={{
-              uri: userProfile?.photoURL,
-            }}
-            className="w-9 h-9 rounded-full bg-gray-200"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Profile Menu Modal */}
-      <Modal
-        visible={profileMenuVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setProfileMenuVisible(false)}
-      >
-        <TouchableOpacity
-          className="flex-1 bg-black/50 justify-start items-end"
-          activeOpacity={1}
-          onPress={() => setProfileMenuVisible(false)}
-        >
-          <View
-            className={`bg-white dark:bg-[#1c1c1c] rounded-lg p-2 mt-[60px] mr-4 w-[150px] shadow-lg`}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setProfileMenuVisible(false);
-                router.push("/admin/AccountsManage/Accounts");
-              }}
-            >
-              <Text className="text-base font-medium py-2 dark:text-white">
-                {userProfile?.displayName || user?.displayName || "Admin"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleLogout}>
-              <Text className="text-base font-medium py-2 dark:text-white">
-                Đăng xuất
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Menu Modal */}
-      <Modal visible={menuVisible} transparent animationType="slide">
-        <View className={`flex-1 bg-white dark:bg-[#1c1c1c] mr-2.5`}>
+    <SafeAreaView className="flex-1">
+      <View className="flex-row items-center justify-between h-14 w-full">
+        <View className="items-start -ml-2.5">
           <TouchableOpacity
-            className="flex-row items-center p-4"
-            onPress={() => setMenuVisible(false)}
+            onPress={() => setMenuVisible(true)}
+            className="p-2"
           >
-            <ChevronLeft size={24} color={iconColor} />
-            <Text className="text-lg font-semibold ml-2 dark:text-white">
-              Back
-            </Text>
+            <MenuIcon size={26} color={iconColor} />
           </TouchableOpacity>
         </View>
-      </Modal>
 
-      {/* Search Modal */}
-      <Modal visible={isSearchOpen} transparent={true} animationType="slide">
-        <View className={`flex-1 bg-white dark:bg-[#1c1c1c]`}>
-          <View className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <Button
-              variant="ghost"
-              onPress={() => setIsSearchOpen(false)}
-              className="flex-row items-center"
-            >
-              <ChevronLeft size={26} color={iconColor} />
-              <Text className="dark:text-white">Cancel</Text>
-            </Button>
-          </View>
-          <View className="flex-1 p-4">
-            <SearchBar />
-          </View>
+        <View className="flex-1 items-center justify-center flex-row">
+          <TouchableOpacity onPress={() => router.push("/admin/home")}>
+            <Logo width={160} height={30} />
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </View>
+
+        <View className="ml-5 items-center">
+          <TouchableOpacity
+            onPress={() => setProfileMenuVisible(true)}
+            className="p-2"
+          >
+            <Image
+              source={{
+                uri: userProfile?.photoURL,
+              }}
+              className="w-9 h-9 rounded-full bg-gray-200"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Profile Menu Modal */}
+        <Modal
+          visible={profileMenuVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setProfileMenuVisible(false)}
+        >
+          <TouchableOpacity
+            className="flex-1 bg-black/50 justify-start items-end"
+            activeOpacity={1}
+            onPress={() => setProfileMenuVisible(false)}
+          >
+            <View
+              className={`bg-white dark:bg-[#1c1c1c] rounded-lg p-2 mt-[60px] mr-4 w-[150px] shadow-lg`}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setProfileMenuVisible(false);
+                  router.push("/admin/AccountsManage/Accounts");
+                }}
+              >
+                <Text className="text-base font-medium py-2 dark:text-white">
+                  {userProfile?.displayName || user?.displayName || "Admin"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogout}>
+                <Text className="text-base font-medium py-2 dark:text-white">
+                  Đăng xuất
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Menu Modal */}
+        <Modal visible={menuVisible} transparent animationType="slide">
+          <View className={`flex-1 bg-white dark:bg-[#1c1c1c] mr-2.5`}>
+            <TouchableOpacity
+              className="flex-row items-center p-4"
+              onPress={() => setMenuVisible(false)}
+            >
+              <ChevronLeft size={24} color={iconColor} />
+              <Text className="text-lg font-semibold ml-2 dark:text-white">
+                Back
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+
+        {/* Search Modal */}
+        <Modal visible={isSearchOpen} transparent={true} animationType="slide">
+          <View className={`flex-1 bg-white dark:bg-[#1c1c1c]`}>
+            <View className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <Button
+                variant="ghost"
+                onPress={() => setIsSearchOpen(false)}
+                className="flex-row items-center"
+              >
+                <ChevronLeft size={26} color={iconColor} />
+                <Text className="dark:text-white">Cancel</Text>
+              </Button>
+            </View>
+            <View className="flex-1 p-4">
+              <SearchBar />
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 

@@ -22,7 +22,7 @@ interface Product {
   link: string;
   name: string;
   price: number;
-  size: string;
+  description: string;
 }
 
 function Trending() {
@@ -48,12 +48,12 @@ function Trending() {
           link: doc.data().link || "",
           name: doc.data().name || "",
           price: Number(doc.data().price) || 0,
-          size: doc.data().size || "xs",
+          description: doc.data().description || "",
         })) as Product[];
 
         // Lọc các sản phẩm thuộc danh mục "valentine"
-        const valentineProducts = allProducts.filter(
-          (product) => product.category.toLowerCase() === "valentine"
+        const valentineProducts = allProducts.filter((product) =>
+          product.category.toLowerCase().includes("")
         );
         setTrendingProducts(valentineProducts);
       } catch (error) {
@@ -90,6 +90,9 @@ function Trending() {
                 />
                 <Text style={[styles.productDescription, { color: textColor }]}>
                   {item.name}
+                </Text>
+                <Text style={[styles.productDescription, { color: textColor }]}>
+                  {item.description}
                 </Text>
                 <Text style={styles.productPrice}>$ {item.price} USD</Text>
               </TouchableOpacity>
@@ -147,10 +150,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   productDescription: {
-    marginTop: 8,
     fontSize: 16,
     fontWeight: "600",
-    height: 60,
   },
   productPrice: {
     fontSize: 18,

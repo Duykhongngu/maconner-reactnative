@@ -8,13 +8,14 @@ import {
   Alert,
   RefreshControl,
   SafeAreaView,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { Button } from "~/components/ui/button";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "~/firebase.config";
-import { Picker } from "@react-native-picker/picker";
 import { Search } from "lucide-react-native";
 
 interface Order {
@@ -28,9 +29,23 @@ interface Order {
   userId?: string;
 }
 
+const colors = [
+  { name: "Red" },
+  { name: "Green" },
+  { name: "Blue" },
+  { name: "Yellow" },
+  { name: "Black" },
+  { name: "White" },
+  { name: "Pink" },
+  { name: "Purple" },
+  { name: "Orange" },
+  { name: "Brown" },
+  { name: "Gray" },
+];
+
 const OrderManager: React.FC = () => {
   const router = useRouter();
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, isDarkColorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -39,6 +54,8 @@ const OrderManager: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   // Improved date formatting
   const formatDate = useCallback((dateString: string) => {
@@ -150,18 +167,23 @@ const OrderManager: React.FC = () => {
     }, 1000);
   }, []);
 
+  // Hàm để hiển thị modal
+  const toggleModal = () => {
+    setModalVisible(!modalVisible);
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1">
         <View
           className={`flex-1 p-4 ${
-            isDarkMode ? "bg-[#121212]" : "bg-[#f8f9fa]"
+            isDarkColorScheme ? "bg-black" : "bg-white"
           }`}
         >
           <Text
             className={`text-2xl font-bold text-center ${
-              isDarkMode ? "text-white" : "text-black"
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
             }`}
           >
             Loading...
@@ -177,12 +199,12 @@ const OrderManager: React.FC = () => {
       <SafeAreaView className="flex-1">
         <View
           className={`flex-1 p-4 ${
-            isDarkMode ? "bg-[#121212]" : "bg-[#f8f9fa]"
+            isDarkColorScheme ? "bg-black" : "bg-white"
           }`}
         >
           <Text
             className={`text-2xl font-bold text-center ${
-              isDarkMode ? "text-white" : "text-black"
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
             }`}
           >
             {error}
@@ -198,11 +220,11 @@ const OrderManager: React.FC = () => {
   return (
     <SafeAreaView className="flex-1">
       <View
-        className={`flex-1 p-4 ${isDarkMode ? "bg-[#121212]" : "bg-[#f8f9fa]"}`}
+        className={`flex-1 p-4 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
       >
         <Text
           className={`text-2xl font-bold text-center ${
-            isDarkMode ? "text-white" : "text-black"
+            isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
           Order Management
@@ -211,14 +233,16 @@ const OrderManager: React.FC = () => {
         {/* Search and Filter Section */}
         <View className="mb-4">
           <View className="flex-row items-center mb-2 border rounded border-gray-300">
-            <Search
-              size={20}
-              color={isDarkMode ? "#ffffff" : "#000000"}
-              className="mx-2"
-            />
+            <View className="bg-white dark:bg-black">
+              <Search
+                size={20}
+                color={isDarkMode ? "#ffffff" : "#000000"}
+                className="mx-2"
+              />
+            </View>
             <TextInput
-              className={`flex-1 p-2 text-base ${
-                isDarkMode ? "bg-[#333333] text-white" : "bg-white text-black"
+              className={`flex-1 p-2 text-l ${
+                isDarkMode ? "bg-black text-white" : "bg-white text-black"
               }`}
               placeholder="Search orders..."
               placeholderTextColor={isDarkMode ? "#888" : "#666"}
@@ -227,20 +251,69 @@ const OrderManager: React.FC = () => {
             />
           </View>
 
-          <View className="border rounded overflow-hidden">
-            <Picker
-              selectedValue={statusFilter}
-              onValueChange={(itemValue) => setStatusFilter(itemValue)}
+          <View className="mb-4">
+            <TouchableOpacity
+              onPress={toggleModal}
               className={`h-12 ${
                 isDarkMode ? "bg-[#333333] text-white" : "bg-white text-black"
-              }`}
-              dropdownIconColor={isDarkMode ? "#ffffff" : "#000000"}
+              } border rounded flex-row items-center justify-between p-2`}
             >
-              <Picker.Item label="All Orders" value="all" />
-              <Picker.Item label="Pending" value="pending" />
-              <Picker.Item label="Completed" value="completed" />
-              <Picker.Item label="Cancelled" value="cancelled" />
-            </Picker>
+              <Text className="text-lg font-bold text-black dark:text-white">
+                {statusFilter === "all"
+                  ? "All Orders"
+                  : statusFilter.charAt(0).toUpperCase() +
+                    statusFilter.slice(1)}
+              </Text>
+            </TouchableOpacity>
+
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={toggleModal}
+            >
+              <View style={styles.modalView}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setStatusFilter("all");
+                    toggleModal();
+                  }}
+                  className="p-2"
+                >
+                  <Text>All Orders</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setStatusFilter("pending");
+                    toggleModal();
+                  }}
+                  className="p-2"
+                >
+                  <Text>Pending</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setStatusFilter("completed");
+                    toggleModal();
+                  }}
+                  className="p-2"
+                >
+                  <Text>Completed</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setStatusFilter("cancelled");
+                    toggleModal();
+                  }}
+                  className="p-2"
+                >
+                  <Text>Cancelled</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={toggleModal} className="p-2">
+                  <Text>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </Modal>
           </View>
         </View>
 
@@ -258,9 +331,6 @@ const OrderManager: React.FC = () => {
                   ? "bg-[#1E1E1E] border-gray-600"
                   : "bg-white border-gray-300"
               }`}
-              onPress={() =>
-                router.push(`/user/Checkout/OrderDetails?id=${order.id}` as any)
-              }
             >
               <View className="flex-row justify-between items-center mb-2">
                 <Text
@@ -321,6 +391,23 @@ const OrderManager: React.FC = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        <View className="mt-4">
+          <Text style={styles.title}>Color</Text>
+          <View style={styles.colorContainer}>
+            {colors.map((color) => (
+              <TouchableOpacity
+                key={color.name}
+                onPress={() => setSelectedColor(color.name)}
+              />
+            ))}
+          </View>
+          {selectedColor && (
+            <Text style={styles.selectedColorText}>
+              Selected Color: {selectedColor}
+            </Text>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -338,5 +425,47 @@ const getStatusColor = (status: string) => {
       return "#6b7280";
   }
 };
+
+const styles = StyleSheet.create({
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  colorContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  colorBox: {
+    width: 50,
+    height: 50,
+    margin: 5,
+    borderRadius: 5,
+  },
+  selectedColorText: {
+    marginTop: 20,
+    fontSize: 18,
+  },
+});
 
 export default React.memo(OrderManager);

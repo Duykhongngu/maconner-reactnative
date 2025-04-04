@@ -18,7 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { useCart } from "../Cart/CartContext";
-import { useOrder } from "./OrderContext";
+import { CartItem, useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
@@ -124,7 +124,7 @@ const CheckoutScreen: React.FC = () => {
         cartItems,
         subtotal: subtotal.toFixed(2),
         shippingFee: shippingFee.toFixed(2),
-        total, // Giữ total dưới dạng number để khớp với Order type
+        total,
         date: new Date().toISOString(),
         status: "pending" as const,
       };
@@ -352,7 +352,7 @@ const CheckoutScreen: React.FC = () => {
         <CardContent>
           {cartItems.map((item) => (
             <View
-              key={`${item.id}-${item.color}-${item.size}`}
+              key={`${item.id}-${item.color}`}
               className="flex-row items-center mb-4"
             >
               <Image
@@ -375,9 +375,7 @@ const CheckoutScreen: React.FC = () => {
                 >
                   {item.name}
                 </Text>
-                <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-                  Màu: {item.color}, Kích thước: {item.size}
-                </Text>
+
                 <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                   Số lượng: {item.quantity}
                 </Text>

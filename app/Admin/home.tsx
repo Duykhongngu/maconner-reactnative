@@ -71,28 +71,7 @@ function HomeAdmin() {
   };
 
   return (
-    <SafeAreaView
-      style={[
-        styles.containerSafe,
-        isDarkMode ? styles.darkBackground : styles.lightBackground,
-      ]}
-    >
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={isDarkMode ? "#1a1a1a" : "#fff9f4"}
-      />
-
-      <View style={styles.header}>
-        <Text
-          style={[
-            styles.headerText,
-            isDarkMode ? styles.darkHeaderText : styles.lightHeaderText,
-          ]}
-        >
-          Admin Dashboard
-        </Text>
-      </View>
-
+    <SafeAreaView className="flex-1 mt-2 ">
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           {menuItems.map((item, index) => (
@@ -132,9 +111,7 @@ function HomeAdmin() {
 
 const styles = StyleSheet.create({
   // Base containers
-  containerSafe: {
-    flex: 1,
-  },
+
   container: {
     flex: 1,
     flexDirection: "row",
@@ -149,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff9f4",
   },
   darkBackground: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#000000",
   },
 
   // Header

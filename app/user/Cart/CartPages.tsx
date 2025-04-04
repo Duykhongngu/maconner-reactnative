@@ -57,7 +57,7 @@ const CartPages: React.FC = () => {
       <ScrollView>
         {cartItems.map((item) => (
           <Card
-            key={`${item.id}-${item.color}-${item.size}`}
+            key={`${item.id}-${item.color}`}
             style={[
               styles.cartItemCard,
               { backgroundColor: bgColor, borderColor },
@@ -79,10 +79,7 @@ const CartPages: React.FC = () => {
                 ${item.price.toFixed(2)} USD
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Color: {item.color || "Not specified"}
-              </Text>
-              <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Size: {item.size}
+                Color: {item.color || "Default"}
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
                 Quantity: {item.quantity}
@@ -94,7 +91,7 @@ const CartPages: React.FC = () => {
                     updateCartQuantity(
                       item.id,
                       item.color,
-                      item.size,
+
                       Math.max(1, item.quantity - 1)
                     )
                   }
@@ -117,7 +114,7 @@ const CartPages: React.FC = () => {
                     updateCartQuantity(
                       item.id,
                       item.color,
-                      item.size,
+
                       item.quantity + 1
                     )
                   }
@@ -137,7 +134,7 @@ const CartPages: React.FC = () => {
 
             <Button
               variant="outline"
-              onPress={() => removeFromCart(item.id, item.color, item.size)}
+              onPress={() => removeFromCart(item.id, item.color)}
             >
               <Trash2 size={16} color={iconColor} />
             </Button>

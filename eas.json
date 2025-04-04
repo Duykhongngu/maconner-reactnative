@@ -1,11 +1,11 @@
 {
   "cli": {
-    "version": ">= 15.0.10",
+    "version": ">= 15.0.14",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
-      "developmentClient": false,
+      "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {

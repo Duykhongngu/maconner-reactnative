@@ -42,9 +42,6 @@ function HomePage() {
       <View>
         <HappyCustomers />
       </View>
-      <View>
-        <Footer />
-      </View>
     </SafeAreaView>
   );
 }
@@ -52,6 +49,7 @@ function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 10,
   },
 });
 export default HomePage;

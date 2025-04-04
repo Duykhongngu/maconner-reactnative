@@ -23,7 +23,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-import { auth, db } from "~/firebase.config";
+
 import { onAuthStateChanged } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";
 import {
@@ -35,6 +35,8 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { logout } from "~/service/api/auth";
+import { auth } from "~/firebase.config";
+import { db } from "~/firebase.config";
 
 const inlineMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
@@ -133,7 +135,7 @@ function SiteHeader() {
       await logout();
       setUser(null);
       setTimeout(() => {
-        router.replace("/");
+        router.push("/");
       }, 100);
     } catch (error: any) {
       Alert.alert("Lỗi đăng xuất", error.message);
@@ -141,201 +143,189 @@ function SiteHeader() {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
-      <View style={styles.container}>
-        {/* Left Section */}
-        <View style={styles.leftSection}>
+    <View style={styles.container}>
+      {/* Left Section */}
+      <View style={styles.leftSection}>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={styles.iconButton}
+        >
+          <MenuIcon size={24} color={iconColor} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Center Section */}
+      <View style={styles.centerSection}>
+        <TouchableOpacity onPress={() => router.push("/user/home")}>
+          <Logo width={140} height={28} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Right Section */}
+      <View style={styles.rightSection}>
+        <View style={styles.iconGroup}>
           <TouchableOpacity
-            onPress={() => setMenuVisible(true)}
             style={styles.iconButton}
+            onPress={() => setIsSearchOpen(true)}
           >
-            <MenuIcon size={24} color={iconColor} />
+            <SearchIcon size={24} color={iconColor} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/user/Checkout/OrderStatus" as any)}
+          >
+            <Truck size={24} color={iconColor} />
+            {totalOrders > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{totalOrders}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/user/Cart/CartPages" as any)}
+          >
+            <ShoppingCart size={24} color={iconColor} />
+            {totalItems > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{totalItems}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Center Section */}
-        <View style={styles.centerSection}>
-          <TouchableOpacity onPress={() => router.push("/user/home")}>
-            <Logo width={140} height={28} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => setProfileMenuVisible(true)}
+          style={styles.profileButton}
+        >
+          <Image
+            source={{
+              uri: userProfile?.photoURL || "https://via.placeholder.com/36",
+            }}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
+      </View>
 
-        {/* Right Section */}
-        <View style={styles.rightSection}>
-          <View style={styles.iconGroup}>
+      {/* Profile Menu Modal */}
+      <Modal
+        visible={profileMenuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setProfileMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setProfileMenuVisible(false)}
+        >
+          <View
+            style={[
+              styles.profileMenu,
+              isDarkColorScheme && styles.darkProfileMenu,
+            ]}
+          >
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setIsSearchOpen(true)}
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push("/user/Auth/Profile");
+              }}
             >
-              <SearchIcon size={24} color={iconColor} />
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                {userProfile?.displayName || user?.displayName || "User"}
+              </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push("/user/Checkout/OrderStatus" as any)}
+              style={styles.profileMenuItem}
+              onPress={handleLogout}
             >
-              <Truck size={24} color={iconColor} />
-              {totalOrders > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{totalOrders}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push("/user/Cart/CartPages" as any)}
-            >
-              <ShoppingCart size={24} color={iconColor} />
-              {totalItems > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{totalItems}</Text>
-                </View>
-              )}
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                Đăng xuất
+              </Text>
             </TouchableOpacity>
           </View>
+        </TouchableOpacity>
+      </Modal>
 
-          <TouchableOpacity
-            onPress={() => setProfileMenuVisible(true)}
-            style={styles.profileButton}
-          >
-            <Image
-              source={{
-                uri: userProfile?.photoURL || "https://via.placeholder.com/36",
-              }}
-              style={styles.profileImage}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Menu Modal */}
-        <Modal
-          visible={profileMenuVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setProfileMenuVisible(false)}
+      {/* Menu Modal */}
+      <Modal visible={menuVisible} transparent animationType="slide">
+        <View
+          style={[styles.modalContainer, isDarkColorScheme && styles.darkModal]}
         >
           <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setProfileMenuVisible(false)}
+            style={styles.closeButton}
+            onPress={() => setMenuVisible(false)}
           >
-            <View
-              style={[
-                styles.profileMenu,
-                isDarkColorScheme && styles.darkProfileMenu,
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.profileMenuItem}
-                onPress={() => {
-                  setProfileMenuVisible(false);
-                  router.push("/user/profile");
-                }}
-              >
-                <Text
-                  style={[
-                    styles.profileMenuText,
-                    isDarkColorScheme && styles.darkText,
-                  ]}
-                >
-                  {userProfile?.displayName || user?.displayName || "User"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.profileMenuItem}
-                onPress={handleLogout}
-              >
-                <Text
-                  style={[
-                    styles.profileMenuText,
-                    isDarkColorScheme && styles.darkText,
-                  ]}
-                >
-                  Đăng xuất
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <ChevronLeft size={24} color={iconColor} />
+            <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
           </TouchableOpacity>
-        </Modal>
 
-        {/* Menu Modal */}
-        <Modal visible={menuVisible} transparent animationType="slide">
-          <View
-            style={[
-              styles.modalContainer,
-              isDarkColorScheme && styles.darkModal,
-            ]}
-          >
+          {/* Menu list */}
+          {inlineMenu.map((item, index) => (
             <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setMenuVisible(false)}
+              key={index}
+              onPress={() => {
+                router.push(item.link as any);
+                setMenuVisible(false);
+              }}
+            >
+              <View style={styles.menuItem}>
+                <Text
+                  style={[
+                    styles.menuText,
+                    isDarkColorScheme && styles.darkText,
+                  ]}
+                >
+                  {item.title}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
+
+      {/* Search Modal */}
+      <Modal visible={isSearchOpen} transparent={true} animationType="slide">
+        <View
+          style={[styles.modalContainer, isDarkColorScheme && styles.darkModal]}
+        >
+          <View style={styles.searchHeader}>
+            <TouchableOpacity
+              onPress={() => setIsSearchOpen(false)}
+              style={styles.cancelButton}
             >
               <ChevronLeft size={24} color={iconColor} />
-              <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
+              <Text style={{ color: iconColor }}>Cancel</Text>
             </TouchableOpacity>
-
-            {/* Menu list */}
-            {inlineMenu.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  router.push(item.link as any);
-                  setMenuVisible(false);
-                }}
-              >
-                <View style={styles.menuItem}>
-                  <Text
-                    style={[
-                      styles.menuText,
-                      isDarkColorScheme && styles.darkText,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
           </View>
-        </Modal>
-
-        {/* Search Modal */}
-        <Modal visible={isSearchOpen} transparent={true} animationType="slide">
-          <View
-            style={[
-              styles.modalContainer,
-              isDarkColorScheme && styles.darkModal,
-            ]}
-          >
-            <View style={styles.searchHeader}>
-              <Button
-                variant={"ghost"}
-                onPress={() => setIsSearchOpen(false)}
-                style={styles.cancelButton}
-              >
-                <ChevronLeft size={24} color={iconColor} />
-                <Text style={{ color: iconColor }}>Cancel</Text>
-              </Button>
-            </View>
-            <View style={styles.searchContent}>
-              <SearchBar />
-            </View>
+          <View style={styles.searchContent}>
+            <SearchBar />
           </View>
-        </Modal>
-      </View>
-    </SafeAreaView>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeContainer: {
-    flexShrink: 1,
-  },
   container: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 56,
+
     width: "100%",
   },
   leftSection: {
@@ -418,6 +408,7 @@ const styles = StyleSheet.create({
     color: "white",
   },
   searchHeader: {
+    justifyContent: "flex-start",
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0,0,0,0.1)",

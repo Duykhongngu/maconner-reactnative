@@ -9,22 +9,25 @@ interface Product {
   link: string;
   name: string;
   price: number;
-  size: string;
-  color: string;
+  description: string;
+  color: string[];
 }
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const querySnapshot = await getDocs(collection(db, "products"));
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    category: doc.data().category || "",
-    inStock: doc.data().inStock !== false,
-    link: doc.data().link || "",
-    name: doc.data().name || "",
-    price: Number(doc.data().price) || 0,
-    size: doc.data().size || "xs",
-    color: doc.data().color || "Not specified",
-  }));
+  return querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      category: data.category || "",
+      inStock: data.inStock !== false,
+      link: data.link || "",
+      name: data.name || "",
+      price: Number(data.price) || 0,
+      description: data.description || "",
+      color: Array.isArray(data.color) ? data.color : [],
+    } as Product;
+  });
 };
 
 export const addProduct = async (productData: Omit<Product, "id">) => {

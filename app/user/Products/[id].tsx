@@ -6,114 +6,102 @@ import {
   Text,
   Image,
   ScrollView,
-  TouchableOpacity,
   SafeAreaView,
-  Dimensions,
   StyleSheet,
-  FlatList,
-  TextInput,
   Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Star } from "lucide-react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from "expo-image-picker";
-import { auth, db } from "~/firebase.config";
-import { onAuthStateChanged } from "firebase/auth";
 import {
-  collection,
-  addDoc,
-  query,
-  where,
-  onSnapshot,
-  getDocs,
   doc,
   getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
-import axios from "axios";
+import { db } from "~/firebase.config";
 import { useCart } from "../Cart/CartContext";
-import Footer from "~/app/Footer/Footer";
+import ColorSelector from "./components/ColorSelector";
+import QuantitySelector from "./components/QuantitySelector";
+import AddToCartButton from "./components/AddToCartButton";
+import { CartItem } from "../Cart/CartContext";
+import { AntDesign } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
-// Định nghĩa interface cho colorScheme (dựa trên useColorScheme)
-interface ColorScheme {
-  colorScheme: "light" | "dark";
-}
-
-const { width, height } = Dimensions.get("window");
+// Khai báo mảng màu cố định
+const AVAILABLE_COLORS = [
+  { name: "White", value: "#FFFFFF", textColor: "#000000" },
+  { name: "Black", value: "#000000", textColor: "#FFFFFF" },
+  { name: "Red", value: "#FF0000", textColor: "#FFFFFF" },
+  { name: "Blue", value: "#0000FF", textColor: "#FFFFFF" },
+  { name: "Green", value: "#008000", textColor: "#FFFFFF" },
+  { name: "Yellow", value: "#FFFF00", textColor: "#000000" },
+  { name: "Purple", value: "#800080", textColor: "#FFFFFF" },
+  { name: "Orange", value: "#FFA500", textColor: "#000000" },
+  { name: "Pink", value: "#FFC0CB", textColor: "#000000" },
+  { name: "Gray", value: "#808080", textColor: "#FFFFFF" },
+  { name: "Brown", value: "#A52A2A", textColor: "#FFFFFF" },
+  { name: "Cyan", value: "#00FFFF", textColor: "#000000" },
+];
 
 interface Product {
   id: string;
   category: string;
+  categoryName?: string;
   inStock: boolean;
   link: string;
   name: string;
   price: number;
   size: string;
-  color: string; // Thêm trường color
+  color: string[];
+  description: string;
+  rating?: number;
 }
 
-interface CustomerReview {
+interface Category {
   id: string;
   name: string;
-  rating: number;
-  comment: string;
-  image?: string;
 }
-
-const STORAGE_KEY = "productReviews";
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
-const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset";
 
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [newReview, setNewReview] = useState<{
-    name: string;
-    rating: number;
-    comment: string;
-    image: string;
-  }>({
-    name: "",
-    rating: 0,
-    comment: "",
-    image: "",
-  });
-  const [customerReviews, setCustomerReviews] = useState<CustomerReview[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [selectedColor, setSelectedColor] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
+  const [categoryName, setCategoryName] = useState<string>("");
+  const isDarkMode = colorScheme === "dark";
 
+  // Lấy dữ liệu sản phẩm và danh mục
   useEffect(() => {
-    const fetchColorScheme = async () => {
-      try {
-        const scheme = await AsyncStorage.getItem("colorScheme");
-        setColorScheme(scheme === "dark" ? "dark" : "light");
-      } catch (error) {
-        console.error("Failed to fetch color scheme:", error);
-        setColorScheme("light");
-      }
-    };
-
-    fetchColorScheme();
-  }, []);
-
-  // Lấy dữ liệu sản phẩm từ Firestore
-  useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndCategory = async () => {
       if (!id) return;
 
       try {
+        setLoading(true);
         const productRef = doc(db, "products", id);
         const productSnap = await getDoc(productRef);
 
         if (productSnap.exists()) {
+          // Xử lý dữ liệu màu sắc từ Firestore
+          let productColors: string[] = [];
+          const colorData = productSnap.data().color;
+
+          if (Array.isArray(colorData)) {
+            productColors = colorData;
+          } else if (typeof colorData === "string") {
+            productColors = [colorData];
+          } else {
+            productColors = ["White"]; // Màu mặc định nếu không có dữ liệu
+          }
+
           const productData = {
             id: productSnap.id,
             category: productSnap.data().category || "",
@@ -121,527 +109,296 @@ export default function ProductDetail(): JSX.Element {
             link: productSnap.data().link || "",
             name: productSnap.data().name || "",
             price: Number(productSnap.data().price) || 0,
-            size: productSnap.data().size || "xs",
-            color: productSnap.data().color || "default", // Lấy color từ Firestore
+            description: productSnap.data().description || "",
+            color: productColors,
+            size: productSnap.data().size || "",
+            rating: productSnap.data().rating || 0,
           } as Product;
 
           setProduct(productData);
-          setSelectedSize(productData.size);
-        } else {
-          console.error("Product not found");
-          Alert.alert("Error", "Product not found.");
-        }
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        Alert.alert("Error", "Failed to load product details.");
-      }
-    };
 
-    fetchProduct();
-  }, [id]);
+          // Lấy tên danh mục
+          if (productData.category) {
+            try {
+              const categoryRef = doc(db, "categories", productData.category);
+              const categorySnap = await getDoc(categoryRef);
 
-  // Lấy sản phẩm gợi ý cùng danh mục
-  useEffect(() => {
-    const fetchSuggestedProducts = async () => {
-      if (!product) return;
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const allProducts = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          category: doc.data().category || "",
-          inStock: doc.data().inStock !== false,
-          link: doc.data().link || "",
-          name: doc.data().name || "",
-          price: Number(doc.data().price) || 0,
-          size: doc.data().size || "xs",
-          color: doc.data().color || "default",
-        })) as Product[];
-
-        // Lọc sản phẩm cùng danh mục nhưng khác ID
-        const suggested = allProducts
-          .filter(
-            (p) =>
-              p.category.toLowerCase() === product.category.toLowerCase() &&
-              p.id !== product.id
-          )
-          .slice(0, 6); // Lấy tối đa 6 sản phẩm gợi ý
-
-        setSuggestedProducts(suggested);
-      } catch (error) {
-        console.error("Error fetching suggested products:", error);
-      }
-    };
-
-    fetchSuggestedProducts();
-  }, [product]);
-
-  // Kiểm tra trạng thái người dùng
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setNewReview((prev) => ({
-          ...prev,
-          name: currentUser.displayName || currentUser.email || "Anonymous",
-        }));
-      } else {
-        setNewReview((prev) => ({ ...prev, name: "" }));
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Load reviews từ Firestore
-  useEffect(() => {
-    if (!id) return;
-
-    const q = query(collection(db, "reviews"), where("productId", "==", id));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const reviewsData: CustomerReview[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          name: doc.data().name,
-          rating: doc.data().rating,
-          comment: doc.data().comment,
-          image: doc.data().image || undefined,
-        }));
-        setCustomerReviews(reviewsData);
-
-        // Backup vào AsyncStorage (tuỳ chọn)
-        const saveToAsyncStorage = async () => {
-          try {
-            const allReviews = await AsyncStorage.getItem(STORAGE_KEY);
-            const parsedReviews = allReviews ? JSON.parse(allReviews) : {};
-            parsedReviews[id] = reviewsData;
-            await AsyncStorage.setItem(
-              STORAGE_KEY,
-              JSON.stringify(parsedReviews)
-            );
-          } catch (error) {
-            console.error("Failed to save reviews to AsyncStorage:", error);
+              if (categorySnap.exists()) {
+                const categoryData = categorySnap.data();
+                setCategoryName(categoryData.name || "Unknown Category");
+                productData.categoryName =
+                  categoryData.name || "Unknown Category";
+              } else {
+                setCategoryName(productData.category); // Sử dụng ID nếu không tìm thấy danh mục
+              }
+            } catch (categoryError) {
+              console.error("Lỗi khi lấy danh mục:", categoryError);
+              setCategoryName(productData.category);
+            }
           }
-        };
-        saveToAsyncStorage();
-      },
-      (error) => {
-        console.error("Error fetching reviews:", error);
-      }
-    );
 
-    return () => unsubscribe();
+          // Fetch suggested products - Sửa lại logic để lấy sản phẩm cùng category
+          if (productData.category) {
+            console.log(
+              "Đang lấy sản phẩm đề xuất cho category:",
+              productData.category
+            );
+
+            const productsRef = collection(db, "products");
+            const q = query(
+              productsRef,
+              where("category", "==", productData.category)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const suggestedProductsData: Product[] = [];
+
+            querySnapshot.forEach((doc) => {
+              // Lọc sản phẩm có id khác với sản phẩm hiện tại
+              if (doc.id !== id) {
+                const data = doc.data();
+                suggestedProductsData.push({
+                  id: doc.id,
+                  category: data.category || "",
+                  categoryName: categoryName, // Sử dụng tên danh mục đã lấy được
+                  inStock: data.inStock !== false,
+                  link: data.link || "",
+                  name: data.name || "",
+                  price: Number(data.price) || 0,
+                  description: data.description || "",
+                  color: Array.isArray(data.color)
+                    ? data.color
+                    : [data.color || "White"],
+                  size: data.size || "",
+                  rating: data.rating || 0,
+                });
+              }
+            });
+
+            console.log(
+              "Số lượng sản phẩm đề xuất tìm thấy:",
+              suggestedProductsData.length
+            );
+            setSuggestedProducts(suggestedProductsData);
+          }
+        } else {
+          setError("Không tìm thấy sản phẩm");
+        }
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu sản phẩm:", err);
+        setError("Đã xảy ra lỗi khi tải dữ liệu sản phẩm");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductAndCategory();
   }, [id]);
 
-  useEffect(() => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0, animated: true });
-    }
-  }, [product]);
-
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Sorry, we need camera roll permissions to make this work!");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setNewReview({ ...newReview, image: result.assets[0].uri });
-    }
-  };
-
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Sorry, we need camera permissions to make this work!");
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setNewReview({ ...newReview, image: result.assets[0].uri });
-    }
-  };
-
-  const uploadImageToCloudinary = async (uri: string): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", {
-      uri,
-      type: "image/jpeg",
-      name: "review_image.jpg",
-    } as any);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    try {
-      const response = await axios.post(CLOUDINARY_URL, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return response.data.secure_url;
-    } catch (error) {
-      console.error("Upload failed:", error);
-      throw new Error("Failed to upload image");
-    }
-  };
-
+  // Xử lý thêm vào giỏ hàng
   const handleAddToCart = () => {
-    if (product && selectedSize) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: quantity,
-        size: selectedSize,
-        color: product.color, // Sử dụng color từ Firestore
-        image: product.link,
+    if (!product) return;
+
+    if (!selectedColor) {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng chọn màu sắc trước khi thêm vào giỏ hàng",
       });
-      setQuantity(1);
+      return;
     }
+
+    // Kiểm tra xem màu đã chọn có hợp lệ không
+    if (!product.color.includes(selectedColor)) {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Màu sắc đã chọn không hợp lệ",
+      });
+      return;
+    }
+
+    const cartItem: CartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      color: selectedColor,
+      image: product.link,
+      description: product.description || "",
+    };
+
+    addToCart(cartItem);
+    Toast.show({
+      type: "success",
+      text1: "Thành công",
+      text2: "Đã thêm sản phẩm vào giỏ hàng",
+    });
   };
 
-  const handleSubmitReview = async () => {
-    if (newReview.rating > 0 && newReview.comment) {
-      try {
-        let imageUrl = "";
-        if (newReview.image) {
-          imageUrl = await uploadImageToCloudinary(newReview.image);
-        }
-
-        const reviewData = {
-          productId: id,
-          name: newReview.name,
-          rating: newReview.rating,
-          comment: newReview.comment,
-          image: imageUrl || null,
-          createdAt: new Date().toISOString(),
-        };
-
-        await addDoc(collection(db, "reviews"), reviewData);
-
-        setNewReview({
-          name: user?.displayName || user?.email || "Anonymous",
-          rating: 0,
-          comment: "",
-          image: "",
-        });
-      } catch (error) {
-        console.error("Failed to save review:", error);
-        alert("Failed to save review. Please try again.");
-      }
-    } else {
-      alert("Please provide a rating and comment.");
-    }
-  };
-
-  const renderReviewItem = ({ item }: { item: CustomerReview }) => (
-    <View style={styles.reviewItem}>
-      <View style={styles.reviewHeader}>
-        <Text style={styles.reviewerName}>{item.name}</Text>
-        <View style={styles.ratingContainer}>
-          {[...Array(5)].map((_, index) => (
-            <Star
-              key={index}
-              fill={index < item.rating ? "#FFD700" : "#E0E0E0"}
-              stroke={index < item.rating ? "#FFD700" : "#E0E0E0"}
-              size={16}
-            />
-          ))}
-        </View>
-      </View>
-      <Text style={styles.reviewComment}>{item.comment}</Text>
-      {item.image && (
-        <Image
-          source={{ uri: item.image }}
-          style={styles.reviewImage}
-          resizeMode="cover"
-        />
-      )}
-    </View>
-  );
-
-  const renderSuggestedProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.suggestedProductItem}
-      onPress={() => router.push(`/user/Products/${item.id}`)}
-    >
-      <Image
-        source={{ uri: item.link }}
-        style={styles.suggestedProductImage}
-        onError={(e) =>
-          console.error("Suggested product image error:", e.nativeEvent.error)
-        }
-      />
-      <Text style={styles.suggestedProductName} numberOfLines={2}>
-        {item.name}
-      </Text>
-      <Text style={styles.suggestedProductPrice}>${item.price.toFixed(2)}</Text>
-    </TouchableOpacity>
-  );
-
-  const isDarkMode = colorScheme === "dark";
-
-  const renderSuggestedProducts = () => (
-    <View style={styles.sectionContainer}>
-      <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-        You May Also Like
-      </Text>
-      <FlatList
-        data={suggestedProducts}
-        renderItem={renderSuggestedProduct}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={[
-          styles.suggestedProductList,
-          isDarkMode && styles.darkSuggestedProductList,
-        ]}
-      />
-    </View>
-  );
-
-  if (!product) {
+  // Hàm lấy thông tin màu từ tên màu
+  const getColorInfo = (colorName: string) => {
+    const colorInfo = AVAILABLE_COLORS.find(
+      (c) => c.name.toLowerCase() === colorName.toLowerCase()
+    );
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
-      </View>
+      colorInfo || { name: colorName, value: "#CCCCCC", textColor: "#000000" }
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={isDarkMode ? styles.darkContainer : styles.container}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={isDarkMode ? styles.darkText : {}}>Đang tải...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  const productImages = [product.link, product.link, product.link]; // Firestore chỉ có 1 link ảnh, nên lặp lại để tạo hiệu ứng slide
+  if (error || !product) {
+    return (
+      <SafeAreaView
+        style={isDarkMode ? styles.darkContainer : styles.container}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={isDarkMode ? styles.darkText : {}}>
+            {error || "Không tìm thấy sản phẩm"}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView
-      style={[styles.container, isDarkMode && styles.darkContainer]}
-    >
-      <ScrollView
-        ref={scrollViewRef}
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.imageContainer}>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
-              const offset = e.nativeEvent.contentOffset.x;
-              setCurrentImageIndex(Math.round(offset / width));
-            }}
-            scrollEventThrottle={16}
-          >
-            {productImages.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={styles.productImage}
-                resizeMode="cover"
-                onError={(e) =>
-                  console.error("Product image error:", e.nativeEvent.error)
-                }
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.paginationContainer}>
-            {productImages.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  currentImageIndex === index && styles.paginationDotActive,
-                ]}
-              />
-            ))}
-          </View>
+    <SafeAreaView style={isDarkMode ? styles.darkContainer : styles.container}>
+      <ScrollView>
+        {/* Hình ảnh sản phẩm */}
+        <Image
+          source={{ uri: product.link }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+
+        {/* Thông tin sản phẩm */}
+        <View style={styles.productInfo}>
+          <Text style={[styles.productName, isDarkMode && styles.darkText]}>
+            {product.name}
+          </Text>
+          <Text style={styles.productPrice}>
+            ${product.price.toFixed(2)} USD
+          </Text>
+          <Text style={[styles.productCategory, isDarkMode && styles.darkText]}>
+            Category: {categoryName || product.category}
+          </Text>
         </View>
 
-        <View style={styles.contentContainer}>
-          <View style={styles.productInfoContainer}>
-            <Text style={[styles.productName, isDarkMode && styles.darkText]}>
-              {product.name}
-            </Text>
-            <Text style={[styles.productPrice, isDarkMode && styles.darkText]}>
-              ${product.price.toFixed(2)} USD
-            </Text>
-            <Text
-              style={[styles.productDescription, isDarkMode && styles.darkText]}
-            >
-              Category: {product.category}
-            </Text>
-          </View>
+        {/* Phần chọn màu sắc */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+            Color
+          </Text>
+          <ColorSelector
+            colors={product.color}
+            selectedColor={selectedColor}
+            onSelectColor={setSelectedColor}
+            isDarkMode={isDarkMode}
+          />
+        </View>
 
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Size
-            </Text>
-            <View style={styles.sizeContainer}>
-              <TouchableOpacity
-                onPress={() => setSelectedSize(product.size)}
-                style={[
-                  styles.sizeOption,
-                  selectedSize === product.size && styles.sizeOptionSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.sizeText,
-                    selectedSize === product.size && styles.sizeTextSelected,
-                  ]}
-                >
-                  {product.size}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* Phần chọn số lượng */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+            Quantity
+          </Text>
+          <QuantitySelector
+            quantity={quantity}
+            onChangeQuantity={setQuantity}
+            isDarkMode={isDarkMode}
+          />
+        </View>
 
-          <View style={styles.sectionContainer}>
+        {/* Mô tả sản phẩm */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+            Description
+          </Text>
+          <Text
+            style={[styles.productDescription, isDarkMode && styles.darkText]}
+          >
+            {product.description}
+          </Text>
+        </View>
+        {/* Nút thêm vào giỏ hàng */}
+        <AddToCartButton
+          onPress={handleAddToCart}
+          price={product.price}
+          disabled={!selectedColor || !product.color.includes(selectedColor)}
+        />
+        {/* Phần sản phẩm đề xuất */}
+        {suggestedProducts.length > 0 && (
+          <View style={styles.suggestedProductsSection}>
             <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Color
+              Sản phẩm tương tự
             </Text>
-            <Text
-              style={[styles.productDescription, isDarkMode && styles.darkText]}
-            >
-              {product.color}
-            </Text>
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Quantity
-            </Text>
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                style={styles.quantityButton}
-              >
-                <Text style={styles.quantityButtonText}>-</Text>
-              </TouchableOpacity>
-              <Text
-                style={[
-                  styles.quantityButtonText,
-                  isDarkMode && styles.darkText,
-                ]}
-              >
-                {quantity}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setQuantity((prev) => prev + 1)}
-                style={styles.quantityButton}
-              >
-                <Text style={styles.quantityButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Customer Reviews
-            </Text>
-            <FlatList
-              data={customerReviews}
-              renderItem={renderReviewItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
-              Leave a Review
-            </Text>
-            {user ? (
-              <Text
-                style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
-              >
-                {newReview.name}
-              </Text>
-            ) : (
-              <TextInput
-                placeholder="Your Name"
-                value={newReview.name}
-                onChangeText={(text) =>
-                  setNewReview({ ...newReview, name: text })
-                }
-                style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
-              />
-            )}
-            <View style={styles.ratingContainer}>
-              {[...Array(5)].map((_, index) => (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {suggestedProducts.map((item) => (
                 <TouchableOpacity
-                  key={index}
-                  onPress={() =>
-                    setNewReview({ ...newReview, rating: index + 1 })
-                  }
+                  key={item.id}
+                  style={styles.suggestedProductCard}
+                  onPress={() => {
+                    // Chuyển hướng đến trang chi tiết sản phẩm
+                    router.push(`/user/Products/${item.id}`);
+                  }}
                 >
-                  <Star
-                    fill={index < newReview.rating ? "#FFD700" : "#E0E0E0"}
-                    stroke={index < newReview.rating ? "#FFD700" : "#E0E0E0"}
-                    size={24}
+                  <Image
+                    source={{ uri: item.link }}
+                    style={styles.suggestedProductImage}
+                    resizeMode="cover"
                   />
+                  <View style={styles.suggestedProductInfo}>
+                    <Text
+                      style={[
+                        styles.suggestedProductName,
+                        isDarkMode && styles.darkText,
+                      ]}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      {item.name}
+                    </Text>
+                    <Text style={styles.suggestedProductPrice}>
+                      ${item.price.toFixed(2)} USD
+                    </Text>
+                    {/* Hiển thị rating nếu có */}
+                    <View style={styles.ratingContainer}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <AntDesign
+                          key={star}
+                          name={
+                            star <= Math.floor(item.rating || 0)
+                              ? "star"
+                              : "staro"
+                          }
+                          size={14}
+                          color="#FFD700"
+                          style={styles.starIcon}
+                        />
+                      ))}
+                      <Text style={styles.ratingText}>
+                        {item.rating ? `(${item.rating.toFixed(1)})` : "(0.0)"}
+                      </Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
               ))}
-            </View>
-            <TextInput
-              placeholder="Your Comment"
-              value={newReview.comment}
-              onChangeText={(text) =>
-                setNewReview({ ...newReview, comment: text })
-              }
-              style={[styles.input, { color: isDarkMode ? "#fff" : "#000" }]}
-              multiline
-            />
-            <View style={styles.imagePickerContainer}>
-              <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
-                <Text style={styles.imageButtonText}>Choose Photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={takePhoto} style={styles.imageButton}>
-                <Text style={styles.imageButtonText}>Take Photo</Text>
-              </TouchableOpacity>
-            </View>
-            {newReview.image ? (
-              <View style={styles.previewContainer}>
-                <Image
-                  source={{ uri: newReview.image }}
-                  style={styles.previewImage}
-                />
-                <TouchableOpacity
-                  onPress={() => setNewReview({ ...newReview, image: "" })}
-                  style={styles.removeImageButton}
-                >
-                  <Text style={styles.removeImageText}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-            <TouchableOpacity
-              onPress={handleSubmitReview}
-              style={styles.submitButton}
-            >
-              <Text style={styles.submitButtonText}>Submit Review</Text>
-            </TouchableOpacity>
+            </ScrollView>
           </View>
-
-          {renderSuggestedProducts()}
-        </View>
-        <Footer />
+        )}
       </ScrollView>
-
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          onPress={handleAddToCart}
-          style={styles.addToCartButton}
-        >
-          <Text style={styles.addToCartText}>
-            Add to Cart - ${(product.price * quantity).toFixed(2)}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -649,246 +406,109 @@ export default function ProductDetail(): JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   darkContainer: {
-    backgroundColor: "#000",
+    flex: 1,
+    backgroundColor: "#121212",
   },
   loadingContainer: {
     flex: 1,
+    justifyContent: "center",
     alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
     justifyContent: "center",
-  },
-  imageContainer: {
-    position: "relative",
-    height: height * 0.5,
-  },
-  productImage: {
-    width: width,
-    height: "100%",
-  },
-  paginationContainer: {
-    position: "absolute",
-    bottom: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    width: "100%",
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: "#fff",
-  },
-  contentContainer: {
+    alignItems: "center",
     padding: 20,
   },
-  productInfoContainer: {
-    marginBottom: 24,
+  productImage: {
+    width: "100%",
+    height: 300,
+  },
+  productInfo: {
+    padding: 16,
   },
   productName: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 8,
-  },
-  productPrice: {
     fontSize: 24,
-    fontWeight: "600",
-    color: "#FF6B00",
-    marginBottom: 12,
-  },
-  productDescription: {
-    fontSize: 16,
-    color: "#666",
-    lineHeight: 24,
-  },
-  sectionContainer: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#000",
-    marginBottom: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
   },
   darkText: {
     color: "#fff",
   },
-  sizeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  sizeOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: "#F5F5F5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sizeOptionSelected: {
-    backgroundColor: "#FF6B00",
-  },
-  sizeText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#000",
-  },
-  sizeTextSelected: {
-    color: "#fff",
-  },
-  quantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  quantityButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F5F5F5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quantityButtonText: {
-    fontSize: 24,
-    fontWeight: "500",
-    color: "#000",
-  },
-  bottomContainer: {
-    padding: 20,
-    paddingBottom: 34,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    backgroundColor: "#fff",
-  },
-  addToCartButton: {
-    backgroundColor: "#FF6B00",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  addToCartText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  reviewItem: {
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: "#F9F9F9",
-    borderRadius: 8,
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  productPrice: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FF6B00",
     marginBottom: 8,
   },
-  reviewerName: {
+  productCategory: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  reviewComment: {
-    fontSize: 14,
     color: "#666",
+    marginBottom: 16,
   },
-  reviewImage: {
-    width: "100%",
-    height: 200,
+  section: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+  },
+  productDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  suggestedProductsSection: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  suggestedProductCard: {
+    width: 160,
+    marginRight: 12,
+    backgroundColor: "#fff",
     borderRadius: 8,
-    marginTop: 8,
-  },
-  suggestedProductItem: {
-    width: 150,
-    marginRight: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   suggestedProductImage: {
     width: "100%",
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
+    height: 160,
+  },
+  suggestedProductInfo: {
+    padding: 8,
   },
   suggestedProductName: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#000",
+    marginBottom: 4,
+    height: 40,
   },
   suggestedProductPrice: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
     color: "#FF6B00",
+    marginBottom: 4,
   },
-  suggestedProductList: {
-    backgroundColor: "#fff",
-  },
-  darkSuggestedProductList: {
-    backgroundColor: "#333",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-  },
-  submitButton: {
-    backgroundColor: "#FF6B00",
-    padding: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  imagePickerContainer: {
+  ratingContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  imageButton: {
-    backgroundColor: "#FF6B00",
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 5,
     alignItems: "center",
   },
-  imageButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  starIcon: {
+    marginRight: 2,
   },
-  previewContainer: {
-    marginBottom: 10,
-    position: "relative",
-  },
-  previewImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 8,
-  },
-  removeImageButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 5,
-    borderRadius: 4,
-  },
-  removeImageText: {
-    color: "#fff",
+  ratingText: {
     fontSize: 12,
+    marginLeft: 4,
+    color: "#666",
   },
 });

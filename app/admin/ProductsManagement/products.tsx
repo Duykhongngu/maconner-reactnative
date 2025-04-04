@@ -8,16 +8,22 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  StyleSheet,
   Switch,
   ScrollView,
   ActivityIndicator,
   Alert,
   SafeAreaView,
-  Platform,
   Modal,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import {
+  ChevronDown,
+  ChevronLast,
+  ChevronLeft,
+  Moon,
+  Sun,
+} from "lucide-react-native";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 import {
   fetchProducts,
@@ -26,6 +32,8 @@ import {
   deleteProduct,
   uploadImage,
 } from "~/service/products";
+import { router } from "expo-router";
+import { fetchCategories } from "~/service/categoryProduct";
 
 interface Product {
   id: string;
@@ -34,8 +42,8 @@ interface Product {
   link: string;
   name: string;
   price: number;
-  size: string;
-  color: string;
+  description: string;
+  color: string[];
 }
 
 interface CategoryOption {
@@ -52,23 +60,32 @@ const ProductManagementScreen = () => {
     link: "",
     name: "",
     price: 0,
-    size: "xs",
-    color: "", // Để trống để người dùng nhập
+    description: "",
+    color: [],
   });
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [priceText, setPriceText] = useState<string>("");
 
-  const categories: CategoryOption[] = [
-    { label: "Select Category", value: "" },
-    { label: "VisorClip", value: "visorclip" },
-    { label: "Valentine", value: "valentine" },
-  ];
+  // Use NativeWind color scheme
+  const { isDarkColorScheme, toggleColorScheme } = useColorScheme();
 
   useEffect(() => {
     fetchProductsData();
+    fetchCategoriesData();
   }, []);
+
+  useEffect(() => {
+    if (newProduct.price > 0) {
+      setPriceText(newProduct.price.toString());
+    } else {
+      setPriceText("");
+    }
+  }, [newProduct.price]);
 
   const fetchProductsData = async () => {
     setLoading(true);
@@ -83,11 +100,31 @@ const ProductManagementScreen = () => {
     }
   };
 
+  const fetchCategoriesData = async () => {
+    try {
+      const allCategories = await fetchCategories();
+      const categoryOptions = allCategories
+        .map((category) => ({
+          label: category.name,
+          value: category.id || "",
+        }))
+        .filter((category) => category.value !== ""); // Lọc bỏ các mục không hợp lệ
+      setCategories(categoryOptions);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      Alert.alert("Error", "Failed to load categories. Please try again.");
+    }
+  };
+
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.category || !newProduct.color) {
+    if (
+      !newProduct.name ||
+      !newProduct.category ||
+      selectedColors.length === 0
+    ) {
       Alert.alert(
         "Missing Information",
-        "Please fill in the name, category, and color fields"
+        "Please fill in the name, category, and select at least one color"
       );
       return;
     }
@@ -95,8 +132,11 @@ const ProductManagementScreen = () => {
     setLoading(true);
     const productData = {
       ...newProduct,
+      color: selectedColors,
       price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
     };
+
+    console.log("Product Data to be added:", productData);
 
     try {
       await addProduct(productData);
@@ -120,10 +160,10 @@ const ProductManagementScreen = () => {
   const handleUpdateProduct = async () => {
     if (!editingProduct) return;
 
-    if (!newProduct.name || !newProduct.category || !newProduct.color) {
+    if (!newProduct.name || !newProduct.category) {
       Alert.alert(
         "Missing Information",
-        "Please fill in the name, category, and color fields"
+        "Please fill in the name and category fields"
       );
       return;
     }
@@ -185,43 +225,64 @@ const ProductManagementScreen = () => {
       link: "",
       name: "",
       price: 0,
-      size: "xs",
-      color: "",
+      description: "",
+      color: [],
     });
     setImageUrl("");
     setEditingProduct(null);
+    setSelectedColors([]);
   };
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={styles.productItem}>
-      <Text style={styles.productName}>
+    <View
+      className={`p-4 border border-${
+        isDarkColorScheme ? "gray-700" : "gray-200"
+      } rounded-lg my-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
+    >
+      <Text
+        className={`font-bold text-base mb-1 ${
+          isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+        }`}
+      >
         {item.name} - ${(item.price ?? 0).toFixed(2)}
       </Text>
       {item.link && (
         <Image
           source={{ uri: item.link }}
-          style={styles.productImage}
+          className="w-[100px] h-[100px] my-2 bg-gray-100"
+          style={{ resizeMode: "contain" }}
           onError={(e) =>
             console.error("Image loading error:", e.nativeEvent.error)
           }
         />
       )}
-      <Text>Category: {item.category}</Text>
-      <Text>Size: {item.size}</Text>
-      <Text>Color: {item.color}</Text>
-      <Text>In Stock: {item.inStock ? "Yes" : "No"}</Text>
-      <View style={styles.actionButtons}>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        Category: {categories.find((cat) => cat.value === item.category)?.label}
+      </Text>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        Description: {item.description}
+      </Text>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        In Stock: {item.inStock ? "Yes" : "No"}
+      </Text>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        Colors:{" "}
+        {Array.isArray(item.color) ? item.color.join(", ") : "Not specified"}
+      </Text>
+      <View className="flex-row justify-end mt-2 gap-2">
         <TouchableOpacity
-          style={styles.editButton}
+          className="bg-yellow-400 py-2 px-4 rounded"
           onPress={() => handleEditProduct(item)}
         >
-          <Text style={styles.editButtonText}>Edit</Text>
+          <Text className="text-black font-semibold text-sm">Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.deleteButton}
+          className={`${
+            isDarkColorScheme ? "bg-red-700" : "bg-red-500"
+          } py-2 px-4 rounded`}
           onPress={() => handleDeleteProduct(item.id)}
         >
-          <Text style={styles.deleteButtonText}>Delete</Text>
+          <Text className="text-white font-semibold text-sm">Delete</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -237,14 +298,23 @@ const ProductManagementScreen = () => {
     onPress: () => void;
   }) => (
     <TouchableOpacity
-      style={[styles.sizeButton, selected && styles.selectedSizeButton]}
+      className={`py-2 px-4 rounded border ${
+        selected
+          ? "bg-orange-500 border-blue-700"
+          : isDarkColorScheme
+          ? "bg-gray-700 border-gray-600"
+          : "bg-gray-100 border-gray-300"
+      }`}
       onPress={onPress}
     >
       <Text
-        style={[
-          styles.sizeButtonText,
-          selected && styles.selectedSizeButtonText,
-        ]}
+        className={`text-sm ${
+          selected
+            ? "text-white font-bold"
+            : isDarkColorScheme
+            ? "text-gray-300"
+            : "text-gray-700"
+        }`}
       >
         {size}
       </Text>
@@ -259,14 +329,23 @@ const ProductManagementScreen = () => {
     return (
       <View>
         <TouchableOpacity
-          style={styles.categorySelector}
+          className={`border ${
+            isDarkColorScheme
+              ? "border-gray-600 bg-gray-700"
+              : "border-gray-300 bg-white"
+          } rounded p-4 my-1`}
           onPress={() => setShowCategoryModal(true)}
         >
           <Text
-            style={[
-              styles.categorySelectorText,
-              !selectedCategory?.label && styles.categorySelectorPlaceholder,
-            ]}
+            className={`text-base ${
+              !selectedCategory?.label
+                ? isDarkColorScheme
+                  ? "text-gray-400"
+                  : "text-gray-400"
+                : isDarkColorScheme
+                ? "text-white"
+                : "text-black"
+            }`}
           >
             {selectedCategory?.label || "Select Category"}
           </Text>
@@ -277,19 +356,33 @@ const ProductManagementScreen = () => {
           transparent={true}
           animationType="slide"
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Category</Text>
+          <View className="flex-1 justify-end bg-black/50">
+            <View
+              className={`${
+                isDarkColorScheme ? "bg-black" : "bg-white"
+              } rounded-t-3xl p-5 max-h-[70%]`}
+            >
+              <Text
+                className={`text-lg font-semibold text-center mb-4 ${
+                  isDarkColorScheme ? "text-white" : "text-gray-800"
+                }`}
+              >
+                Select Category
+              </Text>
 
-              <ScrollView style={styles.categoryList}>
+              <ScrollView className="mb-4">
                 {categories.map((category) => (
                   <TouchableOpacity
                     key={category.value}
-                    style={[
-                      styles.categoryItem,
-                      newProduct.category === category.value &&
-                        styles.selectedCategoryItem,
-                    ]}
+                    className={`p-4 border-b ${
+                      isDarkColorScheme ? "border-gray-700" : "border-gray-200"
+                    } ${
+                      newProduct.category === category.value
+                        ? isDarkColorScheme
+                          ? "bg-blue-900/30"
+                          : "bg-blue-50"
+                        : ""
+                    }`}
                     onPress={() => {
                       setNewProduct({
                         ...newProduct,
@@ -299,11 +392,15 @@ const ProductManagementScreen = () => {
                     }}
                   >
                     <Text
-                      style={[
-                        styles.categoryItemText,
-                        newProduct.category === category.value &&
-                          styles.selectedCategoryItemText,
-                      ]}
+                      className={`text-base ${
+                        newProduct.category === category.label
+                          ? isDarkColorScheme
+                            ? "text-blue-400 font-semibold"
+                            : "text-blue-600 font-semibold"
+                          : isDarkColorScheme
+                          ? "text-gray-200"
+                          : "text-gray-800"
+                      }`}
                     >
                       {category.label}
                     </Text>
@@ -312,10 +409,18 @@ const ProductManagementScreen = () => {
               </ScrollView>
 
               <TouchableOpacity
-                style={styles.cancelButton}
+                className={`p-4 ${
+                  isDarkColorScheme ? "bg-gray-700" : "bg-gray-200"
+                } rounded-lg items-center`}
                 onPress={() => setShowCategoryModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text
+                  className={`text-base font-semibold ${
+                    isDarkColorScheme ? "text-blue-400" : "text-blue-600"
+                  }`}
+                >
+                  Cancel
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -360,76 +465,200 @@ const ProductManagementScreen = () => {
       Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
     }
   };
+  const handleBack = () => {
+    router.back();
+  };
+
+  const renderColorPicker = () => {
+    const colors = ["Red", "Green", "Blue", "Yellow", "Black", "White"];
+
+    return (
+      <View>
+        <Text
+          className={`text-base font-medium mb-1 ${
+            isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+          }`}
+        >
+          Select Colors:
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+          {colors.map((color) => (
+            <TouchableOpacity
+              key={color}
+              onPress={() => {
+                if (selectedColors.includes(color)) {
+                  setSelectedColors(selectedColors.filter((c) => c !== color));
+                } else {
+                  setSelectedColors([...selectedColors, color]);
+                }
+              }}
+              style={{
+                backgroundColor: color.toLowerCase(),
+                padding: 10,
+                borderRadius: 5,
+                margin: 5,
+                borderWidth: selectedColors.includes(color) ? 2 : 0,
+                borderColor: selectedColors.includes(color)
+                  ? "black"
+                  : "transparent",
+              }}
+            >
+              <Text style={{ color: "white" }}>{color}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.header}>Product Management</Text>
+    <SafeAreaView
+      className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
+    >
+      <View
+        className={`${isDarkColorScheme ? "bg-black" : "bg-orange-500"} p-5`}
+      >
+        <View className="flex-row items-center">
+          <Text className="text-2xl font-bold text-white mb-0">
+            Product Management
+          </Text>
+        </View>
+      </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionLabel}>Category:</Text>
+      <ScrollView className="flex-1 p-5" keyboardShouldPersistTaps="handled">
+        <View
+          className={`${
+            isDarkColorScheme ? "bg-black" : "bg-gray-50"
+          } p-4 rounded-lg mb-5 shadow`}
+        >
+          <Text
+            className={`text-base font-medium mb-1 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Category:
+          </Text>
           {renderCategorySelector()}
 
-          <Text style={styles.sectionLabel}>Product Name:</Text>
+          <Text
+            className={`text-base font-medium mb-1 mt-3 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Product Name:
+          </Text>
           <TextInput
             placeholder="Product Name"
+            placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
             value={newProduct.name}
             onChangeText={(text: string) =>
               setNewProduct({ ...newProduct, name: text })
             }
-            style={styles.input}
+            className={`border ${
+              isDarkColorScheme
+                ? "border-gray-600 bg-gray-700 text-white"
+                : "border-gray-300 bg-white text-gray-800"
+            } p-4 my-1 rounded text-base`}
           />
 
-          <Text style={styles.sectionLabel}>Price:</Text>
+          <Text
+            className={`text-base font-medium mb-1 mt-3 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Price:
+          </Text>
           <TextInput
             placeholder="Price (e.g., 12.50)"
-            value={newProduct.price === 0 ? "" : newProduct.price.toString()}
+            placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+            value={priceText}
             onChangeText={(text: string) => {
-              if (text === "" || /^\d*\.?\d*$/.test(text)) {
+              // Thay thế dấu phẩy bằng dấu chấm
+              const normalizedText = text.replace(",", ".");
+
+              // Kiểm tra xem chuỗi có đúng định dạng không
+              if (
+                normalizedText === "" ||
+                /^(\d+\.?\d*|\.\d+)$/.test(normalizedText)
+              ) {
+                setPriceText(normalizedText);
                 setNewProduct({
                   ...newProduct,
-                  price: text === "" ? 0 : Number.parseFloat(text) || 0,
+                  price: normalizedText === "" ? 0 : parseFloat(normalizedText),
                 });
               }
             }}
             keyboardType="decimal-pad"
-            style={styles.input}
+            className={`border ${
+              isDarkColorScheme
+                ? "border-gray-600 bg-gray-700 text-white"
+                : "border-gray-300 bg-white text-gray-800"
+            } p-4 my-1 rounded text-base`}
           />
 
-          <Text style={styles.sectionLabel}>Color:</Text>
+          <Text
+            className={`text-base font-medium mb-1 mt-3 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Description:
+          </Text>
           <TextInput
-            placeholder="Enter color (e.g., Red, Blue)"
-            value={newProduct.color}
+            placeholder="Enter description"
+            placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+            value={newProduct.description}
             onChangeText={(text: string) =>
-              setNewProduct({ ...newProduct, color: text })
+              setNewProduct({ ...newProduct, description: text })
             }
-            style={styles.input}
+            className={`border ${
+              isDarkColorScheme
+                ? "border-gray-600 bg-gray-700 text-white"
+                : "border-gray-300 bg-white text-gray-800"
+            } p-4 my-1 rounded text-base`}
           />
 
-          <Text style={styles.sectionLabel}>Image Products:</Text>
-          <View style={styles.imageInputContainer}>
+          <Text
+            className={`text-base font-medium mb-1 mt-3 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Image Products:
+          </Text>
+          <View className="flex-row items-center my-1">
             <TextInput
               placeholder="Image URL (or pick an image)"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
               value={newProduct.link}
               onChangeText={(text: string) =>
                 setNewProduct({ ...newProduct, link: text })
               }
-              style={[styles.input, styles.imageImageInput]}
+              className={`border ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-gray-300 bg-white text-gray-800"
+              } p-4 rounded flex-1 mr-2 text-base`}
             />
             <TouchableOpacity
-              style={styles.pickButton}
+              className="bg-orange-500 py-4 px-5 rounded justify-center items-center"
               onPress={pickImage}
               disabled={loading}
             >
-              <Text style={styles.pickButtonText}>Pick</Text>
+              <Text className="text-white font-semibold text-base">Pick</Text>
             </TouchableOpacity>
           </View>
 
           {newProduct.link ? (
-            <View style={styles.imagePreviewContainer}>
+            <View
+              className={`items-center my-2 rounded overflow-hidden border ${
+                isDarkColorScheme
+                  ? "border-gray-700 bg-black"
+                  : "border-gray-300 bg-gray-100"
+              }`}
+            >
               <Image
                 source={{ uri: newProduct.link }}
-                style={styles.previewImage}
+                className="w-[200px] h-[200px]"
+                style={{ resizeMode: "contain" }}
                 onError={() => {
                   Alert.alert("Error", "Failed to load image preview");
                   setNewProduct({ ...newProduct, link: "" });
@@ -438,75 +667,71 @@ const ProductManagementScreen = () => {
             </View>
           ) : null}
 
-          <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>In Stock:</Text>
+          <View className="flex-row items-center my-4">
+            <Text
+              className={`text-base mr-2 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
+              In Stock:
+            </Text>
             <Switch
               value={newProduct.inStock}
               onValueChange={(value: boolean) =>
                 setNewProduct({ ...newProduct, inStock: value })
               }
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              thumbColor={newProduct.inStock ? "#007AFF" : "#f4f3f4"}
+              trackColor={{ false: "#767577", true: "#f0883e" }}
+              thumbColor={newProduct.inStock ? "#d96716" : "#f4f3f4"}
               ios_backgroundColor="#3e3e3e"
             />
           </View>
 
-          <View style={styles.sizeSection}>
-            <Text style={styles.sectionLabel}>Size:</Text>
-            <View style={styles.sizeContainer}>
-              {["xs", "s", "m", "l", "xl", "2xl"].map((size) => (
-                <SizeButton
-                  key={size}
-                  size={size}
-                  selected={newProduct.size === size}
-                  onPress={() => setNewProduct({ ...newProduct, size })}
-                />
-              ))}
-            </View>
-          </View>
+          <Text
+            className={`text-base font-medium mb-1 mt-3 ${
+              isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
+            Color:
+          </Text>
+          {renderColorPicker()}
 
           {editingProduct ? (
             <>
               <TouchableOpacity
-                style={styles.addButton}
+                className={`py-4 px-4 rounded-lg mt-4 ${
+                  loading || !newProduct.category || !newProduct.name
+                    ? "bg-gray-400"
+                    : "bg-yellow-400"
+                }`}
                 onPress={handleUpdateProduct}
-                disabled={
-                  loading ||
-                  !newProduct.category ||
-                  !newProduct.name ||
-                  !newProduct.color
-                }
+                disabled={loading || !newProduct.category || !newProduct.name}
               >
-                <Text style={styles.addButtonText}>
+                <Text className="text-black text-center font-bold text-base">
                   {loading ? "Updating..." : "Update Product"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.cancelEditButton}
+                className={`py-4 px-4 rounded-lg mt-2 ${
+                  isDarkColorScheme ? "bg-red-700" : "bg-red-500"
+                }`}
                 onPress={resetForm}
               >
-                <Text style={styles.cancelEditButtonText}>Cancel Edit</Text>
+                <Text className="text-white text-center font-bold text-base">
+                  Cancel Edit
+                </Text>
               </TouchableOpacity>
             </>
           ) : (
             <TouchableOpacity
-              style={[
-                styles.addButton,
-                (loading ||
-                  !newProduct.category ||
-                  !newProduct.name ||
-                  !newProduct.color) &&
-                  styles.disabledButton,
-              ]}
+              className={`py-4 px-4 rounded-lg mt-4 ${
+                loading || !newProduct.category || !newProduct.name
+                  ? "bg-gray-400"
+                  : "bg-yellow-400"
+              }`}
               onPress={handleAddProduct}
-              disabled={
-                loading ||
-                !newProduct.category ||
-                !newProduct.name ||
-                !newProduct.color
-              }
+              disabled={loading || !newProduct.category || !newProduct.name}
             >
-              <Text style={styles.addButtonText}>
+              <Text className="text-black text-center font-bold text-base">
                 {loading ? "Adding..." : "Add Product"}
               </Text>
             </TouchableOpacity>
@@ -516,316 +741,38 @@ const ProductManagementScreen = () => {
         {loading && (
           <ActivityIndicator
             size="large"
-            color="#007AFF"
-            style={styles.loader}
+            color={isDarkColorScheme ? "#f0883e" : "#d96716"}
+            className="py-4"
           />
         )}
 
-        <Text style={styles.sectionTitle}>All Products:</Text>
-        {products.length > 0 ? (
-          <FlatList
-            data={products}
-            renderItem={renderProduct}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
-        ) : (
-          <Text style={styles.emptyMessage}>No products found</Text>
-        )}
+        <Text
+          className={`text-xl font-bold mt-5 mb-2 ${
+            isDarkColorScheme
+              ? "text-gray-100 bg-black"
+              : "text-gray-800 bg-gray-100"
+          } p-2 rounded`}
+        >
+          All Products:
+        </Text>
+        <View>
+          {products.length > 0 ? (
+            products.map((item) => (
+              <View key={item.id}>{renderProduct({ item })}</View>
+            ))
+          ) : (
+            <Text
+              className={`text-center py-5 italic ${
+                isDarkColorScheme ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              No products found
+            </Text>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#333",
-  },
-  formContainer: {
-    backgroundColor: "#f9f9f9",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  categorySelector: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 15,
-    backgroundColor: "#fff",
-    marginVertical: 5,
-  },
-  categorySelectorText: {
-    fontSize: 16,
-    color: "#000",
-  },
-  categorySelectorPlaceholder: {
-    color: "#999",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    padding: 20,
-    maxHeight: "70%",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 15,
-    color: "#333",
-  },
-  categoryList: {
-    marginBottom: 15,
-  },
-  categoryItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  selectedCategoryItem: {
-    backgroundColor: "#f0f8ff",
-  },
-  categoryItemText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  selectedCategoryItemText: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  cancelButton: {
-    padding: 15,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 5,
-    backgroundColor: "#fff",
-    fontSize: 16,
-  },
-  imageInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
-  },
-  imageImageInput: {
-    flex: 1,
-    marginRight: 10,
-  },
-  pickButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pickButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  imagePreviewContainer: {
-    alignItems: "center",
-    marginVertical: 10,
-    borderRadius: 5,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#f0f0f0",
-  },
-  previewImage: {
-    width: 200,
-    height: 200,
-    resizeMode: "contain",
-  },
-  switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 15,
-  },
-  switchLabel: {
-    fontSize: 16,
-    marginRight: 10,
-  },
-  sizeSection: {
-    marginVertical: 10,
-  },
-  sectionLabel: {
-    fontSize: 16,
-    marginBottom: 5,
-    color: "#333",
-    fontWeight: "500",
-  },
-  sizeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  sizeButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    backgroundColor: "#f0f0f0",
-    minWidth: 45,
-    alignItems: "center",
-  },
-  selectedSizeButton: {
-    backgroundColor: "#007AFF",
-    borderColor: "#0056b3",
-  },
-  sizeButtonText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  selectedSizeButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  addButton: {
-    backgroundColor: "#fff200",
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 15,
-    alignItems: "center",
-  },
-  addButtonText: {
-    color: "#000",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  disabledButton: {
-    backgroundColor: "#f0f0f0",
-    opacity: 0.7,
-  },
-  cancelEditButton: {
-    backgroundColor: "#FF4444",
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  cancelEditButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  productItem: {
-    padding: 15,
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 8,
-    marginVertical: 5,
-    backgroundColor: "#fff",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  productName: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  productImage: {
-    width: 100,
-    height: 100,
-    resizeMode: "contain",
-    marginVertical: 10,
-    backgroundColor: "#f9f9f9",
-  },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 10,
-    gap: 10,
-  },
-  editButton: {
-    backgroundColor: "#FFD700",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-  },
-  editButtonText: {
-    color: "#000",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  deleteButton: {
-    backgroundColor: "#FF4444",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-  },
-  deleteButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    borderRadius: 5,
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  emptyMessage: {
-    textAlign: "center",
-    fontStyle: "italic",
-    marginVertical: 10,
-    color: "#888",
-  },
-});
 
 export default ProductManagementScreen;

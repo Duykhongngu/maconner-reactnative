@@ -17,7 +17,7 @@ import { OrderProvider } from "./user/Checkout/OrderContext";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import CustomHeader from "./components/CustomHeader";
+
 import { CartProvider } from "./user/Cart/CartContext";
 
 const LIGHT_THEME = { ...DefaultTheme, colors: NAV_THEME.light };
@@ -67,18 +67,7 @@ export default function RootLayout() {
     <OrderProvider>
       <CartProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-          <StatusBar
-            backgroundColor="transparent"
-            networkActivityIndicatorVisible
-            style={isDarkColorScheme ? "light" : "dark"}
-            translucent
-          />
-          <SafeAreaView
-            style={{
-              flex: 1,
-              backgroundColor: isDarkColorScheme ? "#000" : "#fff",
-            }}
-          >
+          <SafeAreaView className="flex-1 ">
             <Stack
               screenOptions={{
                 headerShown: false,
