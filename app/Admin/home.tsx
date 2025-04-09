@@ -27,22 +27,22 @@ function HomeAdmin() {
       icon: isDarkMode
         ? ("people-outline" as IconName)
         : ("people" as IconName),
-      route: "/admin/AccountsManage/Accounts",
+      route: "/Admin/AccountsManage/Accounts",
     },
     {
       title: "Category Products Management",
       icon: isDarkMode ? ("cube-outline" as IconName) : ("cube" as IconName),
-      route: "/admin/CategoryProductManagement/CategoryProduct",
+      route: "/Admin/CategoryProductManagement/CategoryProduct",
     },
     {
       title: "Products Management",
       icon: isDarkMode ? ("cube-outline" as IconName) : ("cube" as IconName),
-      route: "/admin/ProductsManagement/products",
+      route: "/Admin/ProductsManagement/products",
     },
     {
       title: "Order Management",
       icon: isDarkMode ? ("cart-outline" as IconName) : ("cart" as IconName),
-      route: "/admin/OrderManage/OrderManager",
+      route: "/Admin/OrderManage/OrderManager",
     },
 
     {
@@ -50,14 +50,14 @@ function HomeAdmin() {
       icon: isDarkMode
         ? ("stats-chart-outline" as IconName)
         : ("stats-chart" as IconName),
-      route: "/admin/AccountsManage/Accounts",
+      route: "/Admin/AccountsManage/Accounts",
     },
     {
       title: "Reports",
       icon: isDarkMode
         ? ("document-text-outline" as IconName)
         : ("document-text" as IconName),
-      route: "/admin/AccountsManage/Accounts",
+      route: "/Admin/AccountsManage/Accounts",
     },
   ];
 

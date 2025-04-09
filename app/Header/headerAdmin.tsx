@@ -97,7 +97,7 @@ function AdminHeader() {
         </View>
 
         <View className="flex-1 items-center justify-center flex-row">
-          <TouchableOpacity onPress={() => router.push("/admin/home")}>
+          <TouchableOpacity onPress={() => router.push("/Admin/home")}>
             <Logo width={160} height={30} />
           </TouchableOpacity>
         </View>
@@ -134,7 +134,7 @@ function AdminHeader() {
               <TouchableOpacity
                 onPress={() => {
                   setProfileMenuVisible(false);
-                  router.push("/admin/AccountsManage/Accounts");
+                  router.push("/Admin/AccountsManage/Accounts");
                 }}
               >
                 <Text className="text-base font-medium py-2 dark:text-white">

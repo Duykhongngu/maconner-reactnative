@@ -4,13 +4,12 @@
     "strict": true,
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react-native",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "jsxImportSource": "react",
     "paths": {
       "@firebase/auth": [
         "./node_modules/@firebase/auth/dist/index.rn.d.ts"
@@ -18,13 +17,20 @@
       "~/*": [
         "*"
       ]
-    }
+    },
+    "types": [
+      "node",
+      "react-native"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "nativewind-env.d.ts",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
