@@ -391,23 +391,6 @@ const OrderManager: React.FC = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
-
-        <View className="mt-4">
-          <Text style={styles.title}>Color</Text>
-          <View style={styles.colorContainer}>
-            {colors.map((color) => (
-              <TouchableOpacity
-                key={color.name}
-                onPress={() => setSelectedColor(color.name)}
-              />
-            ))}
-          </View>
-          {selectedColor && (
-            <Text style={styles.selectedColorText}>
-              Selected Color: {selectedColor}
-            </Text>
-          )}
-        </View>
       </View>
     </SafeAreaView>
   );

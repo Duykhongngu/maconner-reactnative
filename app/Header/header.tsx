@@ -132,15 +132,34 @@ function SiteHeader() {
   const handleLogout = async () => {
     try {
       setProfileMenuVisible(false);
-      await logout();
       setUser(null);
-      setTimeout(() => {
-        router.push("/");
-      }, 100);
+      setUserProfile(null);
+      setTotalOrders(0);
+      setIsSearchOpen(false);
+      setMenuVisible(false);
+
+      await logout();
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      await router.push("/");
     } catch (error: any) {
+      console.error("Lỗi đăng xuất:", error);
       Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
+
+  useEffect(() => {
+    const cleanup = () => {
+      setUser(null);
+      setUserProfile(null);
+      setTotalOrders(0);
+      setIsSearchOpen(false);
+      setMenuVisible(false);
+      setProfileMenuVisible(false);
+    };
+    return cleanup;
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -241,6 +260,22 @@ function SiteHeader() {
                 ]}
               >
                 {userProfile?.displayName || user?.displayName || "User"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push("/user/Reviews/ProductsToReview");
+              }}
+            >
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                Đánh giá sản phẩm
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

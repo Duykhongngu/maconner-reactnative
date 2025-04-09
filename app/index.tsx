@@ -68,10 +68,14 @@ export default function Login() {
       console.log("User Role:", userRole);
 
       const numericRole = userRole !== null ? parseInt(userRole) : -1;
+
+      // Đợi một chút trước khi chuyển hướng
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       if (numericRole === 0) {
-        router.replace("/Admin/home" as any);
+        await router.replace("/Admin/home");
       } else if (numericRole === 1) {
-        router.replace("/user/home" as any);
+        await router.replace("/user/home");
       } else {
         Alert.alert("Lỗi", "Vai trò không hợp lệ.");
         setIsLoading(false);
@@ -99,6 +103,7 @@ export default function Login() {
         phone_number: phoneNumber,
         address: address,
         role: 1,
+        photoURL: null,
         createdAt: new Date().toISOString(),
       });
 
@@ -129,10 +134,14 @@ export default function Login() {
       if (token) {
         console.log("Người dùng đã đăng nhập với token hợp lệ.");
         const numericRole = role !== null ? parseInt(role) : -1;
+
+        // Đợi một chút trước khi chuyển hướng
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
         if (numericRole === 0) {
-          router.replace("/Admin/home");
+          await router.replace("/Admin/home");
         } else if (numericRole === 1) {
-          router.replace("/user/home");
+          await router.replace("/user/home");
         } else {
           console.log("Vai trò không hợp lệ.");
           setIsLoading(false);
@@ -162,112 +171,134 @@ export default function Login() {
     checkLoginStatus();
   }, []);
 
-  return (
-    <SafeAreaView className="flex-1 bg-white">
-      {isLoading ? (
+  // Cleanup khi component unmount
+  useEffect(() => {
+    return () => {
+      setIsLoading(false);
+      setEmail("");
+      setPassword("");
+      setName("");
+      setPhoneNumber("");
+      setAddress("");
+      setIsRegistering(false);
+      setEmailForReset("");
+      setIsResettingPassword(false);
+    };
+  }, []);
+
+  // Nếu đang loading, chỉ hiển thị loading indicator
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#FF6B00" />
-          <Text className="mt-4 text-gray-600">Đang kiểm tra đăng nhập...</Text>
+          <Text className="mt-4 text-gray-600">
+            Đang kiểm tra thông tin vui lòng chờ...
+          </Text>
         </View>
-      ) : (
-        <View className="flex-1 justify-center items-center p-5 bg-white">
-          <Text className="text-2xl font-bold mb-5 text-black">
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 justify-center items-center p-5 bg-white">
+        <Text className="text-2xl font-bold mb-5 text-black">
+          {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
+        </Text>
+
+        {isRegistering && (
+          <>
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Tên hiển thị (Display Name)"
+              placeholderTextColor="gray"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Số điện thoại"
+              placeholderTextColor="gray"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Địa chỉ"
+              placeholderTextColor="gray"
+              value={address}
+              onChangeText={setAddress}
+            />
+          </>
+        )}
+
+        <TextInput
+          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+          placeholder="Email"
+          placeholderTextColor="gray"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+          placeholder="Mật khẩu"
+          placeholderTextColor="gray"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity
+          className="p-4 rounded-lg w-full bg-orange-500 items-center"
+          onPress={isRegistering ? handleRegister : handleLogin}
+        >
+          <Text className="text-lg font-bold text-white">
             {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setIsRegistering(!isRegistering)}
+          className="mt-5"
+        >
+          <Text className="text-base text-orange-500">
+            {isRegistering
+              ? "Đã có tài khoản? Đăng nhập"
+              : "Chưa có tài khoản? Đăng ký"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setIsResettingPassword(true)}
+          className="mt-5"
+        >
+          <Text className="text-base text-orange-500">Quên mật khẩu?</Text>
+        </TouchableOpacity>
 
-          {isRegistering && (
-            <>
-              <TextInput
-                className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-                placeholder="Tên hiển thị (Display Name)"
-                placeholderTextColor="gray"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-              <TextInput
-                className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-                placeholder="Số điện thoại"
-                placeholderTextColor="gray"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-              />
-              <TextInput
-                className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-                placeholder="Địa chỉ"
-                placeholderTextColor="gray"
-                value={address}
-                onChangeText={setAddress}
-              />
-            </>
-          )}
-
-          <TextInput
-            className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-            placeholder="Email"
-            placeholderTextColor="gray"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-            placeholder="Mật khẩu"
-            placeholderTextColor="gray"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TouchableOpacity
-            className="p-4 rounded-lg w-full bg-orange-500 items-center"
-            onPress={isRegistering ? handleRegister : handleLogin}
-          >
-            <Text className="text-lg font-bold text-white">
-              {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setIsRegistering(!isRegistering)}
-            className="mt-5"
-          >
-            <Text className="text-base text-orange-500">
-              {isRegistering
-                ? "Đã có tài khoản? Đăng nhập"
-                : "Chưa có tài khoản? Đăng ký"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setIsResettingPassword(true)}
-            className="mt-5"
-          >
-            <Text className="text-base text-orange-500">Quên mật khẩu?</Text>
-          </TouchableOpacity>
-
-          {isResettingPassword && (
-            <View className="w-full mt-5">
-              <TextInput
-                className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
-                placeholder="Nhập email để đặt lại mật khẩu"
-                placeholderTextColor="gray"
-                value={emailForReset}
-                onChangeText={setEmailForReset}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                className="p-4 rounded-lg w-full bg-orange-500 items-center"
-                onPress={handleResetPassword}
-              >
-                <Text className="text-lg font-bold text-white ">
-                  Gửi email đặt lại mật khẩu
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      )}
+        {isResettingPassword && (
+          <View className="w-full mt-5">
+            <TextInput
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              placeholder="Nhập email để đặt lại mật khẩu"
+              placeholderTextColor="gray"
+              value={emailForReset}
+              onChangeText={setEmailForReset}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              className="p-4 rounded-lg w-full bg-orange-500 items-center"
+              onPress={handleResetPassword}
+            >
+              <Text className="text-lg font-bold text-white ">
+                Gửi email đặt lại mật khẩu
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }

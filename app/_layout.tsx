@@ -77,7 +77,7 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="admin" options={{ headerShown: false }} />
+              <Stack.Screen name="Admin" options={{ headerShown: false }} />
               <Stack.Screen name="user" options={{ headerShown: false }} />
             </Stack>
           </SafeAreaView>

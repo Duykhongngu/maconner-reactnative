@@ -73,16 +73,40 @@ function AdminHeader() {
 
   const handleLogout = async () => {
     try {
+      // Đóng menu profile trước
       setProfileMenuVisible(false);
+
+      // Cleanup tất cả state và listeners
+      const cleanupTasks = async () => {
+        setUser(null);
+        setUserProfile(null);
+        setMenuVisible(false);
+      };
+
+      // Thực hiện logout và cleanup
+      await cleanupTasks();
       await logout();
-      setUser(null);
-      setTimeout(() => {
-        router.push("/");
-      }, 100);
+
+      // Đợi một chút trước khi chuyển hướng
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Chuyển hướng về trang chủ
+      router.push("/");
     } catch (error: any) {
+      console.error("Lỗi đăng xuất:", error);
       Alert.alert("Lỗi đăng xuất", error.message);
     }
   };
+
+  // Cleanup khi component unmount
+  useEffect(() => {
+    return () => {
+      setUser(null);
+      setUserProfile(null);
+      setMenuVisible(false);
+      setProfileMenuVisible(false);
+    };
+  }, []);
 
   return (
     <SafeAreaView className="flex-1">

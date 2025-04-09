@@ -18,6 +18,7 @@ export default function AdminLayout() {
         <Stack.Screen name="OrderManage/OrderManager" />
         <Stack.Screen name="ProductsManagement/products" />
         <Stack.Screen name="CategoryProductManagement/CategoryProduct" />
+        <Stack.Screen name="ReviewManagements/ReviewManagement" />
       </Stack>
     </SafeAreaView>
   );

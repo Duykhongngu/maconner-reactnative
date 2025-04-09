@@ -44,7 +44,11 @@ function HomeAdmin() {
       icon: isDarkMode ? ("cart-outline" as IconName) : ("cart" as IconName),
       route: "/Admin/OrderManage/OrderManager",
     },
-
+    {
+      title: "Review Management",
+      icon: isDarkMode ? ("star-outline" as IconName) : ("star" as IconName),
+      route: "/Admin/ReviewManagements/ReviewManagement",
+    },
     {
       title: "Analytics",
       icon: isDarkMode
@@ -52,6 +56,7 @@ function HomeAdmin() {
         : ("stats-chart" as IconName),
       route: "/Admin/AccountsManage/Accounts",
     },
+
     {
       title: "Reports",
       icon: isDarkMode

@@ -20,6 +20,8 @@ import {
   query,
   where,
   getDocs,
+  orderBy,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "~/firebase.config";
 import { useCart } from "../Cart/CartContext";
@@ -65,6 +67,37 @@ interface Category {
   name: string;
 }
 
+interface Review {
+  id: string;
+  userId: string;
+  productId: string;
+  rating: number;
+  comment: string;
+  createdAt: any;
+  productName: string;
+  productImage: string;
+  userName?: string;
+  userAvatar?: string;
+  replies?: ReviewReply[];
+}
+
+interface ReviewReply {
+  id: string;
+  reviewId: string;
+  reply: string;
+  createdAt: any;
+}
+
+interface FirestoreReview {
+  userId: string;
+  productId: string;
+  rating: number;
+  comment: string;
+  createdAt: any;
+  productName: string;
+  productImage: string;
+}
+
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -77,6 +110,8 @@ export default function ProductDetail(): JSX.Element {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
   const [categoryName, setCategoryName] = useState<string>("");
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState<number>(0);
   const isDarkMode = colorScheme === "dark";
 
   // Lấy dữ liệu sản phẩm và danh mục
@@ -139,11 +174,6 @@ export default function ProductDetail(): JSX.Element {
 
           // Fetch suggested products - Sửa lại logic để lấy sản phẩm cùng category
           if (productData.category) {
-            console.log(
-              "Đang lấy sản phẩm đề xuất cho category:",
-              productData.category
-            );
-
             const productsRef = collection(db, "products");
             const q = query(
               productsRef,
@@ -175,10 +205,6 @@ export default function ProductDetail(): JSX.Element {
               }
             });
 
-            console.log(
-              "Số lượng sản phẩm đề xuất tìm thấy:",
-              suggestedProductsData.length
-            );
             setSuggestedProducts(suggestedProductsData);
           }
         } else {
@@ -193,6 +219,107 @@ export default function ProductDetail(): JSX.Element {
     };
 
     fetchProductAndCategory();
+  }, [id]);
+
+  // Thêm hàm tính và cập nhật rating trung bình
+  const updateAverageRating = async (productId: string, reviews: Review[]) => {
+    try {
+      if (!reviews.length) {
+        // Nếu không có đánh giá, cập nhật rating về 0
+        await updateDoc(doc(db, "products", productId), {
+          rating: 0,
+          totalReviews: 0,
+        });
+        return;
+      }
+
+      // Tính rating trung bình
+      const totalRating = reviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+      const averageRating = totalRating / reviews.length;
+
+      // Cập nhật rating trong collection products
+      await updateDoc(doc(db, "products", productId), {
+        rating: averageRating,
+        totalReviews: reviews.length,
+      });
+
+      // Cập nhật state averageRating
+      setAverageRating(averageRating);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật rating trung bình:", error);
+    }
+  };
+
+  // Cập nhật useEffect fetchReviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!id) return;
+
+      try {
+        const reviewsQuery = query(
+          collection(db, "reviews"),
+          where("productId", "==", id)
+        );
+        const reviewsSnapshot = await getDocs(reviewsQuery);
+        const reviewsData: Review[] = [];
+
+        // Lấy tất cả reviews
+        for (const docSnapshot of reviewsSnapshot.docs) {
+          const reviewData = docSnapshot.data() as FirestoreReview;
+          const review: Review = {
+            id: docSnapshot.id,
+            ...reviewData,
+            userName: "Đang tải...",
+            userAvatar: undefined,
+          };
+
+          // Lấy thông tin người dùng từ accounts collection
+          const userRef = doc(db, "accounts", reviewData.userId);
+          try {
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              review.userName = userData.displayName || "Người dùng ẩn danh";
+              review.userAvatar = userData.photoURL || undefined;
+            }
+
+            // Lấy các câu trả lời cho đánh giá này
+            const repliesQuery = query(
+              collection(db, "reviewReplies"),
+              where("reviewId", "==", docSnapshot.id),
+              orderBy("createdAt", "asc")
+            );
+            const repliesSnapshot = await getDocs(repliesQuery);
+            review.replies = repliesSnapshot.docs.map((replyDoc) => ({
+              id: replyDoc.id,
+              ...replyDoc.data(),
+            })) as ReviewReply[];
+          } catch (error) {
+            console.error("Lỗi khi lấy thông tin người dùng:", error);
+            review.userName = "Người dùng ẩn danh";
+          }
+
+          reviewsData.push(review);
+        }
+
+        // Sắp xếp đánh giá mới nhất lên đầu
+        reviewsData.sort(
+          (a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis()
+        );
+
+        setReviews(reviewsData);
+
+        // Cập nhật rating trung bình
+        await updateAverageRating(id, reviewsData);
+      } catch (error) {
+        console.error("Lỗi khi lấy đánh giá:", error);
+      }
+    };
+
+    fetchReviews();
   }, [id]);
 
   // Xử lý thêm vào giỏ hàng
@@ -338,6 +465,138 @@ export default function ProductDetail(): JSX.Element {
           price={product.price}
           disabled={!selectedColor || !product.color.includes(selectedColor)}
         />
+        {/* Phần đánh giá sản phẩm */}
+        <View style={styles.reviewSection}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+            Đánh giá sản phẩm
+          </Text>
+
+          {/* Hiển thị rating trung bình */}
+          <View style={styles.reviewRatingContainer}>
+            <Text
+              style={[styles.reviewRatingText, isDarkMode && styles.darkText]}
+            >
+              {averageRating.toFixed(1)}
+            </Text>
+            <View style={styles.reviewStarsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <AntDesign
+                  key={star}
+                  name={star <= Math.round(averageRating) ? "star" : "staro"}
+                  size={20}
+                  color="#FFB800"
+                />
+              ))}
+            </View>
+            <Text
+              style={[styles.reviewCountText, isDarkMode && styles.darkText]}
+            >
+              ({reviews.length} đánh giá)
+            </Text>
+          </View>
+
+          {/* Danh sách đánh giá */}
+          {reviews.map((review) => (
+            <View key={review.id} style={styles.reviewItemContainer}>
+              <View style={styles.reviewItemHeader}>
+                <View style={styles.reviewUserInfo}>
+                  <View style={styles.userAvatarContainer}>
+                    {review.userAvatar ? (
+                      <Image
+                        source={{ uri: review.userAvatar }}
+                        style={styles.userAvatar}
+                      />
+                    ) : (
+                      <View style={[styles.userAvatar, styles.defaultAvatar]}>
+                        <Text style={styles.defaultAvatarText}>
+                          {review.userName?.[0]?.toUpperCase() || "?"}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.userNameContainer}>
+                      <Text
+                        style={[
+                          styles.reviewUserName,
+                          isDarkMode && styles.darkText,
+                        ]}
+                      >
+                        {review.userName}
+                      </Text>
+                      <View style={styles.reviewStarsContainer}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <AntDesign
+                            key={star}
+                            name={star <= review.rating ? "star" : "staro"}
+                            size={16}
+                            color="#FFB800"
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <Text
+                  style={[styles.reviewItemDate, isDarkMode && styles.darkText]}
+                >
+                  {new Date(review.createdAt?.toDate()).toLocaleDateString()}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.reviewItemComment,
+                  isDarkMode && styles.darkText,
+                ]}
+              >
+                {review.comment}
+              </Text>
+
+              {/* Hiển thị phần trả lời */}
+              {review.replies && review.replies.length > 0 && (
+                <View style={styles.repliesContainer}>
+                  {review.replies.map((reply) => (
+                    <View key={reply.id} style={styles.replyItem}>
+                      <View style={styles.replyHeader}>
+                        <AntDesign name="message1" size={16} color="#666" />
+                        <Text
+                          style={[
+                            styles.replyLabel,
+                            isDarkMode && styles.darkText,
+                          ]}
+                        >
+                          Phản hồi từ Admin
+                        </Text>
+                        <Text
+                          style={[
+                            styles.replyDate,
+                            isDarkMode && styles.darkText,
+                          ]}
+                        >
+                          {new Date(
+                            reply.createdAt?.toDate()
+                          ).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.replyText,
+                          isDarkMode && styles.darkText,
+                        ]}
+                      >
+                        {reply.reply}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+
+          {reviews.length === 0 && (
+            <Text style={[styles.noReviewsText, isDarkMode && styles.darkText]}>
+              Chưa có đánh giá nào cho sản phẩm này
+            </Text>
+          )}
+        </View>
         {/* Phần sản phẩm đề xuất */}
         {suggestedProducts.length > 0 && (
           <View style={styles.suggestedProductsSection}>
@@ -510,5 +769,126 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
     color: "#666",
+  },
+  // Review styles
+  reviewSection: {
+    marginTop: 16,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  reviewRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+  },
+  reviewRatingText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginRight: 12,
+  },
+  reviewStarsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  reviewCountText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  reviewItemContainer: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  reviewItemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  reviewItemDate: {
+    fontSize: 12,
+    color: "#666",
+  },
+  reviewItemComment: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  noReviewsText: {
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+  },
+  reviewUserInfo: {
+    flex: 1,
+  },
+  userAvatarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  defaultAvatar: {
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  defaultAvatarText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#757575",
+  },
+  userNameContainer: {
+    flex: 1,
+  },
+  reviewUserName: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  repliesContainer: {
+    marginTop: 12,
+    paddingLeft: 16,
+    borderLeftWidth: 2,
+    borderLeftColor: "#FF6B00",
+  },
+  replyItem: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+  },
+  replyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  replyLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
+    marginLeft: 6,
+  },
+  replyDate: {
+    fontSize: 12,
+    color: "#999",
+    marginLeft: 8,
+  },
+  replyText: {
+    fontSize: 14,
+    color: "#333",
+    marginLeft: 22,
   },
 });
