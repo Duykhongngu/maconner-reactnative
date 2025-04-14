@@ -9,7 +9,6 @@ import {
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
-import Footer from "../../Footer/Footer";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -107,6 +106,7 @@ const OrderStatus: React.FC = () => {
       ]}
     >
       <ScrollView
+        showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContainer}
       >
@@ -201,9 +201,6 @@ const OrderStatus: React.FC = () => {
             Tiếp tục mua sắm
           </Text>
         </Button>
-        <View style={styles.footerContainer}>
-          <Footer />
-        </View>
       </ScrollView>
     </View>
   );

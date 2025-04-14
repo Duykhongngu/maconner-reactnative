@@ -14,7 +14,20 @@ import {
 import { useRouter } from "expo-router";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { Button } from "~/components/ui/button";
-import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  getDocs,
+  query,
+  where,
+  increment,
+  getDoc,
+  orderBy,
+  limit,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "~/firebase.config";
 import { Search } from "lucide-react-native";
 
@@ -27,6 +40,15 @@ interface Order {
   email?: string;
   phone?: string;
   userId?: string;
+  items?: OrderItem[];
+}
+
+interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  color?: string;
 }
 
 const colors = [
@@ -131,7 +153,110 @@ const OrderManager: React.FC = () => {
     setFilteredOrders(result);
   }, [statusFilter, searchQuery, orders]);
 
-  // Improved status update with validation
+  // Cập nhật thứ hạng sản phẩm khi đơn hàng được hoàn thành
+  const updateProductPurchaseCount = async (orderId: string) => {
+    try {
+      // Lấy thông tin đơn hàng
+      const orderRef = doc(db, "orderManager", orderId);
+      const orderSnap = await getDoc(orderRef);
+
+      if (!orderSnap.exists()) {
+        console.error("Order not found");
+        return;
+      }
+
+      const orderData = orderSnap.data() as Order;
+
+      // Nếu đơn hàng không có items, thoát
+      if (!orderData.items || orderData.items.length === 0) {
+        console.log("Order has no items to update purchase count");
+        return;
+      }
+
+      // Cập nhật purchaseCount cho mỗi sản phẩm trong đơn hàng
+      for (const item of orderData.items) {
+        const productRef = doc(db, "products", item.id);
+        const productSnap = await getDoc(productRef);
+
+        if (productSnap.exists()) {
+          const productData = productSnap.data();
+          const currentStock = productData.stockQuantity || 0;
+
+          // Cập nhật số lượng mua và số lượng tồn kho
+          await updateDoc(productRef, {
+            purchaseCount: increment(item.quantity),
+            stockQuantity: currentStock - item.quantity,
+            // Cập nhật trạng thái inStock dựa trên số lượng còn lại
+            inStock: currentStock - item.quantity > 0,
+          });
+
+          console.log(
+            `Updated product ${item.id}: purchased ${
+              item.quantity
+            }, remaining stock ${currentStock - item.quantity}`
+          );
+        }
+      }
+
+      // Kiểm tra xem có danh mục Trending được bật auto-update không
+      const categoriesRef = collection(db, "categories");
+      const q = query(
+        categoriesRef,
+        where("name", "==", "Trending"),
+        where("autoUpdate", "==", true)
+      );
+      const categorySnap = await getDocs(q);
+
+      if (!categorySnap.empty) {
+        // Có danh mục Trending với auto-update bật
+        const trendingCategory = categorySnap.docs[0];
+
+        // Lấy top 20 sản phẩm bán chạy nhất
+        const productsRef = collection(db, "products");
+        const topProductsQuery = query(
+          productsRef,
+          orderBy("purchaseCount", "desc"),
+          limit(20)
+        );
+        const topProductsSnap = await getDocs(topProductsQuery);
+
+        const topProductIds = topProductsSnap.docs.map((doc) => doc.id);
+
+        // Cập nhật danh sách sản phẩm trending
+        await updateDoc(doc(db, "categories", trendingCategory.id), {
+          productIds: topProductIds,
+          lastUpdated: new Date().toISOString(),
+        });
+
+        // Cập nhật trường Trending cho từng sản phẩm
+        const batch = writeBatch(db);
+
+        // Đầu tiên, đặt tất cả sản phẩm là không trending
+        const allProductsQuery = query(collection(db, "products"));
+        const allProductsSnap = await getDocs(allProductsQuery);
+
+        allProductsSnap.forEach((docSnap) => {
+          const productRef = doc(db, "products", docSnap.id);
+          batch.update(productRef, { Trending: false });
+        });
+
+        // Sau đó đánh dấu các sản phẩm top là trending
+        for (const productId of topProductIds) {
+          const productRef = doc(db, "products", productId);
+          batch.update(productRef, { Trending: true });
+        }
+
+        // Thực hiện tất cả các cập nhật trong một batch
+        await batch.commit();
+
+        console.log("Trending products updated automatically");
+      }
+    } catch (error) {
+      console.error("Error updating product purchase counts:", error);
+    }
+  };
+
+  // Cập nhật hàm updateOrderStatus để gọi updateProductPurchaseCount khi đơn hàng chuyển sang trạng thái completed
   const updateOrderStatus = useCallback(
     async (orderId: string, newStatus: string) => {
       if (!["pending", "completed", "cancelled"].includes(newStatus)) {
@@ -145,6 +270,12 @@ const OrderManager: React.FC = () => {
           status: newStatus,
           updatedAt: new Date().toISOString(),
         });
+
+        // Nếu trạng thái mới là "completed", cập nhật purchaseCount của sản phẩm
+        if (newStatus === "completed") {
+          await updateProductPurchaseCount(orderId);
+        }
+
         Alert.alert("Success", "Order status updated successfully");
       } catch (error) {
         console.error("Error updating order status:", error);

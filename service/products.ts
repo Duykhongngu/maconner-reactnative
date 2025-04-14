@@ -1,34 +1,99 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, limit, getDoc } from "firebase/firestore";
 import { db } from "~/firebase.config";
 import axios from "axios";
 
-interface Product {
+export interface Product {
   id: string;
   category: string;
   inStock: boolean;
   link: string;
+  images?: string[];
   name: string;
   price: number;
   description: string;
   color: string[];
+  purchaseCount?: number;
+  trending?: boolean;
+  stockQuantity?: number;
 }
 
-export const fetchProducts = async (): Promise<Product[]> => {
-  const querySnapshot = await getDocs(collection(db, "products"));
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      category: data.category || "",
-      inStock: data.inStock !== false,
-      link: data.link || "",
-      name: data.name || "",
-      price: Number(data.price) || 0,
-      description: data.description || "",
-      color: Array.isArray(data.color) ? data.color : [],
-    } as Product;
-  });
-};
+export async function fetchProducts(): Promise<Product[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        category: data.category || "",
+        inStock: data.inStock ?? true,
+        link: data.link || "",
+        images: data.images || [],
+        name: data.name || "",
+        price: data.price || 0,
+        description: data.description || "",
+        color: data.color || [],
+        purchaseCount: data.purchaseCount || 0,
+        trending: data.Trending || false,
+        stockQuantity: data.stockQuantity || 0,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+}
+
+export async function fetchTrendingProducts(): Promise<Product[]> {
+  try {
+    const q = query(
+      collection(db, "products"),
+      where("Trending", "==", true),
+      limit(10)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        category: data.category || "",
+        inStock: data.inStock ?? true,
+        link: data.link || "",
+        images: data.images || [],
+        name: data.name || "",
+        price: data.price || 0,
+        description: data.description || "",
+        color: data.color || [],
+        purchaseCount: data.purchaseCount || 0,
+        trending: data.Trending || false,
+        stockQuantity: data.stockQuantity || 0,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching trending products:", error);
+    throw error;
+  }
+}
+
+export async function updatePurchaseCount(productId: string, increment: number = 1): Promise<void> {
+  try {
+    const productRef = doc(db, "products", productId);
+    const productSnap = await getDoc(productRef);
+    
+    if (!productSnap.exists()) {
+      throw new Error("Product not found");
+    }
+    
+    const currentCount = productSnap.data().purchaseCount || 0;
+    
+    await updateDoc(productRef, {
+      purchaseCount: currentCount + increment
+    });
+  } catch (error) {
+    console.error("Error updating purchase count:", error);
+    throw error;
+  }
+}
 
 export const addProduct = async (productData: Omit<Product, "id">) => {
   return await addDoc(collection(db, "products"), productData);
@@ -71,3 +136,30 @@ export const uploadImage = async (imageUri: string): Promise<string> => {
 
   return cloudinaryResponse.data.secure_url;
 };
+
+export async function updateStockQuantity(productId: string, quantity: number): Promise<void> {
+  try {
+    const productRef = doc(db, "products", productId);
+    const productSnap = await getDoc(productRef);
+    
+    if (!productSnap.exists()) {
+      throw new Error("Product not found");
+    }
+    
+    const currentStock = productSnap.data().stockQuantity || 0;
+    const newStock = currentStock + quantity;
+    
+    const finalStock = Math.max(0, newStock);
+    
+    const inStock = finalStock > 0;
+    
+    await updateDoc(productRef, {
+      stockQuantity: finalStock,
+      inStock: inStock
+    });
+    
+  } catch (error) {
+    console.error("Error updating stock quantity:", error);
+    throw error;
+  }
+}

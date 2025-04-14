@@ -15,8 +15,9 @@ export interface CartItem {
   price: number;
   quantity: number;
   color: string;
-
   image: string;
+  images?: string[];
+  description: string;
 }
 
 export interface Order {

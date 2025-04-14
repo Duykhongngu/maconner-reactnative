@@ -11,8 +11,7 @@ import { useWindowDimensions } from "react-native";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "~/firebase.config";
+import { fetchTrendingProducts } from "~/service/products";
 
 // Định nghĩa interface cho sản phẩm
 interface Product {
@@ -23,6 +22,9 @@ interface Product {
   name: string;
   price: number;
   description: string;
+  trending?: boolean;
+  purchaseCount?: number;
+  images?: string[];
 }
 
 function Trending() {
@@ -36,39 +38,25 @@ function Trending() {
   const cardBgColor = isDarkColorScheme ? "#1E1E1E" : "#FFFFFF";
   const borderColor = isDarkColorScheme ? "#374151" : "#E5E7EB";
 
-  // Lấy dữ liệu sản phẩm từ Firestore và lọc theo category "valentine"
+  // Lấy dữ liệu sản phẩm trending từ service
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const allProducts = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          category: doc.data().category || "",
-          inStock: doc.data().inStock !== false,
-          link: doc.data().link || "",
-          name: doc.data().name || "",
-          price: Number(doc.data().price) || 0,
-          description: doc.data().description || "",
-        })) as Product[];
-
-        // Lọc các sản phẩm thuộc danh mục "valentine"
-        const valentineProducts = allProducts.filter((product) =>
-          product.category.toLowerCase().includes("")
-        );
-        setTrendingProducts(valentineProducts);
+        const products = await fetchTrendingProducts();
+        setTrendingProducts(products);
       } catch (error) {
         console.error("Error fetching trending products:", error);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: "#F97316" }]}>
-          Trending Now - Valentine
+          Trending Products
         </Text>
         {trendingProducts.length > 0 ? (
           <View style={styles.productContainer}>
@@ -82,7 +70,7 @@ function Trending() {
                 ]}
               >
                 <Image
-                  source={{ uri: item.link }}
+                  source={{ uri: item.images?.[0] || item.link }}
                   style={styles.productImage}
                   onError={(e) =>
                     console.error("Image loading error:", e.nativeEvent.error)
@@ -95,12 +83,17 @@ function Trending() {
                   {item.description}
                 </Text>
                 <Text style={styles.productPrice}>$ {item.price} USD</Text>
+                {item.purchaseCount !== undefined && item.purchaseCount > 0 && (
+                  <Text style={styles.purchaseCount}>
+                    Purchased {item.purchaseCount} times
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
         ) : (
           <Text style={[styles.emptyMessage, { color: textColor }]}>
-            No Valentine products found
+            No trending products found
           </Text>
         )}
         <View style={styles.showMoreContainer}>
@@ -179,6 +172,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     marginVertical: 10,
+  },
+  purchaseCount: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontStyle: "italic",
+    marginTop: 4,
   },
 });
 

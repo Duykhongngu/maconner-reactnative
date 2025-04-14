@@ -50,13 +50,22 @@ function HomeAdmin() {
       route: "/Admin/ReviewManagements/ReviewManagement",
     },
     {
+      title: "Quản lý thông báo",
+      icon: "notifications" as IconName,
+      route: "/Admin/NotificationManagement/NotificationManagement",
+    },
+    {
+      title: "Yêu cầu hỗ trợ",
+      icon: "chatbubbles-outline" as IconName,
+      route: "/Admin/ChatManagement/AdminChatManagement",
+    },
+    {
       title: "Analytics",
       icon: isDarkMode
         ? ("stats-chart-outline" as IconName)
         : ("stats-chart" as IconName),
       route: "/Admin/AccountsManage/Accounts",
     },
-
     {
       title: "Reports",
       icon: isDarkMode

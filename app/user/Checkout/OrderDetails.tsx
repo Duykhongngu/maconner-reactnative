@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { MaterialIcons } from "@expo/vector-icons";
-import Footer from "../../Footer/Footer";
 import { db } from "~/firebase.config"; // Đảm bảo đã cấu hình Firebase
 import { doc, getDoc } from "firebase/firestore";
 
@@ -87,6 +86,8 @@ const OrderDetailsScreen: React.FC = () => {
 
   return (
     <ScrollView
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
       style={[
         styles.container,
         isDarkMode ? styles.darkBackground : styles.lightBackground,
@@ -251,7 +252,6 @@ const OrderDetailsScreen: React.FC = () => {
           Quay lại danh sách đơn hàng
         </Text>
       </Button>
-      <Footer />
     </ScrollView>
   );
 };

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305889940349",
+    "project_id": "maconer-c3047",
+    "storage_bucket": "maconer-c3047.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305889940349:web:1ab2513ad44f9491b9f214",
+        "android_client_info": {
+          "package_name": "com.duynguroi1504.marconerreacnative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAROIKd7YY1QWlMb-D_nASWFfSAEwrEpO8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

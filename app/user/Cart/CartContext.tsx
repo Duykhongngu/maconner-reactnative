@@ -18,7 +18,12 @@ export interface CartItem {
   quantity: number;
   color: string;
   image: string;
+  images?: string[];
   description: string;
+  size?: string;
+  trending?: boolean;
+  purchaseCount?: number;
+  stockQuantity?: number;
 }
 
 interface CartContextType {
@@ -73,7 +78,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
           price: item.price,
           quantity: item.quantity,
           color: item.color || "default", // Đảm bảo color không undefined
+          size: item.size || "Standard", // Đảm bảo size không undefined
           image: item.image,
+          images: item.images || [item.image], // Đảm bảo images có giá trị
           description: item.description || "", // Đảm bảo description không undefined
         }));
         await setDoc(cartRef, { items: validItems }, { merge: true });

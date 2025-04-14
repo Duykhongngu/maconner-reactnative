@@ -4,7 +4,11 @@ import HomePage from "~/app/user/Home/index";
 export default function Screen() {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-black">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
         <View className="flex-1">
           <HomePage />
         </View>

@@ -12,7 +12,7 @@ import {
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft, MenuIcon } from "lucide-react-native";
+import { ChevronLeft, MenuIcon, Send, SendIcon } from "lucide-react-native";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
@@ -126,7 +126,15 @@ function AdminHeader() {
           </TouchableOpacity>
         </View>
 
-        <View className="ml-5 items-center">
+        <View className="ml-5 flex-row items-center gap-2">
+          <TouchableOpacity
+            className="p-2"
+            onPress={() =>
+              router.push("/Admin/ChatManagement/AdminChatManagement")
+            }
+          >
+            <Send size={26} color={iconColor} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setProfileMenuVisible(true)}
             className="p-2"

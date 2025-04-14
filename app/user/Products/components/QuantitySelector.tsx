@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  AnimatedStyleProp,
 } from "react-native-reanimated";
 
 interface QuantitySelectorProps {
@@ -28,30 +27,40 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   const scaleDecrease = useSharedValue(1);
   const scaleIncrease = useSharedValue(1);
 
-  // Animated styles - Sửa kiểu dữ liệu
-  const decreaseAnimatedStyle = useAnimatedStyle<AnimatedStyleProp<ViewStyle>>(
-    () => {
-      return {
-        transform: [{ scale: scaleDecrease.value }],
-      };
-    }
-  );
+  // React states để theo dõi giá trị shared values
+  const [decreaseScale, setDecreaseScale] = useState(1);
+  const [increaseScale, setIncreaseScale] = useState(1);
 
-  const increaseAnimatedStyle = useAnimatedStyle<AnimatedStyleProp<ViewStyle>>(
-    () => {
-      return {
-        transform: [{ scale: scaleIncrease.value }],
-      };
-    }
-  );
+  // Sử dụng polling để đồng bộ shared values với React states
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDecreaseScale(scaleDecrease.value);
+      setIncreaseScale(scaleIncrease.value);
+    }, 1000 / 60); // 60 FPS
+
+    return () => clearInterval(interval);
+  }, [scaleDecrease, scaleIncrease]);
+
+  // Animated styles
+  const decreaseAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scaleDecrease.value }],
+    };
+  });
+
+  const increaseAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scaleIncrease.value }],
+    };
+  });
 
   const handleDecrease = () => {
     if (quantity <= 1) return;
 
-    // Sử dụng withSpring thay vì callback
+    // Tạo animation và sau đó thực hiện hành động
     scaleDecrease.value = withSpring(0.9);
 
-    // Sử dụng setTimeout để đảm bảo animation hoàn thành
+    // Dùng setTimeout thông thường cho UI thay vì callback trong animation
     setTimeout(() => {
       scaleDecrease.value = withSpring(1);
       onChangeQuantity(Math.max(1, quantity - 1));
@@ -59,10 +68,10 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   };
 
   const handleIncrease = () => {
-    // Sử dụng withSpring thay vì callback
+    // Tạo animation và sau đó thực hiện hành động
     scaleIncrease.value = withSpring(0.9);
 
-    // Sử dụng setTimeout để đảm bảo animation hoàn thành
+    // Dùng setTimeout thông thường cho UI thay vì callback trong animation
     setTimeout(() => {
       scaleIncrease.value = withSpring(1);
       onChangeQuantity(quantity + 1);

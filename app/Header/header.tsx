@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
+
 import {
   Modal,
   View,
@@ -11,12 +12,15 @@ import {
   StyleSheet,
   Alert,
   Image,
+  Vibration,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
   ChevronLeft,
   MenuIcon,
+  MessageCircle,
   SearchIcon,
+  Send,
   ShoppingCart,
   Truck,
 } from "lucide-react-native";
@@ -37,7 +41,8 @@ import {
 import { logout } from "~/service/api/auth";
 import { auth } from "~/firebase.config";
 import { db } from "~/firebase.config";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 const inlineMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
   { title: "Occasions", link: "/user/Products/[id]" },
@@ -72,6 +77,8 @@ function SiteHeader() {
     displayName: string;
   } | null>(null);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
 
   useEffect(() => {
     const fetchUserProfile = async (uid: string) => {
@@ -129,6 +136,47 @@ function SiteHeader() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Notification permissions not granted");
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const count = await AsyncStorage.getItem("chatUnreadCount");
+        const newCount = count ? parseInt(count) : 0;
+        setUnreadMessages(newCount);
+
+        if (newCount > lastMessageCount && lastMessageCount !== 0) {
+          Vibration.vibrate();
+
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Tin nhắn mới",
+              body: "Bạn có tin nhắn mới từ Admin",
+              sound: true,
+            },
+            trigger: null,
+          });
+        }
+        setLastMessageCount(newCount);
+      } catch (error) {
+        console.error("Error loading unread count:", error);
+      }
+    };
+
+    loadUnreadCount();
+
+    const interval = setInterval(loadUnreadCount, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastMessageCount]);
+
   const handleLogout = async () => {
     try {
       setProfileMenuVisible(false);
@@ -176,7 +224,7 @@ function SiteHeader() {
       {/* Center Section */}
       <View style={styles.centerSection}>
         <TouchableOpacity onPress={() => router.push("/user/home")}>
-          <Logo width={140} height={28} />
+          <Logo width={80} height={28} />
         </TouchableOpacity>
       </View>
 
@@ -210,6 +258,17 @@ function SiteHeader() {
             {totalItems > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{totalItems}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/user/Chat/AdminChat" as any)}
+          >
+            <Send size={24} color={iconColor} />
+            {unreadMessages > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadMessages}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -276,6 +335,38 @@ function SiteHeader() {
                 ]}
               >
                 Đánh giá sản phẩm
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push("/user/Chat/AdminChat");
+              }}
+            >
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                Chat với Admin
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push("/user/Chat/ChatScreen");
+              }}
+            >
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                Chat với trợ lý ảo
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -360,11 +451,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-
     width: "100%",
   },
   leftSection: {
     alignItems: "flex-start",
+    justifyContent: "center",
   },
   centerSection: {
     flex: 1,
@@ -380,6 +471,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginRight: 8,
+    gap: 3,
   },
   iconButton: {
     padding: 4,

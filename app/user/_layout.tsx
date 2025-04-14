@@ -22,8 +22,6 @@ export default function UserLayout() {
         <Stack.Screen name="Checkout/Checkout" />
         <Stack.Screen name="Checkout/OrderStatus" />
         <Stack.Screen name="Checkout/OrderDetails" />
-        <Stack.Screen name="Collections/NightLight" />
-        <Stack.Screen name="Collections/DrinkWare" />
       </Stack>
     </SafeAreaView>
   );

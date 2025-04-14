@@ -40,10 +40,14 @@ interface Product {
   category: string;
   inStock: boolean;
   link: string;
+  images?: string[];
   name: string;
   price: number;
   description: string;
   color: string[];
+  purchaseCount?: number;
+  trending?: boolean;
+  stockQuantity?: number;
 }
 
 interface CategoryOption {
@@ -53,15 +57,18 @@ interface CategoryOption {
 
 const ProductManagementScreen = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [newProduct, setNewProduct] = useState<Product>({
+  const [newProduct, setNewProduct] = useState<Omit<Product, "id">>({
     category: "",
-    id: "",
     inStock: true,
     link: "",
+    images: [],
     name: "",
     price: 0,
     description: "",
     color: [],
+    purchaseCount: 0,
+    trending: false,
+    stockQuantity: 0,
   });
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
@@ -70,6 +77,7 @@ const ProductManagementScreen = () => {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [priceText, setPriceText] = useState<string>("");
+  const [multipleImages, setMultipleImages] = useState<string[]>([]);
 
   // Use NativeWind color scheme
   const { isDarkColorScheme, toggleColorScheme } = useColorScheme();
@@ -134,6 +142,9 @@ const ProductManagementScreen = () => {
       ...newProduct,
       color: selectedColors,
       price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
+      images: multipleImages.length > 0 ? multipleImages : [newProduct.link],
+      purchaseCount: newProduct.purchaseCount || 0,
+      Trending: newProduct.trending || false,
     };
 
     console.log("Product Data to be added:", productData);
@@ -155,6 +166,7 @@ const ProductManagementScreen = () => {
     setEditingProduct(product);
     setNewProduct({ ...product });
     setImageUrl(product.link);
+    setMultipleImages(product.images || []);
   };
 
   const handleUpdateProduct = async () => {
@@ -172,6 +184,9 @@ const ProductManagementScreen = () => {
     const productData = {
       ...newProduct,
       price: isNaN(Number(newProduct.price)) ? 0 : Number(newProduct.price),
+      images: multipleImages.length > 0 ? multipleImages : [newProduct.link],
+      purchaseCount: newProduct.purchaseCount || 0,
+      Trending: newProduct.trending || false,
     };
 
     try {
@@ -220,15 +235,19 @@ const ProductManagementScreen = () => {
   const resetForm = () => {
     setNewProduct({
       category: "",
-      id: "",
       inStock: true,
       link: "",
+      images: [],
       name: "",
       price: 0,
       description: "",
       color: [],
+      purchaseCount: 0,
+      trending: false,
+      stockQuantity: 0,
     });
     setImageUrl("");
+    setMultipleImages([]);
     setEditingProduct(null);
     setSelectedColors([]);
   };
@@ -246,7 +265,27 @@ const ProductManagementScreen = () => {
       >
         {item.name} - ${(item.price ?? 0).toFixed(2)}
       </Text>
-      {item.link && (
+
+      {/* Display multiple images in a row */}
+      {item.images && item.images.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="my-2"
+        >
+          {item.images.map((imageUrl, index) => (
+            <Image
+              key={index}
+              source={{ uri: imageUrl }}
+              className="w-[100px] h-[100px] mr-2 bg-gray-100"
+              style={{ resizeMode: "contain" }}
+              onError={(e) =>
+                console.error("Image loading error:", e.nativeEvent.error)
+              }
+            />
+          ))}
+        </ScrollView>
+      ) : item.link ? (
         <Image
           source={{ uri: item.link }}
           className="w-[100px] h-[100px] my-2 bg-gray-100"
@@ -255,7 +294,8 @@ const ProductManagementScreen = () => {
             console.error("Image loading error:", e.nativeEvent.error)
           }
         />
-      )}
+      ) : null}
+
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
         Category: {categories.find((cat) => cat.value === item.category)?.label}
       </Text>
@@ -264,6 +304,12 @@ const ProductManagementScreen = () => {
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
         In Stock: {item.inStock ? "Yes" : "No"}
+      </Text>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        Stock Quantity: {item.stockQuantity || 0}
+      </Text>
+      <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
+        Purchase Count: {item.purchaseCount || 0}
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
         Colors:{" "}
@@ -453,6 +499,8 @@ const ProductManagementScreen = () => {
           // Upload ảnh và lấy URL
           const uploadedUrl = await uploadImage(result.assets[0].uri);
           setNewProduct({ ...newProduct, link: uploadedUrl });
+          // Add to multiple images array
+          setMultipleImages([...multipleImages, uploadedUrl]);
         } catch (error) {
           console.error("Lỗi khi tải ảnh lên:", error);
           Alert.alert("Lỗi", "Không thể tải ảnh lên. Vui lòng thử lại.");
@@ -465,6 +513,11 @@ const ProductManagementScreen = () => {
       Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
     }
   };
+
+  const removeImage = (imageUrl: string) => {
+    setMultipleImages(multipleImages.filter((url) => url !== imageUrl));
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -626,7 +679,7 @@ const ProductManagementScreen = () => {
           </Text>
           <View className="flex-row items-center my-1">
             <TextInput
-              placeholder="Image URL (or pick an image)"
+              placeholder="Image URL (or pick images)"
               placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
               value={newProduct.link}
               onChangeText={(text: string) =>
@@ -647,7 +700,48 @@ const ProductManagementScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {newProduct.link ? (
+          {/* Multiple Images Display */}
+          {multipleImages.length > 0 && (
+            <View className="mt-2">
+              <Text
+                className={`text-base font-medium mb-2 ${
+                  isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+                }`}
+              >
+                Selected Images ({multipleImages.length}):
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="my-2"
+              >
+                {multipleImages.map((imgUrl, index) => (
+                  <View
+                    key={index}
+                    className={`mr-3 border rounded overflow-hidden ${
+                      isDarkColorScheme
+                        ? "border-gray-700 bg-gray-800"
+                        : "border-gray-300 bg-gray-100"
+                    }`}
+                  >
+                    <Image
+                      source={{ uri: imgUrl }}
+                      className="w-[100px] h-[100px]"
+                      style={{ resizeMode: "cover" }}
+                    />
+                    <TouchableOpacity
+                      className="absolute top-1 right-1 bg-red-500 rounded-full p-1"
+                      onPress={() => removeImage(imgUrl)}
+                    >
+                      <Text className="text-white font-bold text-xs">✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {newProduct.link && !multipleImages.includes(newProduct.link) ? (
             <View
               className={`items-center my-2 rounded overflow-hidden border ${
                 isDarkColorScheme
@@ -664,6 +758,15 @@ const ProductManagementScreen = () => {
                   setNewProduct({ ...newProduct, link: "" });
                 }}
               />
+              <TouchableOpacity
+                className="bg-orange-500 py-2 px-4 rounded mt-2 mb-2"
+                onPress={() => {
+                  setMultipleImages([...multipleImages, newProduct.link]);
+                  setNewProduct({ ...newProduct, link: "" });
+                }}
+              >
+                <Text className="text-white font-semibold">Add to Images</Text>
+              </TouchableOpacity>
             </View>
           ) : null}
 
@@ -694,6 +797,78 @@ const ProductManagementScreen = () => {
             Color:
           </Text>
           {renderColorPicker()}
+
+          <View className="mb-4">
+            <Text
+              className={`text-base font-medium mb-1 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
+              Stock Quantity:
+            </Text>
+            <TextInput
+              placeholder="Enter stock quantity"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+              value={String(newProduct.stockQuantity || 0)}
+              onChangeText={(text) =>
+                setNewProduct({
+                  ...newProduct,
+                  stockQuantity: Number(text) || 0,
+                })
+              }
+              keyboardType="numeric"
+              className={`border ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              } p-3 rounded-md text-base`}
+            />
+          </View>
+
+          <View className="mb-4">
+            <Text
+              className={`text-base font-medium mb-1 ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
+              Purchase Count:
+            </Text>
+            <TextInput
+              placeholder="Enter purchase count"
+              placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
+              value={String(newProduct.purchaseCount || 0)}
+              onChangeText={(text) =>
+                setNewProduct({
+                  ...newProduct,
+                  purchaseCount: Number(text) || 0,
+                })
+              }
+              keyboardType="numeric"
+              className={`border ${
+                isDarkColorScheme
+                  ? "border-gray-600 bg-gray-700 text-white"
+                  : "border-orange-200 text-gray-800"
+              } p-3 rounded-md text-base`}
+            />
+          </View>
+
+          <View className="mb-4 flex-row justify-between items-center">
+            <Text
+              className={`text-base font-medium ${
+                isDarkColorScheme ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
+              Mark as Trending Product:
+            </Text>
+            <Switch
+              value={newProduct.trending || false}
+              onValueChange={(value) =>
+                setNewProduct({ ...newProduct, trending: value })
+              }
+              trackColor={{ false: "#767577", true: "#ff8c00" }}
+              thumbColor={newProduct.trending ? "#f4f3f4" : "#f4f3f4"}
+            />
+          </View>
 
           {editingProduct ? (
             <>

@@ -4,12 +4,12 @@
     "slug": "maconer-reactnative",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/imageapp.jpg",
+    "icon": "assets/images/NADlogo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/images/imageapp.jpg",
+      "image": "assets/images/NADlogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -33,11 +33,12 @@
       "bundleIdentifier": "com.duynguroi1504.marconerreacnative",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "jsEngine": "hermes"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/imageapp.jpg",
+        "foregroundImage": "assets/images/NADlogo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.duynguroi1504.marconerreacnative",
@@ -57,12 +58,14 @@
             "mimeType": "image/*"
           }
         }
-      ]
+      ],
+      "googleServicesFile": "./google-services.json",
+      "jsEngine": "hermes"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/imageapp.jpg"
+      "favicon": "assets/images/NADlogo.png"
     },
     "experiments": {
       "typedRoutes": true
@@ -76,7 +79,6 @@
       },
       "eas": {
         "projectId": "344399a1-a42e-47e7-84a8-a7936cdc467a"
-        
       }
     },
     "owner": "duynguroi1504"

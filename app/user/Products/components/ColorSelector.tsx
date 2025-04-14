@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  AnimatedStyleProp,
 } from "react-native-reanimated";
 
 interface ColorInfo {
@@ -108,15 +107,25 @@ const ColorOption: React.FC<ColorOptionProps> = ({
 }) => {
   // Shared value cho animation
   const scale = useSharedValue(1);
+  // State để theo dõi giá trị hiện tại của scale
+  const [scaleState, setScaleState] = useState(1);
 
   // Cập nhật scale khi isSelected thay đổi
-  React.useEffect(() => {
-    // Sử dụng withSpring để animation mượt mà
+  useEffect(() => {
     scale.value = withSpring(isSelected ? 1.1 : 1);
-  }, [isSelected, scale]);
+  }, [isSelected]);
 
-  // Animated style - Sửa kiểu dữ liệu
-  const animatedStyle = useAnimatedStyle<AnimatedStyleProp<ViewStyle>>(() => {
+  // Sử dụng polling để đồng bộ shared value với React state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setScaleState(scale.value);
+    }, 1000 / 60); // 60 FPS
+
+    return () => clearInterval(interval);
+  }, [scale]);
+
+  // Animated style sử dụng scale shared value
+  const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
     };

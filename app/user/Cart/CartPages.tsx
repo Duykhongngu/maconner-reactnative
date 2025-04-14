@@ -12,7 +12,8 @@ import { Card } from "~/components/ui/card";
 import { PackageOpen, Trash2 } from "lucide-react-native";
 import { useCart } from "./CartContext";
 import { router } from "expo-router";
-import Footer from "~/app/Footer/Footer";
+
+import SuggestedProducts from "~/app/user/Cart/components/SuggestedProducts";
 
 const CartPages: React.FC = () => {
   const { isDarkColorScheme } = useColorScheme();
@@ -54,7 +55,10 @@ const CartPages: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <ScrollView>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      >
         {cartItems.map((item) => (
           <Card
             key={`${item.id}-${item.color}`}
@@ -154,7 +158,7 @@ const CartPages: React.FC = () => {
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </Button>
         <View style={{ marginTop: 20 }}>
-          <Footer />
+          <SuggestedProducts />
         </View>
       </ScrollView>
     </View>

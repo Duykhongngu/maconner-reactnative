@@ -7,10 +7,10 @@ import {
   Image,
   ScrollView,
   SafeAreaView,
-  StyleSheet,
   Alert,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -31,6 +31,7 @@ import AddToCartButton from "./components/AddToCartButton";
 import { CartItem } from "../Cart/CartContext";
 import { AntDesign } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 // Khai báo mảng màu cố định
 const AVAILABLE_COLORS = [
@@ -54,6 +55,7 @@ interface Product {
   categoryName?: string;
   inStock: boolean;
   link: string;
+  images?: string[];
   name: string;
   price: number;
   size: string;
@@ -98,6 +100,65 @@ interface FirestoreReview {
   productImage: string;
 }
 
+// Add this new component for image carousel display
+const ImageCarousel = ({ images }: { images: string[] }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const { isDarkColorScheme } = useColorScheme();
+
+  const handleScroll = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const imageWidth = event.nativeEvent.layoutMeasurement.width;
+    const newIndex = Math.round(contentOffsetX / imageWidth);
+    if (newIndex !== activeIndex) {
+      setActiveIndex(newIndex);
+    }
+  };
+
+  return (
+    <View className="w-full h-[300px] relative">
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
+        {images.map((uri, index) => (
+          <Image
+            key={index}
+            source={{ uri }}
+            className="w-screen h-[300px]"
+            style={{ resizeMode: "cover" }}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Indicator dots */}
+      <View className="flex-row justify-center items-center absolute bottom-4 w-full">
+        {images.map((_, index) => (
+          <TouchableOpacity
+            key={index}
+            className={`mx-1 ${
+              index === activeIndex
+                ? "bg-orange-500 w-2.5 h-2.5 rounded-[5px]"
+                : "bg-white/50 w-2 h-2 rounded-[4px]"
+            }`}
+            onPress={() => {
+              setActiveIndex(index);
+              scrollViewRef.current?.scrollTo({
+                x: Dimensions.get("window").width * index,
+                animated: true,
+              });
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+};
+
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -108,11 +169,10 @@ export default function ProductDetail(): JSX.Element {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedColor, setSelectedColor] = useState<string>("");
-  const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
   const [categoryName, setCategoryName] = useState<string>("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState<number>(0);
-  const isDarkMode = colorScheme === "dark";
+  const { isDarkColorScheme } = useColorScheme();
 
   // Lấy dữ liệu sản phẩm và danh mục
   useEffect(() => {
@@ -137,11 +197,23 @@ export default function ProductDetail(): JSX.Element {
             productColors = ["White"]; // Màu mặc định nếu không có dữ liệu
           }
 
+          // Xử lý dữ liệu hình ảnh
+          let productImages: string[] = [];
+          const imagesData = productSnap.data().images;
+          const linkData = productSnap.data().link;
+
+          if (Array.isArray(imagesData) && imagesData.length > 0) {
+            productImages = imagesData;
+          } else if (linkData) {
+            productImages = [linkData];
+          }
+
           const productData = {
             id: productSnap.id,
             category: productSnap.data().category || "",
             inStock: productSnap.data().inStock !== false,
             link: productSnap.data().link || "",
+            images: productImages,
             name: productSnap.data().name || "",
             price: Number(productSnap.data().price) || 0,
             description: productSnap.data().description || "",
@@ -352,6 +424,7 @@ export default function ProductDetail(): JSX.Element {
       quantity: quantity,
       color: selectedColor,
       image: product.link,
+      images: product.images || [product.link],
       description: product.description || "",
     };
 
@@ -376,11 +449,17 @@ export default function ProductDetail(): JSX.Element {
   if (loading) {
     return (
       <SafeAreaView
-        style={isDarkMode ? styles.darkContainer : styles.container}
+        className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
       >
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#FF6B00" />
-          <Text style={isDarkMode ? styles.darkText : {}}>Đang tải...</Text>
+          <Text
+            className={
+              isDarkColorScheme ? "text-white mt-2" : "text-gray-800 mt-2"
+            }
+          >
+            Đang tải...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -389,10 +468,10 @@ export default function ProductDetail(): JSX.Element {
   if (error || !product) {
     return (
       <SafeAreaView
-        style={isDarkMode ? styles.darkContainer : styles.container}
+        className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
       >
-        <View style={styles.errorContainer}>
-          <Text style={isDarkMode ? styles.darkText : {}}>
+        <View className="flex-1 justify-center items-center p-5">
+          <Text className={isDarkColorScheme ? "text-white" : "text-gray-800"}>
             {error || "Không tìm thấy sản phẩm"}
           </Text>
         </View>
@@ -401,84 +480,125 @@ export default function ProductDetail(): JSX.Element {
   }
 
   return (
-    <SafeAreaView style={isDarkMode ? styles.darkContainer : styles.container}>
-      <ScrollView>
+    <SafeAreaView
+      className={`flex-1 ${isDarkColorScheme ? "bg-black" : "bg-white"}`}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      >
         {/* Hình ảnh sản phẩm */}
-        <Image
-          source={{ uri: product.link }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
+        {product.images && product.images.length > 0 ? (
+          <ImageCarousel images={product.images} />
+        ) : (
+          <Image
+            source={{ uri: product.link }}
+            className="w-full h-[300px]"
+            style={{ resizeMode: "cover" }}
+          />
+        )}
 
         {/* Thông tin sản phẩm */}
-        <View style={styles.productInfo}>
-          <Text style={[styles.productName, isDarkMode && styles.darkText]}>
+        <View className="p-4">
+          <Text
+            className={`text-2xl font-bold mb-2 ${
+              isDarkColorScheme ? "text-white" : "text-gray-800"
+            }`}
+          >
             {product.name}
           </Text>
-          <Text style={styles.productPrice}>
+          <Text className="text-xl font-bold text-orange-500 mb-2">
             ${product.price.toFixed(2)} USD
           </Text>
-          <Text style={[styles.productCategory, isDarkMode && styles.darkText]}>
-            Category: {categoryName || product.category}
+          <Text
+            className={`text-base mb-4 ${
+              isDarkColorScheme ? "text-gray-300" : "text-gray-600"
+            }`}
+          >
+            {categoryName || product.category}
           </Text>
         </View>
 
         {/* Phần chọn màu sắc */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+        <View className="p-4 border-t border-gray-200">
+          <Text
+            className={`text-lg font-bold mb-3 ${
+              isDarkColorScheme ? "text-white" : "text-gray-800"
+            }`}
+          >
             Color
           </Text>
           <ColorSelector
             colors={product.color}
             selectedColor={selectedColor}
             onSelectColor={setSelectedColor}
-            isDarkMode={isDarkMode}
+            isDarkMode={isDarkColorScheme}
           />
         </View>
 
         {/* Phần chọn số lượng */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+        <View className="p-4 border-t border-gray-200">
+          <Text
+            className={`text-lg font-bold mb-3 ${
+              isDarkColorScheme ? "text-white" : "text-gray-800"
+            }`}
+          >
             Quantity
           </Text>
           <QuantitySelector
             quantity={quantity}
             onChangeQuantity={setQuantity}
-            isDarkMode={isDarkMode}
+            isDarkMode={isDarkColorScheme}
           />
         </View>
 
         {/* Mô tả sản phẩm */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+        <View className="p-4 border-t border-gray-200">
+          <Text
+            className={`text-lg font-bold mb-3 ${
+              isDarkColorScheme ? "text-white" : "text-gray-800"
+            }`}
+          >
             Description
           </Text>
           <Text
-            style={[styles.productDescription, isDarkMode && styles.darkText]}
+            className={`text-base leading-6 ${
+              isDarkColorScheme ? "text-gray-300" : "text-gray-600"
+            }`}
           >
             {product.description}
           </Text>
         </View>
+
         {/* Nút thêm vào giỏ hàng */}
-        <AddToCartButton
-          onPress={handleAddToCart}
-          price={product.price}
-          disabled={!selectedColor || !product.color.includes(selectedColor)}
-        />
+        <View className="p-4">
+          <AddToCartButton
+            onPress={handleAddToCart}
+            price={product.price}
+            disabled={!selectedColor || !product.color.includes(selectedColor)}
+          />
+        </View>
+
         {/* Phần đánh giá sản phẩm */}
-        <View style={styles.reviewSection}>
-          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+        <View className="p-4 border-t border-gray-200">
+          <Text
+            className={`text-lg font-bold mb-3 ${
+              isDarkColorScheme ? "text-white" : "text-gray-800"
+            }`}
+          >
             Đánh giá sản phẩm
           </Text>
 
           {/* Hiển thị rating trung bình */}
-          <View style={styles.reviewRatingContainer}>
+          <View className="flex-row items-center p-3 mb-4 bg-gray-100 rounded-lg">
             <Text
-              style={[styles.reviewRatingText, isDarkMode && styles.darkText]}
+              className={`text-2xl font-bold mr-3 ${
+                isDarkColorScheme ? "text-gray-800" : "text-gray-800"
+              }`}
             >
               {averageRating.toFixed(1)}
             </Text>
-            <View style={styles.reviewStarsContainer}>
+            <View className="flex-row items-center mr-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <AntDesign
                   key={star}
@@ -488,41 +608,41 @@ export default function ProductDetail(): JSX.Element {
                 />
               ))}
             </View>
-            <Text
-              style={[styles.reviewCountText, isDarkMode && styles.darkText]}
-            >
+            <Text className="text-sm text-gray-600">
               ({reviews.length} đánh giá)
             </Text>
           </View>
 
           {/* Danh sách đánh giá */}
           {reviews.map((review) => (
-            <View key={review.id} style={styles.reviewItemContainer}>
-              <View style={styles.reviewItemHeader}>
-                <View style={styles.reviewUserInfo}>
-                  <View style={styles.userAvatarContainer}>
+            <View
+              key={review.id}
+              className="mb-4 p-3 bg-white rounded-lg border border-gray-200"
+            >
+              <View className="flex-row justify-between items-start mb-2">
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-2">
                     {review.userAvatar ? (
                       <Image
                         source={{ uri: review.userAvatar }}
-                        style={styles.userAvatar}
+                        className="w-10 h-10 rounded-full mr-3"
                       />
                     ) : (
-                      <View style={[styles.userAvatar, styles.defaultAvatar]}>
-                        <Text style={styles.defaultAvatarText}>
+                      <View className="w-10 h-10 rounded-full mr-3 bg-gray-300 justify-center items-center">
+                        <Text className="text-lg font-bold text-gray-600">
                           {review.userName?.[0]?.toUpperCase() || "?"}
                         </Text>
                       </View>
                     )}
-                    <View style={styles.userNameContainer}>
+                    <View className="flex-1">
                       <Text
-                        style={[
-                          styles.reviewUserName,
-                          isDarkMode && styles.darkText,
-                        ]}
+                        className={`font-semibold mb-1 ${
+                          isDarkColorScheme ? "text-white" : "text-gray-800"
+                        }`}
                       >
                         {review.userName}
                       </Text>
-                      <View style={styles.reviewStarsContainer}>
+                      <View className="flex-row">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <AntDesign
                             key={star}
@@ -535,53 +655,38 @@ export default function ProductDetail(): JSX.Element {
                     </View>
                   </View>
                 </View>
-                <Text
-                  style={[styles.reviewItemDate, isDarkMode && styles.darkText]}
-                >
+                <Text className="text-xs text-gray-500">
                   {new Date(review.createdAt?.toDate()).toLocaleDateString()}
                 </Text>
               </View>
               <Text
-                style={[
-                  styles.reviewItemComment,
-                  isDarkMode && styles.darkText,
-                ]}
+                className={`text-sm ${
+                  isDarkColorScheme ? "text-gray-300" : "text-gray-700"
+                }`}
               >
                 {review.comment}
               </Text>
 
               {/* Hiển thị phần trả lời */}
               {review.replies && review.replies.length > 0 && (
-                <View style={styles.repliesContainer}>
+                <View className="mt-3 pl-4 border-l-2 border-orange-500">
                   {review.replies.map((reply) => (
-                    <View key={reply.id} style={styles.replyItem}>
-                      <View style={styles.replyHeader}>
+                    <View
+                      key={reply.id}
+                      className="mt-2 p-2 bg-gray-50 rounded-lg"
+                    >
+                      <View className="flex-row items-center mb-1">
                         <AntDesign name="message1" size={16} color="#666" />
-                        <Text
-                          style={[
-                            styles.replyLabel,
-                            isDarkMode && styles.darkText,
-                          ]}
-                        >
+                        <Text className="ml-1.5 text-xs font-semibold text-gray-600">
                           Phản hồi từ Admin
                         </Text>
-                        <Text
-                          style={[
-                            styles.replyDate,
-                            isDarkMode && styles.darkText,
-                          ]}
-                        >
+                        <Text className="ml-2 text-xs text-gray-500">
                           {new Date(
                             reply.createdAt?.toDate()
                           ).toLocaleDateString()}
                         </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.replyText,
-                          isDarkMode && styles.darkText,
-                        ]}
-                      >
+                      <Text className="text-sm text-gray-700 ml-6">
                         {reply.reply}
                       </Text>
                     </View>
@@ -592,48 +697,50 @@ export default function ProductDetail(): JSX.Element {
           ))}
 
           {reviews.length === 0 && (
-            <Text style={[styles.noReviewsText, isDarkMode && styles.darkText]}>
+            <Text className="text-center italic text-gray-500">
               Chưa có đánh giá nào cho sản phẩm này
             </Text>
           )}
         </View>
+
         {/* Phần sản phẩm đề xuất */}
         {suggestedProducts.length > 0 && (
-          <View style={styles.suggestedProductsSection}>
-            <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>
+          <View className="p-4 border-t border-gray-200">
+            <Text
+              className={`text-lg font-bold mb-3 ${
+                isDarkColorScheme ? "text-white" : "text-gray-800"
+              }`}
+            >
               Sản phẩm tương tự
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {suggestedProducts.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={styles.suggestedProductCard}
+                  className="w-40 mr-3 bg-white rounded-lg shadow overflow-hidden"
                   onPress={() => {
-                    // Chuyển hướng đến trang chi tiết sản phẩm
                     router.push(`/user/Products/${item.id}`);
                   }}
                 >
                   <Image
                     source={{ uri: item.link }}
-                    style={styles.suggestedProductImage}
-                    resizeMode="cover"
+                    className="w-full h-40"
+                    style={{ resizeMode: "cover" }}
                   />
-                  <View style={styles.suggestedProductInfo}>
+                  <View className="p-2">
                     <Text
-                      style={[
-                        styles.suggestedProductName,
-                        isDarkMode && styles.darkText,
-                      ]}
+                      className={`text-sm font-medium mb-1 h-10 ${
+                        isDarkColorScheme ? "text-gray-300" : "text-gray-800"
+                      }`}
                       numberOfLines={2}
                       ellipsizeMode="tail"
                     >
                       {item.name}
                     </Text>
-                    <Text style={styles.suggestedProductPrice}>
+                    <Text className="text-base font-bold text-orange-500 mb-1">
                       ${item.price.toFixed(2)} USD
                     </Text>
-                    {/* Hiển thị rating nếu có */}
-                    <View style={styles.ratingContainer}>
+                    <View className="flex-row items-center">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <AntDesign
                           key={star}
@@ -644,10 +751,10 @@ export default function ProductDetail(): JSX.Element {
                           }
                           size={14}
                           color="#FFD700"
-                          style={styles.starIcon}
+                          style={{ marginRight: 1 }}
                         />
                       ))}
-                      <Text style={styles.ratingText}>
+                      <Text className="text-xs ml-1 text-gray-500">
                         {item.rating ? `(${item.rating.toFixed(1)})` : "(0.0)"}
                       </Text>
                     </View>
@@ -661,234 +768,3 @@ export default function ProductDetail(): JSX.Element {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  darkContainer: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  productImage: {
-    width: "100%",
-    height: 300,
-  },
-  productInfo: {
-    padding: 16,
-  },
-  productName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  darkText: {
-    color: "#fff",
-  },
-  productPrice: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FF6B00",
-    marginBottom: 8,
-  },
-  productCategory: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 16,
-  },
-  section: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  productDescription: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  suggestedProductsSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  suggestedProductCard: {
-    width: 160,
-    marginRight: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  suggestedProductImage: {
-    width: "100%",
-    height: 160,
-  },
-  suggestedProductInfo: {
-    padding: 8,
-  },
-  suggestedProductName: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 4,
-    height: 40,
-  },
-  suggestedProductPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FF6B00",
-    marginBottom: 4,
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  starIcon: {
-    marginRight: 2,
-  },
-  ratingText: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: "#666",
-  },
-  // Review styles
-  reviewSection: {
-    marginTop: 16,
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-  reviewRatingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-  },
-  reviewRatingText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginRight: 12,
-  },
-  reviewStarsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  reviewCountText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  reviewItemContainer: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#eee",
-  },
-  reviewItemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  reviewItemDate: {
-    fontSize: 12,
-    color: "#666",
-  },
-  reviewItemComment: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  noReviewsText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-  },
-  reviewUserInfo: {
-    flex: 1,
-  },
-  userAvatarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  defaultAvatar: {
-    backgroundColor: "#E0E0E0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  defaultAvatarText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#757575",
-  },
-  userNameContainer: {
-    flex: 1,
-  },
-  reviewUserName: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  repliesContainer: {
-    marginTop: 12,
-    paddingLeft: 16,
-    borderLeftWidth: 2,
-    borderLeftColor: "#FF6B00",
-  },
-  replyItem: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-  },
-  replyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  replyLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#666",
-    marginLeft: 6,
-  },
-  replyDate: {
-    fontSize: 12,
-    color: "#999",
-    marginLeft: 8,
-  },
-  replyText: {
-    fontSize: 14,
-    color: "#333",
-    marginLeft: 22,
-  },
-});

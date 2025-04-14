@@ -22,7 +22,20 @@ import { CartItem, useOrder } from "./OrderContext";
 import { useRouter } from "expo-router";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  updateDoc,
+  increment,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  writeBatch,
+} from "firebase/firestore";
 
 // Định nghĩa schema cho form
 const formSchema = z.object({
@@ -55,6 +68,7 @@ const CheckoutScreen: React.FC = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    trigger,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -65,6 +79,7 @@ const CheckoutScreen: React.FC = () => {
       country: "",
       paymentMethod: "credit",
     },
+    mode: "onChange", // Validate on change for immediate feedback
   });
 
   // Lấy thông tin người dùng từ Firestore dựa trên userId khi đăng nhập
@@ -84,6 +99,9 @@ const CheckoutScreen: React.FC = () => {
               country: userData.country || "",
               paymentMethod: "credit",
             });
+
+            // Trigger validation after setting values from database
+            await trigger();
           } else {
             console.log("Không tìm thấy thông tin người dùng trong Firestore");
             Alert.alert(
@@ -102,10 +120,17 @@ const CheckoutScreen: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, [reset, router]);
+  }, [reset, router, trigger]);
 
   // Xử lý submit form và lưu đơn hàng lên Firestore với userId
-  async function onSubmit(values: FormData) {
+  const onSubmit = async (values: FormData) => {
+    // Đầu tiên kiểm tra lại xem form có hợp lệ không
+    const isValid = await trigger();
+    if (!isValid) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin trước khi đặt hàng");
+      return;
+    }
+
     if (!auth.currentUser) {
       Alert.alert("Lỗi", "Bạn cần đăng nhập để đặt hàng.");
       router.replace("/" as any);
@@ -118,10 +143,23 @@ const CheckoutScreen: React.FC = () => {
     }
 
     try {
+      // Format cart items to ensure they have all required fields
+      const formattedCartItems = cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        color: item.color || "Default",
+        size: item.size || "Standard", // Add default size if missing
+        image: item.image,
+        images: item.images || [item.image],
+        description: item.description || "",
+      }));
+
       const orderData = {
         userId: auth.currentUser.uid, // Gắn userId của tài khoản đăng nhập
         ...values,
-        cartItems,
+        cartItems: formattedCartItems,
         subtotal: subtotal.toFixed(2),
         shippingFee: shippingFee.toFixed(2),
         total,
@@ -136,6 +174,104 @@ const CheckoutScreen: React.FC = () => {
       // Cập nhật current order trong OrderContext
       setCurrentOrder(newOrder);
 
+      // Cập nhật số lượng mua (purchaseCount) cho mỗi sản phẩm
+      for (const item of formattedCartItems) {
+        try {
+          const productRef = doc(db, "products", item.id);
+          const productSnap = await getDoc(productRef);
+
+          if (productSnap.exists()) {
+            const productData = productSnap.data();
+            const currentStock = productData.stockQuantity || 0;
+
+            // Kiểm tra xem có đủ hàng không
+            if (currentStock < item.quantity) {
+              Alert.alert(
+                "Out of Stock",
+                `Sorry, there are only ${currentStock} units of "${item.name}" available.`
+              );
+              return;
+            }
+
+            // Cập nhật số lượng mua và số lượng tồn kho
+            await updateDoc(productRef, {
+              purchaseCount: increment(item.quantity),
+              stockQuantity: currentStock - item.quantity,
+              // Cập nhật trạng thái inStock dựa trên số lượng còn lại
+              inStock: currentStock - item.quantity > 0,
+            });
+
+            console.log(
+              `Updated product ${item.id}: purchased ${
+                item.quantity
+              }, remaining stock ${currentStock - item.quantity}`
+            );
+          }
+        } catch (error) {
+          console.error(`Error updating product ${item.id}:`, error);
+          // Continue with the next item even if one fails
+        }
+      }
+
+      // Kiểm tra xem có danh mục Trending được bật auto-update không
+      try {
+        const categoriesRef = collection(db, "categories");
+        const q = query(
+          categoriesRef,
+          where("name", "==", "Trending"),
+          where("autoUpdate", "==", true)
+        );
+        const categorySnap = await getDocs(q);
+
+        if (!categorySnap.empty) {
+          // Có danh mục Trending với auto-update bật
+          const trendingCategory = categorySnap.docs[0];
+
+          // Lấy top 20 sản phẩm bán chạy nhất
+          const productsRef = collection(db, "products");
+          const topProductsQuery = query(
+            productsRef,
+            orderBy("purchaseCount", "desc"),
+            limit(20)
+          );
+          const topProductsSnap = await getDocs(topProductsQuery);
+
+          const topProductIds = topProductsSnap.docs.map((doc) => doc.id);
+
+          // Cập nhật danh sách sản phẩm trending
+          await updateDoc(doc(db, "categories", trendingCategory.id), {
+            productIds: topProductIds,
+            lastUpdated: new Date().toISOString(),
+          });
+
+          // Cập nhật trường Trending cho từng sản phẩm
+          const batch = writeBatch(db);
+
+          // Đầu tiên, đặt tất cả sản phẩm là không trending
+          const allProductsQuery = query(collection(db, "products"));
+          const allProductsSnap = await getDocs(allProductsQuery);
+
+          allProductsSnap.forEach((docSnap) => {
+            const productRef = doc(db, "products", docSnap.id);
+            batch.update(productRef, { Trending: false });
+          });
+
+          // Sau đó đánh dấu các sản phẩm top là trending
+          for (const productId of topProductIds) {
+            const productRef = doc(db, "products", productId);
+            batch.update(productRef, { Trending: true });
+          }
+
+          // Thực hiện tất cả các cập nhật trong một batch
+          await batch.commit();
+
+          console.log("Trending products updated automatically");
+        }
+      } catch (error) {
+        console.error("Error updating trending products:", error);
+        // Không hiển thị lỗi cho người dùng, đơn hàng vẫn thành công
+      }
+
       // Xóa giỏ hàng sau khi đặt hàng thành công
       clearCart();
 
@@ -147,13 +283,15 @@ const CheckoutScreen: React.FC = () => {
       console.error("Lỗi khi lưu đơn hàng:", error);
       Alert.alert("Lỗi", "Không thể lưu đơn hàng. Vui lòng thử lại.");
     }
-  }
+  };
 
   const colorScheme = Appearance.getColorScheme();
   const isDarkMode = colorScheme === "dark";
 
   return (
     <ScrollView
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
       style={isDarkMode ? styles.darkBackground : styles.lightBackground}
     >
       <Card>
@@ -175,7 +313,10 @@ const CheckoutScreen: React.FC = () => {
                   Họ và tên
                 </Text>
                 <TextInput
-                  style={isDarkMode ? styles.darkInput : styles.lightInput}
+                  style={[
+                    isDarkMode ? styles.darkInput : styles.lightInput,
+                    errors.name ? { borderColor: "#ef4444" } : {},
+                  ]}
                   placeholder="Nguyễn Văn A"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -201,12 +342,16 @@ const CheckoutScreen: React.FC = () => {
                   Email
                 </Text>
                 <TextInput
-                  style={isDarkMode ? styles.darkInput : styles.lightInput}
+                  style={[
+                    isDarkMode ? styles.darkInput : styles.lightInput,
+                    errors.email ? { borderColor: "#ef4444" } : {},
+                  ]}
                   placeholder="example@email.com"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   keyboardType="email-address"
+                  autoCapitalize="none"
                 />
                 {errors.email && (
                   <Text className="text-red-500 text-sm mt-1">
@@ -228,7 +373,10 @@ const CheckoutScreen: React.FC = () => {
                   Số điện thoại
                 </Text>
                 <TextInput
-                  style={isDarkMode ? styles.darkInput : styles.lightInput}
+                  style={[
+                    isDarkMode ? styles.darkInput : styles.lightInput,
+                    errors.phone ? { borderColor: "#ef4444" } : {},
+                  ]}
                   placeholder="0123456789"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -255,7 +403,10 @@ const CheckoutScreen: React.FC = () => {
                   Quốc gia
                 </Text>
                 <TextInput
-                  style={isDarkMode ? styles.darkInput : styles.lightInput}
+                  style={[
+                    isDarkMode ? styles.darkInput : styles.lightInput,
+                    errors.country ? { borderColor: "#ef4444" } : {},
+                  ]}
                   placeholder="Nhập quốc gia"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -281,7 +432,10 @@ const CheckoutScreen: React.FC = () => {
                   Địa chỉ
                 </Text>
                 <TextInput
-                  style={isDarkMode ? styles.darkInput : styles.lightInput}
+                  style={[
+                    isDarkMode ? styles.darkInput : styles.lightInput,
+                    errors.address ? { borderColor: "#ef4444" } : {},
+                  ]}
                   placeholder="123 Đường ABC, Quận XYZ"
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -312,22 +466,36 @@ const CheckoutScreen: React.FC = () => {
               <View>
                 <TouchableOpacity
                   className={`flex-row items-center p-4 border rounded-md mb-2 ${
-                    value === "credit" ? "border-primary" : "border-border"
+                    value === "credit"
+                      ? "border-orange-500"
+                      : errors.paymentMethod
+                      ? "border-red-500"
+                      : "border-gray-300"
                   }`}
                   onPress={() => onChange("credit")}
                 >
-                  <CreditCard className="mr-2" />
+                  <CreditCard
+                    color={value === "credit" ? "#F97316" : "#6B7280"}
+                    className="mr-2"
+                  />
                   <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                     Thẻ tín dụng / Ghi nợ
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className={`flex-row items-center p-4 border rounded-md ${
-                    value === "cod" ? "border-primary" : "border-border"
+                    value === "cod"
+                      ? "border-orange-500"
+                      : errors.paymentMethod
+                      ? "border-red-500"
+                      : "border-gray-300"
                   }`}
                   onPress={() => onChange("cod")}
                 >
-                  <DollarSign className="mr-2" />
+                  <DollarSign
+                    color={value === "cod" ? "#F97316" : "#6B7280"}
+                    className="mr-2"
+                  />
                   <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                     Thanh toán khi nhận hàng
                   </Text>
@@ -430,11 +598,18 @@ const CheckoutScreen: React.FC = () => {
       </Card>
 
       <Button
-        style={styles.checkoutButton}
-        className="w-full mt-4 mb-1"
+        style={[
+          styles.checkoutButton,
+          Object.keys(errors).length > 0 ? { backgroundColor: "#999" } : {},
+        ]}
+        className="w-full mt-4 mb-6"
         onPress={handleSubmit(onSubmit)}
       >
-        <Text style={styles.checkoutButtonText}>Đặt hàng</Text>
+        <Text style={styles.checkoutButtonText}>
+          {Object.keys(errors).length > 0
+            ? "Vui lòng điền đầy đủ thông tin"
+            : "Đặt hàng"}
+        </Text>
       </Button>
     </ScrollView>
   );

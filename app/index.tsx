@@ -10,6 +10,7 @@ import {
   Alert,
   SafeAreaView,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, db } from "~/firebase.config";
@@ -191,10 +192,12 @@ export default function Login() {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center">
+          <Image
+            source={require("~/assets/images/NADlogo.png")}
+            style={{ width: 400, height: 400 }}
+            resizeMode="contain"
+          />
           <ActivityIndicator size="large" color="#FF6B00" />
-          <Text className="mt-4 text-gray-600">
-            Đang kiểm tra thông tin vui lòng chờ...
-          </Text>
         </View>
       </SafeAreaView>
     );

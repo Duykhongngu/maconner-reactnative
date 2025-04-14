@@ -1,14 +1,9 @@
 import { SafeAreaView, StyleSheet, View } from "react-native";
 import Background from "./background";
 import Trending from "./trending";
-import MothersSlider from "./sliderShow";
-import ShopAll from "./shopAll";
-import CarVisor from "./carViso";
-import BottleLamp from "./bottleLamp";
-import Recipient from "./recipient";
-import ByProducts from "./byProducts";
-import HappyCustomers from "./HappyCustomer";
-import Footer from "../../Footer/Footer";
+
+// import ByProducts from "./byProducts";
+// import HappyCustomers from "./HappyCustomer";
 
 function HomePage() {
   return (
@@ -17,13 +12,11 @@ function HomePage() {
         <View>
           <Background />
         </View>
-        <View>
-          <MothersSlider />
-        </View>
+
         <View>
           <Trending />
         </View>
-        <View>
+        {/* <View>
           <ShopAll />
         </View>
         <View>
@@ -40,7 +33,7 @@ function HomePage() {
         </View>
       </View>
       <View>
-        <HappyCustomers />
+        <HappyCustomers /> */}
       </View>
     </SafeAreaView>
   );
