@@ -35,31 +35,8 @@ import {
 import { db, auth } from "~/firebase.config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNotifications } from "~/hooks/useNotifications";
-
-interface Message {
-  id: string;
-  text: string;
-  createdAt: Date;
-  userId: string;
-  userName: string;
-  isAdmin: boolean;
-  isRead?: boolean;
-}
-
-interface UserData {
-  displayName: string;
-  profileImage: string;
-  email: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  profileImage?: string;
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  unreadCount: number;
-}
+import { Message, UserData } from "./types";
+import { User } from "./types";
 
 // Cập nhật hàm gửi thông báo
 const sendPushNotification = async (userId: string, message: string) => {

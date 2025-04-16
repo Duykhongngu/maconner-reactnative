@@ -37,7 +37,7 @@ function HomeAdmin() {
     {
       title: "Products Management",
       icon: isDarkMode ? ("cube-outline" as IconName) : ("cube" as IconName),
-      route: "/Admin/ProductsManagement/products",
+      route: "/Admin/ProductsManagement/Products",
     },
     {
       title: "Order Management",
