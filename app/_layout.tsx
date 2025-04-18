@@ -9,11 +9,11 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView, Platform } from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
-import { OrderProvider } from "./user/Checkout/OrderContext";
+import { OrderProvider } from "./user/Order/OrderContext";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -30,14 +30,18 @@ export default function RootLayout() {
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
   const [isAuthLoaded, setIsAuthLoaded] = React.useState(false);
   const [userRole, setUserRole] = React.useState<number | null>(null);
+  const [statusBarStyle, setStatusBarStyle] = React.useState<"light" | "dark">(
+    isDarkColorScheme ? "light" : "dark"
+  );
 
-  // Xử lý theme
+  // Handle theme
   React.useEffect(() => {
     setAndroidNavigationBar(colorScheme);
+    setStatusBarStyle(colorScheme === "dark" ? "light" : "dark");
     setIsColorSchemeLoaded(true);
   }, [colorScheme]);
 
-  // Xử lý xác thực và lấy vai trò người dùng
+  // Handle authentication and get user role
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -67,6 +71,7 @@ export default function RootLayout() {
     <OrderProvider>
       <CartProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+          <StatusBar style={statusBarStyle} animated={true} />
           <SafeAreaView className="flex-1 ">
             <Stack
               screenOptions={{

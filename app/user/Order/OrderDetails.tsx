@@ -1,49 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { db } from "~/firebase.config"; // Đảm bảo đã cấu hình Firebase
+import { db } from "~/firebase.config";
 import { doc, getDoc } from "firebase/firestore";
+import { Order } from "./components/types";
 
-// Định nghĩa interface cho chi tiết đơn hàng từ Firebase
-interface FirebaseOrder {
-  id: string;
-  date: string;
-  total: number;
-  status: "pending" | "completed" | "cancelled";
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  country?: string;
-  paymentMethod?: "credit" | "cod";
-  userId?: string;
-  cartItems: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    color: string;
-    size: string;
-    image: string;
-  }[];
-  subtotal?: string;
-  shippingFee?: string;
-}
+// Interface for Firebase order data
+interface FirebaseOrder extends Order {}
 
 const OrderDetailsScreen: React.FC = () => {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
   const { id } = useLocalSearchParams();
-  const [order, setOrder] = useState<FirebaseOrder | null>(null); // State để lưu chi tiết đơn hàng
+  const [order, setOrder] = useState<FirebaseOrder | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Lấy chi tiết đơn hàng từ Firestore
+  // Fetch order details from Firestore
   useEffect(() => {
     const fetchOrder = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const orderRef = doc(db, "orderManager", id as string);
@@ -52,17 +42,41 @@ const OrderDetailsScreen: React.FC = () => {
         if (orderSnap.exists()) {
           setOrder({ id: orderSnap.id, ...orderSnap.data() } as FirebaseOrder);
         } else {
-          console.log("Không tìm thấy đơn hàng trong Firestore");
+          console.log("Order not found in Firestore");
           setOrder(null);
         }
       } catch (error) {
-        console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
-        Alert.alert("Lỗi", "Không thể tải chi tiết đơn hàng.");
+        console.error("Error fetching order details:", error);
+        Alert.alert("Error", "Unable to load order details.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchOrder();
   }, [id]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          isDarkMode ? styles.darkBackground : styles.lightBackground,
+        ]}
+      >
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text
+          style={[
+            styles.loadingText,
+            isDarkMode ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Đang tải thông tin đơn hàng...
+        </Text>
+      </View>
+    );
+  }
 
   if (!order) {
     return (
@@ -78,7 +92,7 @@ const OrderDetailsScreen: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Không tìm thấy đơn hàng
+          Order not found
         </Text>
       </View>
     );
@@ -105,7 +119,7 @@ const OrderDetailsScreen: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Đơn hàng của bạn đã đặt thành công!
+          Đơn hàng của bạn đã được đặt thành công!
         </Text>
         <View style={styles.infoContainer}>
           <MaterialIcons
@@ -149,7 +163,7 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Số điện thoại: {order.phone || "Không có thông tin"}
+            SĐT: {order.phone || "Không có thông tin"}
           </Text>
         </View>
         <View style={styles.infoContainer}>
@@ -183,10 +197,10 @@ const OrderDetailsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Hiển thị cartItems */}
+        {/* Display cart items */}
         {order.cartItems.map((item) => (
           <View
-            key={`${item.id}-${item.color}-${item.size}`}
+            key={`${item.id}-${item.color}-${item.size || "default"}`}
             style={[
               styles.itemContainer,
               isDarkMode ? styles.darkCard : styles.lightCard,
@@ -215,10 +229,10 @@ const OrderDetailsScreen: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Màu: {item.color} | Size: {item.size}
+                Màu: {item.color} | Size: {item.size || "Standard"}
               </Text>
               <Text style={styles.itemPrice}>
-                ${item.price.toFixed(2)} x {item.quantity}
+                {item.price.toFixed(2)} x {item.quantity}
               </Text>
             </View>
           </View>
@@ -236,20 +250,20 @@ const OrderDetailsScreen: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Tổng cộng:{" "}
+            Tổng:{" "}
           </Text>
-          <Text style={[styles.totalPrice]}>${order.total.toFixed(2)}</Text>
+          <Text style={[styles.totalPrice]}>{order.total.toFixed(2)} VNĐ</Text>
         </View>
       </View>
 
       <Button
         style={styles.button}
-        onPress={() => router.push("/user/Checkout/OrderStatus")}
+        onPress={() => router.push("/user/Order/OrderStatus")}
       >
         <Text
           style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
         >
-          Quay lại danh sách đơn hàng
+          Back to Orders
         </Text>
       </Button>
     </ScrollView>
@@ -260,6 +274,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    textAlign: "center",
   },
   darkBackground: {
     backgroundColor: "#121212",
@@ -279,66 +304,74 @@ const styles = StyleSheet.create({
   lightCard: {
     backgroundColor: "white",
   },
-  successMessage: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
+    color: "#f97316",
+  },
+  message: {
+    fontSize: 18,
+    textAlign: "center",
+    marginTop: 20,
   },
   orderDetailsContainer: {
     marginBottom: 20,
   },
+  successMessage: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+    color: "#10b981",
+  },
   infoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   itemContainer: {
     flexDirection: "row",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 10,
-    shadowColor: "#000",
+    marginBottom: 12,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
   },
   itemImage: {
     width: 80,
     height: 80,
-    borderRadius: 8,
+    borderRadius: 4,
     marginRight: 12,
   },
   itemDetails: {
     flex: 1,
+    justifyContent: "center",
   },
   itemName: {
     fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 4,
   },
   itemInfo: {
     fontSize: 14,
+    marginBottom: 4,
   },
   itemPrice: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "500",
     color: "#f97316",
   },
   totalContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 16,
   },
   totalText: {
     fontSize: 18,
@@ -350,24 +383,16 @@ const styles = StyleSheet.create({
     color: "#f97316",
   },
   button: {
-    marginTop: 20,
-    paddingVertical: 12,
     backgroundColor: "#f97316",
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 40,
+    marginTop: 16,
   },
   darkButtonText: {
     color: "#ffffff",
+    fontWeight: "500",
   },
   lightButtonText: {
-    color: "#000000",
-  },
-  message: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 20,
+    color: "#ffffff",
+    fontWeight: "500",
   },
 });
 

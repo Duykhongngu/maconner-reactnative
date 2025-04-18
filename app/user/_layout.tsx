@@ -16,12 +16,10 @@ export default function UserLayout() {
       >
         <Stack.Screen name="home" />
         <Stack.Screen name="Auth/Profile" />
-        <Stack.Screen name="Home/sliderShow" />
         <Stack.Screen name="Products/[id]" />
         <Stack.Screen name="Cart/CartPages" />
-        <Stack.Screen name="Checkout/Checkout" />
-        <Stack.Screen name="Checkout/OrderStatus" />
-        <Stack.Screen name="Checkout/OrderDetails" />
+        <Stack.Screen name="Order/OrderStatus" />
+        <Stack.Screen name="Order/OrderDetails" />
       </Stack>
     </SafeAreaView>
   );

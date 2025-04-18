@@ -5,20 +5,45 @@ export interface Message {
   userId: string;
   userName: string;
   isAdmin: boolean;
-  isRead?: boolean;
+  isRead: boolean;
 }
 
 export interface UserData {
   displayName: string;
-  profileImage: string;
-  email: string;
+  profileImage?: string;
 }
 
 export interface User {
   id: string;
   name: string;
-  profileImage?: string;
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount: number;
+  profileImage?: string;
+}
+
+export interface ChatHeaderProps {
+  showUserList: boolean;
+  selectedUser: string | null;
+  totalUnreadCount: number;
+  userName?: string;
+  onBackPress: () => void;
+}
+
+export interface ChatInputProps {
+  inputMessage: string;
+  setInputMessage: (message: string) => void;
+  handleSend: () => void;
+  isLoading: boolean;
+}
+
+export interface MessageItemProps {
+  message: Message;
+  formatTime: (date: Date) => string;
+}
+
+export interface UserListItemProps {
+  user: User;
+  onSelect: (userId: string) => void;
+  formatTime: (date: Date) => string;
 } 

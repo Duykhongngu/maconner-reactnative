@@ -13,6 +13,7 @@ import {
   Alert,
   Image,
   Vibration,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -43,16 +44,15 @@ import { auth } from "~/firebase.config";
 import { db } from "~/firebase.config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-const inlineMenu = [
+import {
+  fetchCategories,
+  Category as ServiceCategory,
+} from "~/service/categoryProduct";
+
+// Default fallback menu items in case categories can't be loaded
+const fallbackMenu = [
   { title: "Valentine's Day", link: "/user/Products/[id]" },
-  { title: "Occasions", link: "/user/Products/[id]" },
-  { title: "Recipients", link: "/user/Products/[id]" },
-  { title: "Interests", link: "/user/Products/[id]" },
-  { title: "Home & Kitchen", link: "/user/Products/[id]" },
-  { title: "Clothing & Jewelry", link: "/user/Products/[id]" },
-  { title: "Drinkware & Barware", link: "/user/Products/[id]" },
-  { title: "Accessories", link: "/user/Products/[id]" },
-  { title: "Happy Customers", link: "/user/Products/[id]" },
+  { title: "All Products", link: "/user/Products/[id]" },
 ];
 
 interface User {
@@ -79,6 +79,28 @@ function SiteHeader() {
   const [totalOrders, setTotalOrders] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // Load categories for the menu
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const categoriesData = await fetchCategories();
+        // Sort categories alphabetically by name
+        categoriesData.sort((a, b) => a.name.localeCompare(b.name));
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Failed to fetch categories for menu:", err);
+        // If there's an error, we'll use the fallback menu
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async (uid: string) => {
@@ -118,8 +140,8 @@ function SiteHeader() {
           const querySnapshot = await getDocs(q);
           setTotalOrders(querySnapshot.docs.length);
         } catch (error) {
-          console.error("Lỗi khi lấy số lượng đơn hàng từ Firebase:", error);
-          Alert.alert("Lỗi", "Không thể tải số lượng đơn hàng.");
+          console.error("Error fetching order count from Firebase:", error);
+          Alert.alert("Error", "Unable to load order count.");
           setTotalOrders(0);
         }
       } else {
@@ -157,8 +179,8 @@ function SiteHeader() {
 
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: "Tin nhắn mới",
-              body: "Bạn có tin nhắn mới từ Admin",
+              title: "New Message",
+              body: "You have a new message from Admin",
               sound: true,
             },
             trigger: null,
@@ -192,8 +214,8 @@ function SiteHeader() {
 
       await router.push("/");
     } catch (error: any) {
-      console.error("Lỗi đăng xuất:", error);
-      Alert.alert("Lỗi đăng xuất", error.message);
+      console.error("Logout error:", error);
+      Alert.alert("Logout Error", error.message);
     }
   };
 
@@ -240,7 +262,7 @@ function SiteHeader() {
 
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => router.push("/user/Checkout/OrderStatus" as any)}
+            onPress={() => router.push("/user/Order/OrderStatus" as any)}
           >
             <Truck size={24} color={iconColor} />
             {totalOrders > 0 && (
@@ -350,7 +372,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Chat với Admin
+                Nhắn tin với Admin
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -366,7 +388,23 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Chat với trợ lý ảo
+                Nhắn tin với trợ lý ảo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push("/user/Vouchers/VoucherScreen");
+              }}
+            >
+              <Text
+                style={[
+                  styles.profileMenuText,
+                  isDarkColorScheme && styles.darkText,
+                ]}
+              >
+                Voucher
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -379,7 +417,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Đăng xuất
+                Log Out
               </Text>
             </TouchableOpacity>
           </View>
@@ -399,27 +437,61 @@ function SiteHeader() {
             <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
           </TouchableOpacity>
 
-          {/* Menu list */}
-          {inlineMenu.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                router.push(item.link as any);
-                setMenuVisible(false);
-              }}
-            >
-              <View style={styles.menuItem}>
-                <Text
-                  style={[
-                    styles.menuText,
-                    isDarkColorScheme && styles.darkText,
-                  ]}
-                >
-                  {item.title}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {/* Menu list with dynamic categories */}
+          {loadingCategories ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF6B00" />
+              <Text style={[styles.loadingText, { color: iconColor }]}>
+                Loading categories...
+              </Text>
+            </View>
+          ) : categories.length > 0 ? (
+            categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                onPress={() => {
+                  router.push({
+                    pathname: "/user/Collections/CategoryProducts",
+                    params: { categoryId: category.id },
+                  } as any);
+                  setMenuVisible(false);
+                }}
+              >
+                <View style={styles.menuItem}>
+                  <Text
+                    style={[
+                      styles.menuText,
+                      isDarkColorScheme && styles.darkText,
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            // Fallback menu if no categories are available
+            fallbackMenu.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  router.push(item.link as any);
+                  setMenuVisible(false);
+                }}
+              >
+                <View style={styles.menuItem}>
+                  <Text
+                    style={[
+                      styles.menuText,
+                      isDarkColorScheme && styles.darkText,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </Modal>
 
@@ -577,6 +649,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "black",
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

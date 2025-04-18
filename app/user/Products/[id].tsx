@@ -508,7 +508,7 @@ export default function ProductDetail(): JSX.Element {
             {product.name}
           </Text>
           <Text className="text-xl font-bold text-orange-500 mb-2">
-            ${product.price.toFixed(2)} USD
+            {product.price.toFixed(2)} VNĐ
           </Text>
           <Text
             className={`text-base mb-4 ${
@@ -526,7 +526,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Color
+            Màu sắc
           </Text>
           <ColorSelector
             colors={product.color}
@@ -543,7 +543,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Quantity
+            Số lượng
           </Text>
           <QuantitySelector
             quantity={quantity}
@@ -559,7 +559,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Description
+            Mô tả
           </Text>
           <Text
             className={`text-base leading-6 ${
@@ -711,7 +711,7 @@ export default function ProductDetail(): JSX.Element {
                 isDarkColorScheme ? "text-white" : "text-gray-800"
               }`}
             >
-              Sản phẩm tương tự
+              Sản phẩm liên quan
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {suggestedProducts.map((item) => (

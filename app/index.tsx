@@ -190,7 +190,7 @@ export default function Login() {
   // Nếu đang loading, chỉ hiển thị loading indicator
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-white dark:bg-black">
         <View className="flex-1 justify-center items-center">
           <Image
             source={require("~/assets/images/NADlogo.png")}
@@ -204,16 +204,16 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 justify-center items-center p-5 bg-white">
-        <Text className="text-2xl font-bold mb-5 text-black">
+    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+      <View className="flex-1 justify-center items-center p-5 bg-white dark:bg-black">
+        <Text className="text-2xl font-bold mb-5 text-black dark:text-white">
           {isRegistering ? "Đăng Ký" : "Đăng Nhập"}
         </Text>
 
         {isRegistering && (
           <>
             <TextInput
-              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
               placeholder="Tên hiển thị (Display Name)"
               placeholderTextColor="gray"
               value={name}
@@ -221,7 +221,7 @@ export default function Login() {
               autoCapitalize="words"
             />
             <TextInput
-              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
               placeholder="Số điện thoại"
               placeholderTextColor="gray"
               value={phoneNumber}
@@ -229,7 +229,7 @@ export default function Login() {
               keyboardType="phone-pad"
             />
             <TextInput
-              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
               placeholder="Địa chỉ"
               placeholderTextColor="gray"
               value={address}
@@ -239,7 +239,7 @@ export default function Login() {
         )}
 
         <TextInput
-          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
           placeholder="Email"
           placeholderTextColor="gray"
           value={email}
@@ -248,7 +248,7 @@ export default function Login() {
           autoCapitalize="none"
         />
         <TextInput
-          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+          className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
           placeholder="Mật khẩu"
           placeholderTextColor="gray"
           value={password}
@@ -283,9 +283,9 @@ export default function Login() {
         {isResettingPassword && (
           <View className="w-full mt-5">
             <TextInput
-              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black"
+              className="w-full border-2 rounded-lg p-2 mb-4 border-gray-300 text-black dark:text-white"
               placeholder="Nhập email để đặt lại mật khẩu"
-              placeholderTextColor="gray"
+              placeholderTextColor="black"
               value={emailForReset}
               onChangeText={setEmailForReset}
               keyboardType="email-address"

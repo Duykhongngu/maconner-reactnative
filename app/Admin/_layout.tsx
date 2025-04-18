@@ -19,6 +19,9 @@ export default function AdminLayout() {
         <Stack.Screen name="ProductsManagement/Products" />
         <Stack.Screen name="CategoryProductManagement/CategoryProduct" />
         <Stack.Screen name="ReviewManagements/ReviewManagement" />
+        <Stack.Screen name="VoucherManagement/VoucherManager" />
+        <Stack.Screen name="VoucherManagement/EditVoucher" />
+        <Stack.Screen name="VoucherManagement/CreateVoucher" />
       </Stack>
     </SafeAreaView>
   );

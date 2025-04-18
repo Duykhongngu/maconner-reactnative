@@ -8,44 +8,7 @@ import {
   useEffect,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  color: string;
-  image: string;
-  images?: string[];
-  description: string;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  cartItems: CartItem[];
-  total: number;
-  userId?: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  country?: string;
-  paymentMethod?: "credit" | "cod";
-  subtotal?: string;
-  shippingFee?: string;
-  status: "pending" | "completed" | "cancelled";
-}
-interface OrderContextType {
-  orders: Order[];
-  currentOrder: Order | null;
-  setCurrentOrder: (order: Order | null) => void;
-  addOrder: (
-    orderData: Omit<Order, "id" | "date" | "status">
-  ) => Promise<Order>;
-  getOrder: (id: string) => Order | undefined;
-  removeOrder: (id: string) => Promise<void>; // Thêm dòng này
-}
+import { Order, OrderContextType } from "./components/types";
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
@@ -100,6 +63,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       throw new Error("Failed to add order");
     }
   };
+
   const removeOrder = async (orderId: string) => {
     try {
       const updatedOrders = orders.filter((order) => order.id !== orderId);

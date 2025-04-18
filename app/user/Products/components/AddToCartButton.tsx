@@ -30,14 +30,19 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const handlePress = () => {
     if (disabled) return;
 
-    // Animation khi nhấn nút - sử dụng withTiming không có callback
-    opacity.value = withTiming(0.5, { duration: 300 });
+    // Animation khi nhấn nút - sử dụng withTiming với callback
+    opacity.value = withTiming(0.5, { duration: 300 }, (isFinished) => {
+      if (isFinished) {
+        // Chỉ tiếp tục nếu animation đã hoàn thành
+        opacity.value = withTiming(1, { duration: 300 });
+        // Trong JS thread, không được gọi hàm React trong worklet
+        // runtime.runOnJS(onPress)(); - nếu dùng trong worklet
+      }
+    });
 
-    // Sử dụng setTimeout để đảm bảo animation hoàn thành trước khi thực hiện hành động
-    setTimeout(() => {
-      opacity.value = withTiming(1, { duration: 300 });
-      onPress();
-    }, 300);
+    // Do withTiming callback chạy trong UI thread, không thể gọi onPress trực tiếp từ đó
+    // Nên vẫn dùng setTimeout nhưng lần này hợp lý hơn
+    setTimeout(onPress, 300);
   };
 
   return (

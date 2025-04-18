@@ -143,7 +143,7 @@ const SuggestedProducts = () => {
                   marginBottom: 4,
                 }}
               >
-                ${item.price.toFixed(2)} USD
+                {item.price.toFixed(2)} VNĐ
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {[1, 2, 3, 4, 5].map((star) => (

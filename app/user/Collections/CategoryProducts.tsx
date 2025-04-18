@@ -299,9 +299,7 @@ function CategoryProducts() {
               setShowSortModal(false);
             }}
           >
-            <Text className="text-base dark:text-white">
-              Price: Low to High
-            </Text>
+            <Text className="text-base dark:text-white">Giá: Thấp đến cao</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -314,7 +312,7 @@ function CategoryProducts() {
             }}
           >
             <Text className="text-base dark:text-white">
-              Price: High to Low
+              Giá: Cao đến thấp{" "}
             </Text>
           </TouchableOpacity>
         </View>
@@ -411,7 +409,7 @@ function CategoryProducts() {
             sortOption !== "default") && (
             <View className="flex-row flex-wrap items-center mb-4">
               <Text className="mr-2 text-sm dark:text-gray-300">
-                Active filters:
+                Bộ lọc đang hoạt động:
               </Text>
 
               {searchQuery ? (
@@ -448,7 +446,9 @@ function CategoryProducts() {
               {sortOption !== "default" ? (
                 <View className="bg-orange-500 rounded-full px-2 py-1 flex-row items-center mr-2 mb-1.5">
                   <Text className="text-white text-xs mr-1">
-                    {sortOption === "price-asc" ? "Low to High" : "High to Low"}
+                    {sortOption === "price-asc"
+                      ? "Thấp đến cao"
+                      : "Cao đến thấp"}
                   </Text>
                   <TouchableOpacity onPress={() => setSortOption("default")}>
                     <X size={14} color="white" />
@@ -457,7 +457,7 @@ function CategoryProducts() {
               ) : null}
 
               <TouchableOpacity onPress={resetFilters}>
-                <Text className="text-orange-500 text-sm">Clear all</Text>
+                <Text className="text-orange-500 text-sm">Xóa tất cả</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -539,15 +539,13 @@ function CategoryProducts() {
               ) : (
                 <View className="items-center mt-12">
                   <Text className="text-lg text-center dark:text-white mb-5">
-                    No products match your search
+                    Không có sản phẩm phù hợp với tìm kiếm của bạn
                   </Text>
                   <TouchableOpacity
                     className="bg-orange-500 py-2.5 px-5 rounded-lg"
                     onPress={resetFilters}
                   >
-                    <Text className="text-white font-medium">
-                      Clear Filters
-                    </Text>
+                    <Text className="text-white font-medium">Xóa tất cả</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -555,13 +553,13 @@ function CategoryProducts() {
           ) : (
             <View className="items-center mt-12">
               <Text className="text-lg text-center dark:text-white mb-5">
-                No products available in this category
+                Không có sản phẩm trong danh mục này
               </Text>
               <TouchableOpacity
                 className="bg-orange-500 py-2.5 px-5 rounded-lg"
                 onPress={() => router.back()}
               >
-                <Text className="text-white font-medium">Go Back</Text>
+                <Text className="text-white font-medium">Quay lại</Text>
               </TouchableOpacity>
             </View>
           )}

@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
-  StyleSheet,
 } from "react-native";
 import { useWindowDimensions } from "react-native";
 import { Button } from "~/components/ui/button";
@@ -30,13 +29,10 @@ interface Product {
 function Trending() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { isDarkColorScheme } = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
 
-  const bgColor = isDarkColorScheme ? "#121212" : "#FFFFFF";
-  const textColor = isDarkColorScheme ? "#E5E7EB" : "#1E1E1E";
-  const cardBgColor = isDarkColorScheme ? "#1E1E1E" : "#FFFFFF";
-  const borderColor = isDarkColorScheme ? "#374151" : "#E5E7EB";
+  const isDarkColorScheme = colorScheme === "dark";
 
   // Lấy dữ liệu sản phẩm trending từ service
   useEffect(() => {
@@ -53,132 +49,83 @@ function Trending() {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: "#F97316" }]}>
-          Trending Products
-        </Text>
+    <SafeAreaView
+      className={`flex-1 my-2.5 ${
+        isDarkColorScheme ? "bg-[#121212]" : "bg-white"
+      }`}
+    >
+      <View className="flex-1 px-4">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-2xl font-bold text-[#F97316]">
+            Sản phẩm bán chạy
+          </Text>
+          <Button
+            onPress={() => router.push(`/user/Collections/Trending`)}
+            variant="secondary"
+            className="bg-[#F97316] justify-center items-center py-2 px-4 rounded-full h-10"
+          >
+            <Text className="text-base font-semibold text-white">
+              Xem tất cả
+            </Text>
+          </Button>
+        </View>
+
         {trendingProducts.length > 0 ? (
-          <View style={styles.productContainer}>
+          <View className="flex-row flex-wrap justify-between">
             {trendingProducts.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => router.push(`/user/Products/${item.id}`)}
-                style={[
-                  styles.productCard,
-                  { backgroundColor: cardBgColor, borderColor },
-                ]}
+                className={`rounded-lg p-4 mb-4 border ${
+                  isDarkColorScheme
+                    ? "bg-[#1E1E1E] border-[#374151]"
+                    : "bg-white border-[#E5E7EB]"
+                } w-[48%]`}
               >
                 <Image
                   source={{ uri: item.images?.[0] || item.link }}
-                  style={styles.productImage}
+                  className="w-full h-40 rounded-lg"
                   onError={(e) =>
                     console.error("Image loading error:", e.nativeEvent.error)
                   }
                 />
-                <Text style={[styles.productDescription, { color: textColor }]}>
+                <Text
+                  className={`text-base font-semibold ${
+                    isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
+                  }`}
+                >
                   {item.name}
                 </Text>
-                <Text style={[styles.productDescription, { color: textColor }]}>
+                <Text
+                  className={`text-base font-semibold ${
+                    isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
+                  }`}
+                >
                   {item.description}
                 </Text>
-                <Text style={styles.productPrice}>$ {item.price} USD</Text>
+                <Text className="text-lg font-bold text-[#F97316]">
+                  {item.price} VNĐ
+                </Text>
                 {item.purchaseCount !== undefined && item.purchaseCount > 0 && (
-                  <Text style={styles.purchaseCount}>
-                    Purchased {item.purchaseCount} times
+                  <Text className="text-sm text-[#6B7280] italic mt-1">
+                    Đã bán {item.purchaseCount} lần
                   </Text>
                 )}
               </TouchableOpacity>
             ))}
           </View>
         ) : (
-          <Text style={[styles.emptyMessage, { color: textColor }]}>
-            No trending products found
+          <Text
+            className={`text-center italic my-2.5 ${
+              isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
+            }`}
+          >
+            Không có sản phẩm bán chạy
           </Text>
         )}
-        <View style={styles.showMoreContainer}>
-          <Button
-            onPress={() => router.push(`/user/Collections/NightLight` as any)}
-            variant="secondary"
-            style={styles.showMoreButton}
-          >
-            <Text style={[styles.showMoreText]}>Shop All</Text>
-          </Button>
-        </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginVertical: 10,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  productContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  productCard: {
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    width: "48%",
-  },
-  productImage: {
-    width: "100%",
-    height: 160,
-    borderRadius: 10,
-  },
-  productDescription: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  productPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#F97316",
-  },
-  showMoreContainer: {
-    alignItems: "center",
-  },
-  showMoreButton: {
-    backgroundColor: "#F97316",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 99999,
-    width: "40%",
-    height: 50,
-  },
-  showMoreText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  emptyMessage: {
-    textAlign: "center",
-    fontStyle: "italic",
-    marginVertical: 10,
-  },
-  purchaseCount: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontStyle: "italic",
-    marginTop: 4,
-  },
-});
 
 export default Trending;

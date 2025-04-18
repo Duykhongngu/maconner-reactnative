@@ -16,7 +16,7 @@ import { ChevronLeft, MenuIcon, Send, SendIcon } from "lucide-react-native";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
-import { useOrder } from "../user/Checkout/OrderContext";
+import { useOrder } from "../user/Order/OrderContext";
 import { auth, db } from "../../firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { useCart } from "../user/Cart/CartContext";

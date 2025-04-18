@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
       <View className="flex-1 justify-center items-center">
         <Text className="text-xl font-bold mb-4">Trang này không tồn tại!</Text>
 
-        <Link href="/user/home" className="mt-4">
+        <Link href="/" className="mt-4">
           <Text className="text-blue-500 text-lg">Quay về trang chủ</Text>
         </Link>
       </View>

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
@@ -12,46 +13,26 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import Toast from "react-native-toast-message"; // Import Toast
+import Toast from "react-native-toast-message";
+import { Order } from "./components/types";
 
-// Định nghĩa interface cho đơn hàng từ Firebase
-interface FirebaseOrder {
-  id: string;
-  date: string;
-  total: number;
-  status: "pending" | "completed" | "cancelled";
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  country?: string;
-  paymentMethod?: "credit" | "cod";
-  userId?: string;
-  cartItems: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    color: string;
-    size: string;
-    image: string;
-  }[];
-  subtotal?: string;
-  shippingFee?: string;
-}
+// Interface for Firebase order data
+interface FirebaseOrder extends Order {}
 
 const OrderStatus: React.FC = () => {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
   const [orders, setOrders] = useState<FirebaseOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Lấy dữ liệu đơn hàng từ Firestore theo userId
+  // Fetch orders from Firestore by userId
   useEffect(() => {
     let unsubscribe: () => void;
 
     const fetchOrders = () => {
       if (auth.currentUser) {
+        setLoading(true);
         const q = query(
           collection(db, "orderManager"),
           where("userId", "==", auth.currentUser.uid)
@@ -63,23 +44,34 @@ const OrderStatus: React.FC = () => {
               id: doc.id,
               ...doc.data(),
             })) as FirebaseOrder[];
-            setOrders(ordersData);
+
+            // Sort orders by date (newest first)
+            const sortedOrders = ordersData.sort((a, b) => {
+              const dateA = new Date(a.date).getTime();
+              const dateB = new Date(b.date).getTime();
+              return dateB - dateA; // Descending order (newest first)
+            });
+
+            setOrders(sortedOrders);
+            setLoading(false);
           },
           (error) => {
-            console.error("Lỗi khi lấy đơn hàng từ Firestore:", error);
+            console.error("Error fetching orders from Firestore:", error);
             Toast.show({
               type: "error",
-              text1: "Lỗi",
-              text2: "Không thể tải danh sách đơn hàng.",
+              text1: "Error",
+              text2: "Unable to load order list.",
             });
+            setLoading(false);
           }
         );
       } else {
         setOrders([]);
+        setLoading(false);
         Toast.show({
           type: "info",
-          text1: "Thông báo",
-          text2: "Vui lòng đăng nhập để xem đơn hàng của bạn.",
+          text1: "Notice",
+          text2: "Please log in to view your orders.",
         });
         router.replace("/" as any);
       }
@@ -89,7 +81,7 @@ const OrderStatus: React.FC = () => {
       fetchOrders();
     });
 
-    // Gọi lần đầu khi component mount
+    // Call on component mount
     fetchOrders();
 
     return () => {
@@ -97,6 +89,28 @@ const OrderStatus: React.FC = () => {
       authUnsubscribe();
     };
   }, [router]);
+
+  // Show loading spinner
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          isDarkMode ? styles.darkBackground : styles.lightBackground,
+        ]}
+      >
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text
+          style={[
+            styles.loadingText,
+            isDarkMode ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Đang tải danh sách đơn hàng...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -124,7 +138,7 @@ const OrderStatus: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Tổng số đơn hàng: {orders.length}
+          Tổng đơn hàng: {orders.length}
         </Text>
 
         {orders.length === 0 ? (
@@ -145,7 +159,7 @@ const OrderStatus: React.FC = () => {
                 isDarkMode ? styles.darkCard : styles.lightCard,
               ]}
               onPress={() =>
-                router.push(`/user/Checkout/OrderDetails?id=${item.id}` as any)
+                router.push(`/user/Order/OrderDetails?id=${item.id}` as any)
               }
             >
               <Text
@@ -154,7 +168,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Mã đơn hàng: {item.id}
+                Order ID: {item.id}
               </Text>
               {item.name && (
                 <Text
@@ -163,7 +177,7 @@ const OrderStatus: React.FC = () => {
                     isDarkMode ? styles.darkText : styles.lightText,
                   ]}
                 >
-                  Tên: {item.name}
+                  Name: {item.name}
                 </Text>
               )}
               <Text
@@ -172,7 +186,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Ngày đặt: {new Date(item.date).toLocaleDateString()}
+                Date: {new Date(item.date).toLocaleDateString()}
               </Text>
               <Text
                 style={[
@@ -180,7 +194,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Tổng cộng: ${item.total.toFixed(2)}
+                Total: ${item.total.toFixed(2)}
               </Text>
               <Text
                 style={[
@@ -188,7 +202,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Trạng thái: {item.status}
+                Status: {item.status}
               </Text>
             </TouchableOpacity>
           ))
@@ -198,7 +212,7 @@ const OrderStatus: React.FC = () => {
           <Text
             style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
           >
-            Tiếp tục mua sắm
+            Tiếp tục mua hàng
           </Text>
         </Button>
       </ScrollView>
@@ -210,6 +224,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    textAlign: "center",
   },
   darkBackground: {
     backgroundColor: "#121212",
@@ -236,6 +261,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#f97316",
   },
+  orderCount: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  orderItem: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  orderTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  orderInfo: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
   orderPrice: {
     fontSize: 18,
     fontWeight: "500",
@@ -249,43 +297,17 @@ const styles = StyleSheet.create({
   scrollViewContainer: {
     paddingBottom: 20,
   },
-  orderItem: {
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  orderTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  orderInfo: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
   button: {
-    marginTop: 20,
-    paddingVertical: 12,
     backgroundColor: "#f97316",
-    borderRadius: 8,
-    alignItems: "center",
+    marginTop: 16,
   },
   darkButtonText: {
     color: "#ffffff",
+    fontWeight: "500",
   },
   lightButtonText: {
-    color: "#000000",
-  },
-  orderCount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-    color: "#f97316",
-  },
-  footerContainer: {
-    marginTop: 20,
+    color: "#ffffff",
+    fontWeight: "500",
   },
 });
 

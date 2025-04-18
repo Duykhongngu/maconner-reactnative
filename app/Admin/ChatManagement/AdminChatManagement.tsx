@@ -1,20 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   SafeAreaView,
   FlatList,
-  Image,
-  Vibration,
   AppState,
-  Platform,
+  Vibration,
+  Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
 import {
   collection,
   addDoc,
@@ -30,25 +24,25 @@ import {
   QuerySnapshot,
   DocumentSnapshot,
   updateDoc,
-  setDoc,
 } from "firebase/firestore";
 import { db, auth } from "~/firebase.config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNotifications } from "~/hooks/useNotifications";
-import { Message, UserData } from "./types";
-import { User } from "./types";
+import { Message, User, UserData } from "./types";
+import { ChatHeader } from "./components/ChatHeader";
+import { ChatInput } from "./components/ChatInput";
+import { MessageItem } from "./components/MessageItem";
+import { UserListItem } from "./components/UserListItem";
 
 // Cập nhật hàm gửi thông báo
 const sendPushNotification = async (userId: string, message: string) => {
   try {
-    // Lấy token của user từ Firestore
     const tokenDoc = await getDoc(doc(db, "userTokens", userId));
     if (!tokenDoc.exists()) return;
 
     const { expoPushToken } = tokenDoc.data();
     if (!expoPushToken) return;
 
-    // Gửi thông báo qua Expo Push Service
     await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
       headers: {
@@ -67,7 +61,6 @@ const sendPushNotification = async (userId: string, message: string) => {
       }),
     });
 
-    // Lưu thông báo vào Firestore để đảm bảo user nhận được ngay cả khi offline
     await addDoc(collection(db, "notifications"), {
       userId,
       type: "chat",
@@ -96,20 +89,16 @@ export default function AdminChatManagement() {
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const appStateRef = useRef(AppState.currentState);
 
-  // Sử dụng hook notifications
   useNotifications();
 
-  // Theo dõi trạng thái app
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (
         appStateRef.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        // App vừa trở lại foreground
         setIsAppActive(true);
       } else if (nextAppState.match(/inactive|background/)) {
-        // App vừa vào background
         setIsAppActive(false);
       }
       appStateRef.current = nextAppState;
@@ -120,7 +109,6 @@ export default function AdminChatManagement() {
     };
   }, []);
 
-  // Lưu và đọc số tin nhắn chưa đọc từ AsyncStorage
   useEffect(() => {
     const loadUnreadCount = async () => {
       try {
@@ -149,7 +137,6 @@ export default function AdminChatManagement() {
     saveUnreadCount();
   }, [totalUnreadCount]);
 
-  // Lấy danh sách người dùng có tin nhắn
   useEffect(() => {
     const setupUserListener = () => {
       try {
@@ -169,7 +156,6 @@ export default function AdminChatManagement() {
               let totalUnread = 0;
               let hasNewMessage = false;
 
-              // Kiểm tra tin nhắn mới
               snapshot.docChanges().forEach((change) => {
                 if (change.type === "added" || change.type === "modified") {
                   const data = change.doc.data();
@@ -190,12 +176,10 @@ export default function AdminChatManagement() {
                 }
               });
 
-              // Thông báo khi có tin nhắn mới
               if (hasNewMessage && !isAppActive) {
                 Vibration.vibrate();
               }
 
-              // Xử lý dữ liệu người dùng
               snapshot.forEach((docSnapshot) => {
                 const data = docSnapshot.data();
                 const userId = data.userId;
@@ -282,24 +266,6 @@ export default function AdminChatManagement() {
     return () => unsubscribe();
   }, [isAppActive]);
 
-  // Hàm retry kết nối
-  const retryConnection = (operation: () => void, delay: number = 5000) => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
-    retryTimeoutRef.current = setTimeout(operation, delay);
-  };
-
-  // Cleanup timeout khi component unmount
-  useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Lấy tin nhắn của người dùng được chọn
   useEffect(() => {
     if (!selectedUser) return;
 
@@ -329,7 +295,6 @@ export default function AdminChatManagement() {
         });
       });
 
-      // Cập nhật trạng thái đã đọc cho tin nhắn của user
       if (hasUnreadMessages) {
         snapshot.forEach(async (doc) => {
           const data = doc.data();
@@ -340,7 +305,6 @@ export default function AdminChatManagement() {
           }
         });
 
-        // Cập nhật lại danh sách users để reset unreadCount
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
             user.id === selectedUser ? { ...user, unreadCount: 0 } : user
@@ -360,8 +324,7 @@ export default function AdminChatManagement() {
 
     setIsLoading(true);
     try {
-      // Gửi tin nhắn
-      const messageRef = await addDoc(collection(db, "adminChats"), {
+      await addDoc(collection(db, "adminChats"), {
         text: inputMessage.trim(),
         createdAt: serverTimestamp(),
         userId: selectedUser,
@@ -370,7 +333,6 @@ export default function AdminChatManagement() {
         isRead: false,
       });
 
-      // Gửi thông báo push
       await sendPushNotification(selectedUser, inputMessage.trim());
 
       setInputMessage("");
@@ -388,53 +350,20 @@ export default function AdminChatManagement() {
     });
   };
 
-  const renderMessage = (message: Message) => (
-    <View
-      className={`flex-row ${
-        message.isAdmin ? "justify-end" : "justify-start"
-      } mb-4`}
-    >
-      {!message.isAdmin && (
-        <View className="w-8 h-8 rounded-full mr-2 bg-black dark:bg-white items-center justify-center">
-          <Text className="text-sm font-semibold text-white dark:text-black">
-            {message.userName.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-      )}
-      <View
-        className={`rounded-2xl px-4 py-3 max-w-[80%] ${
-          message.isAdmin
-            ? "bg-blue-500 dark:bg-blue-500"
-            : "bg-white dark:bg-black border border-gray-200 dark:border-gray-800"
-        }`}
-      >
-        <Text
-          className={`text-base ${
-            message.isAdmin ? "text-white" : "text-gray-800 dark:text-white"
-          }`}
-        >
-          {message.text}
-        </Text>
-        <View className="flex-row items-center justify-between mt-1">
-          <Text
-            className={`text-xs ${
-              message.isAdmin ? "text-blue-100" : "text-gray-500"
-            }`}
-          >
-            {formatTime(message.createdAt)}
-          </Text>
-          {message.isAdmin && (
-            <Ionicons
-              name={message.isRead ? "checkmark-done" : "checkmark"}
-              size={16}
-              color="#FFFFFF"
-              style={{ marginLeft: 4 }}
-            />
-          )}
-        </View>
-      </View>
-    </View>
-  );
+  const retryConnection = (operation: () => void, delay: number = 5000) => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+    retryTimeoutRef.current = setTimeout(operation, delay);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!currentUser) {
     return (
@@ -449,94 +378,30 @@ export default function AdminChatManagement() {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-black">
       <View className="flex-1">
-        {/* Header cho mobile */}
-        <View className="bg-white dark:bg-black p-4 border-b border-gray-200 flex-row items-center justify-between">
-          {!showUserList && selectedUser && (
-            <TouchableOpacity
-              onPress={() => setShowUserList(true)}
-              className="p-2"
-            >
-              <Ionicons name="arrow-back" size={24} color="#374151" />
-            </TouchableOpacity>
-          )}
-          <View className="flex-row items-center">
-            <Text className="text-lg font-semibold text-black dark:text-white">
-              {showUserList
-                ? "Danh sách chat"
-                : users.find((u) => u.id === selectedUser)?.name || "Chat"}
-            </Text>
-            {showUserList && totalUnreadCount > 0 && (
-              <View className="ml-2 bg-red-500 rounded-full px-2 py-1">
-                <Text className="text-white text-xs font-bold">
-                  {totalUnreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-          {!showUserList && selectedUser && (
-            <TouchableOpacity className="p-2">
-              <Ionicons name="ellipsis-vertical" size={24} color="#374151" />
-            </TouchableOpacity>
-          )}
-        </View>
+        <ChatHeader
+          showUserList={showUserList}
+          selectedUser={selectedUser}
+          totalUnreadCount={totalUnreadCount}
+          userName={users.find((u) => u.id === selectedUser)?.name}
+          onBackPress={() => setShowUserList(true)}
+        />
 
-        {/* Danh sách người dùng */}
         {showUserList ? (
           <FlatList
             data={users}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setSelectedUser(item.id);
+              <UserListItem
+                user={item}
+                onSelect={(userId) => {
+                  setSelectedUser(userId);
                   setShowUserList(false);
                 }}
-                className="p-4 border-b border-gray-200 bg-white dark:bg-black"
-              >
-                <View className="flex-row items-center">
-                  <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center mr-3">
-                    {item.profileImage ? (
-                      <Image
-                        source={{ uri: item.profileImage }}
-                        className="w-12 h-12 rounded-full"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <Text className="text-lg font-semibold text-black dark:text-white">
-                        {item.name.charAt(0).toUpperCase()}
-                      </Text>
-                    )}
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row justify-between items-center">
-                      <Text className="text-base font-semibold text-black dark:text-white">
-                        {item.name}
-                      </Text>
-                      {item.lastMessageTime && (
-                        <Text className="text-xs text-gray-500 dark:text-white">
-                          {formatTime(item.lastMessageTime)}
-                        </Text>
-                      )}
-                    </View>
-                    {item.lastMessage && (
-                      <Text className="text-gray-500 text-sm" numberOfLines={1}>
-                        {item.lastMessage}
-                      </Text>
-                    )}
-                  </View>
-                  {item.unreadCount > 0 && (
-                    <View className="ml-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center">
-                      <Text className="text-white text-xs">
-                        {item.unreadCount}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
+                formatTime={formatTime}
+              />
             )}
             keyExtractor={(item) => item.id}
           />
-        ) : // Khu vực chat
-        selectedUser ? (
+        ) : selectedUser ? (
           <View className="flex-1 bg-white dark:bg-black">
             <ScrollView
               ref={scrollViewRef}
@@ -544,46 +409,20 @@ export default function AdminChatManagement() {
               contentContainerStyle={{ paddingVertical: 16 }}
             >
               {messages.map((message) => (
-                <View key={message.id}>{renderMessage(message)}</View>
+                <MessageItem
+                  key={message.id}
+                  message={message}
+                  formatTime={formatTime}
+                />
               ))}
             </ScrollView>
 
-            <View className="p-4 border-t border-gray-200 bg-white dark:bg-black">
-              <View className="flex-row items-center space-x-2">
-                <TextInput
-                  className="flex-1 bg-gray-100 dark:bg-gray-600 rounded-full px-4 py-2 text-base"
-                  placeholder="Nhập tin nhắn..."
-                  placeholderTextColor="black dark:text-white"
-                  value={inputMessage}
-                  onChangeText={setInputMessage}
-                  multiline
-                  maxLength={500}
-                />
-                <TouchableOpacity
-                  onPress={handleSend}
-                  disabled={inputMessage.trim() === "" || isLoading}
-                  className={`w-10 h-10 rounded-full items-center justify-center ${
-                    inputMessage.trim() === "" || isLoading
-                      ? "bg-gray-300 dark:bg-gray-600"
-                      : "bg-blue-500 dark:bg-blue-500"
-                  }`}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Ionicons
-                      name="send"
-                      size={20}
-                      color={
-                        inputMessage.trim() === "" || isLoading
-                          ? "#9CA3AF"
-                          : "#FFFFFF"
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
+            <ChatInput
+              inputMessage={inputMessage}
+              setInputMessage={setInputMessage}
+              handleSend={handleSend}
+              isLoading={isLoading}
+            />
           </View>
         ) : (
           <View className="flex-1 justify-center items-center">

@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
-} from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 interface ColorInfo {
@@ -107,42 +101,35 @@ const ColorOption: React.FC<ColorOptionProps> = ({
 }) => {
   // Shared value cho animation
   const scale = useSharedValue(1);
-  // State để theo dõi giá trị hiện tại của scale
-  const [scaleState, setScaleState] = useState(1);
+  const borderWidthAnim = useSharedValue(1);
+  const borderColorAnim = useSharedValue("#ccc");
 
-  // Cập nhật scale khi isSelected thay đổi
+  // Cập nhật shared values khi isSelected thay đổi
   useEffect(() => {
-    scale.value = withSpring(isSelected ? 1.1 : 1);
+    scale.value = withTiming(isSelected ? 1.1 : 1, { duration: 300 });
+    borderWidthAnim.value = withTiming(isSelected ? 3 : 1, { duration: 300 });
+    borderColorAnim.value = withTiming(isSelected ? "#FF6B00" : "#ccc", {
+      duration: 300,
+    });
   }, [isSelected]);
 
-  // Sử dụng polling để đồng bộ shared value với React state
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setScaleState(scale.value);
-    }, 1000 / 60); // 60 FPS
-
-    return () => clearInterval(interval);
-  }, [scale]);
-
-  // Animated style sử dụng scale shared value
+  // Animated style với cú pháp đúng
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
+      margin: 5,
+      borderWidth: borderWidthAnim.value,
+      borderColor: borderColorAnim.value,
+      backgroundColor: colorInfo.value,
     };
   });
 
   return (
-    <Animated.View style={[styles.colorOptionContainer, animatedStyle]}>
+    <Animated.View style={[styles.colorOption, animatedStyle]}>
       <TouchableOpacity
-        style={[
-          styles.colorOption,
-          { backgroundColor: colorInfo.value },
-          isSelected && {
-            borderWidth: 3,
-            borderColor: "#FF6B00",
-          },
-        ]}
+        style={styles.touchableArea}
         onPress={onSelect}
+        activeOpacity={0.7}
       >
         <Text style={[styles.colorText, { color: colorInfo.textColor }]}>
           {colorName}
@@ -159,17 +146,18 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 16,
   },
-  colorOptionContainer: {
-    margin: 5,
-  },
   colorOption: {
     width: 60,
     height: 60,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ccc",
+  },
+  touchableArea: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   colorText: {
     fontWeight: "bold",

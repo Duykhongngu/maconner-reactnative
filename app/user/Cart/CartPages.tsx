@@ -35,10 +35,10 @@ const CartPages: React.FC = () => {
         <View style={styles.emptyCartContainer}>
           <PackageOpen size={48} color={iconColor} />
           <Text style={[styles.emptyCartTitle, { color: textColor }]}>
-            Your cart is empty
+            Giỏ hàng của bạn trống
           </Text>
           <Text style={[styles.emptyCartSubtitle, { color: textColor }]}>
-            Explore special gifts for you and your loved ones.
+            Khám phá quà tặng đặc biệt cho bạn và người thân.
           </Text>
           <Button
             variant="normal"
@@ -46,7 +46,7 @@ const CartPages: React.FC = () => {
             style={styles.keepShoppingButton}
             onPress={() => router.push("/user/home")}
           >
-            <Text style={styles.keepShoppingButtonText}>Keep Shopping</Text>
+            <Text style={styles.keepShoppingButtonText}>Tiếp tục mua hàng</Text>
           </Button>
         </View>
       </View>
@@ -80,13 +80,13 @@ const CartPages: React.FC = () => {
                 {item.name}
               </Text>
               <Text style={[styles.cartItemPrice, { color: "#F97316" }]}>
-                ${item.price.toFixed(2)} USD
+                {item.price.toFixed(2)} VNĐ
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Color: {item.color || "Default"}
+                Màu: {item.color || "Mặc định"}
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Quantity: {item.quantity}
+                Số lượng: {item.quantity}
               </Text>
 
               <View style={styles.quantityContainer}>
@@ -146,16 +146,16 @@ const CartPages: React.FC = () => {
         ))}
         <View style={styles.subtotalContainer}>
           <Text style={[styles.subtotalText, { color: textColor }]}>
-            Subtotal: ${subtotal.toFixed(2)} USD
+            Tổng tiền: {subtotal.toFixed(2)} VNĐ
           </Text>
         </View>
         <Button
           variant="normal"
           size="lg"
           style={styles.checkoutButton}
-          onPress={() => router.push("/user/Checkout/Checkout" as any)}
+          onPress={() => router.push("/user/Checkout/Checkout")}
         >
-          <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+          <Text style={styles.checkoutButtonText}>Tiếp tục thanh toán</Text>
         </Button>
         <View style={{ marginTop: 20 }}>
           <SuggestedProducts />

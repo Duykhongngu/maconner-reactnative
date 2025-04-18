@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -9,59 +9,75 @@ import {
   StyleSheet,
   Appearance,
   Alert,
+  Platform,
+  Modal,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { CreditCard, DollarSign } from "lucide-react-native";
+import {
+  CreditCard,
+  DollarSign,
+  Tag,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  X,
+} from "lucide-react-native";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { useCart } from "../Cart/CartContext";
-import { CartItem, useOrder } from "./OrderContext";
+import { useOrder } from "../Order/OrderContext";
 import { useRouter } from "expo-router";
-import { auth, db } from "~/firebase.config";
+import { auth } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import {
-  doc,
-  getDoc,
-  collection,
-  addDoc,
-  updateDoc,
-  increment,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-  writeBatch,
-} from "firebase/firestore";
+  FormData,
+  getUserData,
+  processCheckout,
+  STRIPE_PUBLISHABLE_KEY,
+} from "~/service/checkout";
+import { Order as OrderType } from "../Order/components/types";
+import { validateVoucher, getUserVouchers, Voucher } from "~/service/vouchers";
 
-// Định nghĩa schema cho form
+// Form schema definition
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Tên phải có ít nhất 2 ký tự" }),
-  email: z.string().email({ message: "Email không hợp lệ" }),
-  phone: z.string().min(10, { message: "Số điện thoại không hợp lệ" }),
-  address: z.string().min(5, { message: "Địa chỉ phải có ít nhất 5 ký tự" }),
-  country: z.string().min(1, { message: "Vui lòng chọn quốc gia" }),
-  paymentMethod: z.enum(["credit", "cod"], {
-    required_error: "Vui lòng chọn phương thức thanh toán",
+  name: z.string().min(2, { message: "Name must have at least 2 characters" }),
+  email: z.string().email({ message: "Invalid email" }),
+  phone: z.string().min(10, { message: "Invalid phone number" }),
+  address: z
+    .string()
+    .min(5, { message: "Address must have at least 5 characters" }),
+  paymentMethod: z.enum(["stripe", "cod"], {
+    required_error: "Please select a payment method",
   }),
+  voucherCode: z.string().optional(),
 });
 
-type FormData = z.infer<typeof formSchema>;
-
-const CheckoutScreen: React.FC = () => {
+const CheckoutContent: React.FC = () => {
   const { cartItems, clearCart } = useCart();
   const { setCurrentOrder } = useOrder();
   const router = useRouter();
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [voucher, setVoucher] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [userVouchers, setUserVouchers] = useState<
+    { id: string; voucher: Voucher; isUsed: boolean }[]
+  >([]);
+  const [loadingUserVouchers, setLoadingUserVouchers] = useState(false);
 
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
   const shippingFee = 30;
-  const total = subtotal + shippingFee;
+  const total = subtotal + shippingFee - discountAmount;
 
   const {
     control,
@@ -69,6 +85,9 @@ const CheckoutScreen: React.FC = () => {
     formState: { errors },
     reset,
     trigger,
+    watch,
+    setValue,
+    getValues,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -76,45 +95,47 @@ const CheckoutScreen: React.FC = () => {
       email: "",
       phone: "",
       address: "",
-      country: "",
-      paymentMethod: "credit",
+      paymentMethod: "stripe",
+      voucherCode: "",
     },
     mode: "onChange", // Validate on change for immediate feedback
   });
 
-  // Lấy thông tin người dùng từ Firestore dựa trên userId khi đăng nhập
+  // Watch the payment method to show UI conditionally
+  const selectedPaymentMethod = watch("paymentMethod");
+  const voucherCode = watch("voucherCode");
+
+  // Get user information from Firestore based on userId when logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          const userDocRef = doc(db, "accounts", currentUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
+          const userData = await getUserData(currentUser.uid);
+          if (userData) {
             reset({
               name: userData.displayName || "",
               email: userData.email || "",
-              phone: userData.phone || "",
+              phone: userData.phone_number || "",
               address: userData.address || "",
-              country: userData.country || "",
-              paymentMethod: "credit",
+              paymentMethod: "stripe",
+              voucherCode: "",
             });
 
             // Trigger validation after setting values from database
             await trigger();
           } else {
-            console.log("Không tìm thấy thông tin người dùng trong Firestore");
+            console.log("User information not found in Firestore");
             Alert.alert(
-              "Thông báo",
-              "Không tìm thấy thông tin người dùng. Vui lòng điền thông tin thủ công."
+              "Notice",
+              "User information not found. Please fill in manually."
             );
           }
         } catch (error) {
-          console.error("Lỗi khi lấy dữ liệu người dùng:", error);
-          Alert.alert("Lỗi", "Không thể tải thông tin người dùng.");
+          console.error("Error fetching user data:", error);
+          Alert.alert("Error", "Could not load user information.");
         }
       } else {
-        Alert.alert("Lỗi", "Bạn cần đăng nhập để tiếp tục đặt hàng.");
+        Alert.alert("Error", "You need to be logged in to place an order.");
         router.replace("/" as any);
       }
     });
@@ -122,166 +143,264 @@ const CheckoutScreen: React.FC = () => {
     return () => unsubscribe();
   }, [reset, router, trigger]);
 
-  // Xử lý submit form và lưu đơn hàng lên Firestore với userId
-  const onSubmit = async (values: FormData) => {
-    // Đầu tiên kiểm tra lại xem form có hợp lệ không
-    const isValid = await trigger();
-    if (!isValid) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin trước khi đặt hàng");
-      return;
+  // Load user vouchers when component mounts
+  useEffect(() => {
+    if (auth.currentUser) {
+      loadUserVouchers();
     }
+  }, []);
 
-    if (!auth.currentUser) {
-      Alert.alert("Lỗi", "Bạn cần đăng nhập để đặt hàng.");
-      router.replace("/" as any);
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      Alert.alert("Lỗi", "Giỏ hàng của bạn đang trống!");
-      return;
-    }
+  // Load user vouchers
+  const loadUserVouchers = async () => {
+    if (!auth.currentUser) return;
 
     try {
-      // Format cart items to ensure they have all required fields
-      const formattedCartItems = cartItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        color: item.color || "Default",
-        size: item.size || "Standard", // Add default size if missing
-        image: item.image,
-        images: item.images || [item.image],
-        description: item.description || "",
-      }));
+      setLoadingUserVouchers(true);
+      const vouchers = await getUserVouchers(auth.currentUser.uid);
+      // Filter out used vouchers
+      setUserVouchers(vouchers.filter((v) => !v.isUsed));
+    } catch (error) {
+      console.error("Error loading user vouchers:", error);
+    } finally {
+      setLoadingUserVouchers(false);
+    }
+  };
 
-      const orderData = {
-        userId: auth.currentUser.uid, // Gắn userId của tài khoản đăng nhập
+  // Select a voucher from the modal
+  const handleSelectVoucher = async (selectedVoucher: Voucher) => {
+    // Close modal
+    setShowVoucherModal(false);
+
+    // Reset any previous voucher and error
+    setVoucher(null);
+    setDiscountAmount(0);
+    setVoucherError(null);
+
+    // Set the voucher code in the form
+    setValue("voucherCode", selectedVoucher.code);
+
+    // Apply the voucher
+    await validateAndApplyVoucher(selectedVoucher);
+  };
+
+  // Validate and apply a voucher
+  const validateAndApplyVoucher = async (voucherToApply: Voucher) => {
+    setIsApplyingVoucher(true);
+    setVoucherError(null);
+
+    try {
+      // Get product IDs from cart items
+      const productIds = cartItems.map((item) => item.id);
+
+      // Validate the voucher
+      const result = await validateVoucher(
+        voucherToApply.code,
+        productIds,
+        [],
+        subtotal
+      );
+
+      if (result.valid && result.voucher) {
+        setVoucher(result.voucher);
+
+        // Calculate discount
+        let discount = 0;
+        if (result.voucher.discountType === "percentage") {
+          discount = (subtotal * result.voucher.discountValue) / 100;
+
+          // Check for max discount limit
+          if (
+            result.voucher.maxDiscount &&
+            discount > result.voucher.maxDiscount
+          ) {
+            discount = result.voucher.maxDiscount;
+          }
+        } else {
+          // Fixed discount
+          discount = result.voucher.discountValue;
+
+          // Ensure discount isn't more than the subtotal
+          if (discount > subtotal) {
+            discount = subtotal;
+          }
+        }
+
+        setDiscountAmount(discount);
+        Alert.alert("Thành công", "Đã áp dụng mã giảm giá!");
+      } else {
+        setVoucher(null);
+        setDiscountAmount(0);
+        setValue("voucherCode", "");
+        setVoucherError(result.message || "Mã giảm giá không hợp lệ");
+      }
+    } catch (error) {
+      console.error("Error applying voucher:", error);
+      setVoucherError("Có lỗi xảy ra khi áp dụng mã giảm giá");
+      setValue("voucherCode", "");
+    } finally {
+      setIsApplyingVoucher(false);
+    }
+  };
+
+  // Handle manual voucher application
+  const handleApplyVoucher = async () => {
+    const code = getValues("voucherCode");
+    if (!code) {
+      setVoucherError("Vui lòng nhập mã voucher");
+      return;
+    }
+
+    setIsApplyingVoucher(true);
+    setVoucherError(null);
+
+    try {
+      // Get product IDs from cart items
+      const productIds = cartItems.map((item) => item.id);
+
+      // Validate the voucher
+      const result = await validateVoucher(code, productIds, [], subtotal);
+
+      if (result.valid && result.voucher) {
+        setVoucher(result.voucher);
+
+        // Calculate discount
+        let discount = 0;
+        if (result.voucher.discountType === "percentage") {
+          discount = (subtotal * result.voucher.discountValue) / 100;
+
+          // Check for max discount limit
+          if (
+            result.voucher.maxDiscount &&
+            discount > result.voucher.maxDiscount
+          ) {
+            discount = result.voucher.maxDiscount;
+          }
+        } else {
+          // Fixed discount
+          discount = result.voucher.discountValue;
+
+          // Ensure discount isn't more than the subtotal
+          if (discount > subtotal) {
+            discount = subtotal;
+          }
+        }
+
+        setDiscountAmount(discount);
+        Alert.alert("Thành công", "Đã áp dụng mã giảm giá!");
+      } else {
+        setVoucher(null);
+        setDiscountAmount(0);
+        setVoucherError(result.message || "Mã giảm giá không hợp lệ");
+      }
+    } catch (error) {
+      console.error("Error applying voucher:", error);
+      setVoucherError("Có lỗi xảy ra khi áp dụng mã giảm giá");
+    } finally {
+      setIsApplyingVoucher(false);
+    }
+  };
+
+  // Remove applied voucher
+  const handleRemoveVoucher = () => {
+    setVoucher(null);
+    setDiscountAmount(0);
+    setValue("voucherCode", "");
+    setVoucherError(null);
+  };
+
+  // Format discount value for display
+  const formatDiscountValue = (voucher: Voucher) => {
+    if (voucher.discountType === "percentage") {
+      let text = `${voucher.discountValue}%`;
+      if (voucher.maxDiscount) {
+        text += ` (tối đa ${voucher.maxDiscount} VNĐ)`;
+      }
+      return text;
+    } else {
+      return `${voucher.discountValue} VNĐ`;
+    }
+  };
+
+  // Handle form submission and save the order to Firestore with userId
+  const onSubmit = async (values: FormData) => {
+    // First check if the form is valid
+    const isValid = await trigger();
+    if (!isValid) {
+      Alert.alert(
+        "Error",
+        "Please fill in all required information before placing an order"
+      );
+      return;
+    }
+
+    setIsPaymentLoading(true);
+
+    try {
+      // Add voucher information to the checkout process
+      const checkoutData = {
         ...values,
-        cartItems: formattedCartItems,
-        subtotal: subtotal.toFixed(2),
-        shippingFee: shippingFee.toFixed(2),
-        total,
-        date: new Date().toISOString(),
-        status: "pending" as const,
+        voucherId: voucher?.id,
+        discountAmount: discountAmount.toFixed(2),
       };
 
-      // Lưu đơn hàng vào collection 'orderManager'
-      const docRef = await addDoc(collection(db, "orderManager"), orderData);
-      const newOrder = { id: docRef.id, ...orderData };
+      const order = await processCheckout(
+        checkoutData,
+        cartItems,
+        subtotal,
+        shippingFee
+      );
 
-      // Cập nhật current order trong OrderContext
-      setCurrentOrder(newOrder);
+      if (order) {
+        // Chuyển đổi định dạng Order sang định dạng OrderType cho OrderContext
+        const orderForContext: OrderType = {
+          id: order.id,
+          date: order.date,
+          cartItems: order.cartItems.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            color: item.color || "Default",
+            size: item.size || "Standard",
+            image: item.image || "",
+            images: item.images || [],
+            description: item.description || "",
+          })),
+          total: order.total,
+          userId: order.userId,
+          name: order.name,
+          email: order.email,
+          phone: order.phone,
+          address: order.address,
+          country: order.country,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          subtotal: order.subtotal,
+          shippingFee: order.shippingFee,
+          status: order.status,
+          discountAmount: discountAmount.toFixed(2),
+          voucherId: voucher?.id,
+        };
 
-      // Cập nhật số lượng mua (purchaseCount) cho mỗi sản phẩm
-      for (const item of formattedCartItems) {
-        try {
-          const productRef = doc(db, "products", item.id);
-          const productSnap = await getDoc(productRef);
+        // Update current order in OrderContext
+        setCurrentOrder(orderForContext);
 
-          if (productSnap.exists()) {
-            const productData = productSnap.data();
-            const currentStock = productData.stockQuantity || 0;
+        // Clear the cart
+        clearCart();
 
-            // Kiểm tra xem có đủ hàng không
-            if (currentStock < item.quantity) {
-              Alert.alert(
-                "Out of Stock",
-                `Sorry, there are only ${currentStock} units of "${item.name}" available.`
-              );
-              return;
-            }
-
-            // Cập nhật số lượng mua và số lượng tồn kho
-            await updateDoc(productRef, {
-              purchaseCount: increment(item.quantity),
-              stockQuantity: currentStock - item.quantity,
-              // Cập nhật trạng thái inStock dựa trên số lượng còn lại
-              inStock: currentStock - item.quantity > 0,
-            });
-
-            console.log(
-              `Updated product ${item.id}: purchased ${
-                item.quantity
-              }, remaining stock ${currentStock - item.quantity}`
-            );
-          }
-        } catch (error) {
-          console.error(`Error updating product ${item.id}:`, error);
-          // Continue with the next item even if one fails
-        }
+        // Navigate to order status page
+        setTimeout(() => {
+          router.push("/user/Order/OrderStatus" as any);
+        }, 500);
       }
-
-      // Kiểm tra xem có danh mục Trending được bật auto-update không
-      try {
-        const categoriesRef = collection(db, "categories");
-        const q = query(
-          categoriesRef,
-          where("name", "==", "Trending"),
-          where("autoUpdate", "==", true)
-        );
-        const categorySnap = await getDocs(q);
-
-        if (!categorySnap.empty) {
-          // Có danh mục Trending với auto-update bật
-          const trendingCategory = categorySnap.docs[0];
-
-          // Lấy top 20 sản phẩm bán chạy nhất
-          const productsRef = collection(db, "products");
-          const topProductsQuery = query(
-            productsRef,
-            orderBy("purchaseCount", "desc"),
-            limit(20)
-          );
-          const topProductsSnap = await getDocs(topProductsQuery);
-
-          const topProductIds = topProductsSnap.docs.map((doc) => doc.id);
-
-          // Cập nhật danh sách sản phẩm trending
-          await updateDoc(doc(db, "categories", trendingCategory.id), {
-            productIds: topProductIds,
-            lastUpdated: new Date().toISOString(),
-          });
-
-          // Cập nhật trường Trending cho từng sản phẩm
-          const batch = writeBatch(db);
-
-          // Đầu tiên, đặt tất cả sản phẩm là không trending
-          const allProductsQuery = query(collection(db, "products"));
-          const allProductsSnap = await getDocs(allProductsQuery);
-
-          allProductsSnap.forEach((docSnap) => {
-            const productRef = doc(db, "products", docSnap.id);
-            batch.update(productRef, { Trending: false });
-          });
-
-          // Sau đó đánh dấu các sản phẩm top là trending
-          for (const productId of topProductIds) {
-            const productRef = doc(db, "products", productId);
-            batch.update(productRef, { Trending: true });
-          }
-
-          // Thực hiện tất cả các cập nhật trong một batch
-          await batch.commit();
-
-          console.log("Trending products updated automatically");
-        }
-      } catch (error) {
-        console.error("Error updating trending products:", error);
-        // Không hiển thị lỗi cho người dùng, đơn hàng vẫn thành công
-      }
-
-      // Xóa giỏ hàng sau khi đặt hàng thành công
-      clearCart();
-
-      // Điều hướng sang trang trạng thái đơn hàng
-      router.replace("/user/Checkout/OrderStatus");
-
-      console.log("Đơn hàng đã được lưu với ID:", docRef.id);
     } catch (error) {
-      console.error("Lỗi khi lưu đơn hàng:", error);
-      Alert.alert("Lỗi", "Không thể lưu đơn hàng. Vui lòng thử lại.");
+      console.error("Error during checkout:", error);
+      Alert.alert(
+        "Error",
+        "Something went wrong during checkout. Please try again."
+      );
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
 
@@ -393,35 +512,6 @@ const CheckoutScreen: React.FC = () => {
           />
           <Controller
             control={control}
-            name="country"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View className="mb-4">
-                <Text
-                  className="mb-2 font-medium"
-                  style={isDarkMode ? styles.darkText : styles.lightText}
-                >
-                  Quốc gia
-                </Text>
-                <TextInput
-                  style={[
-                    isDarkMode ? styles.darkInput : styles.lightInput,
-                    errors.country ? { borderColor: "#ef4444" } : {},
-                  ]}
-                  placeholder="Nhập quốc gia"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-                {errors.country && (
-                  <Text className="text-red-500 text-sm mt-1">
-                    {errors.country.message}
-                  </Text>
-                )}
-              </View>
-            )}
-          />
-          <Controller
-            control={control}
             name="address"
             render={({ field: { onChange, onBlur, value } }) => (
               <View className="mb-4">
@@ -455,6 +545,215 @@ const CheckoutScreen: React.FC = () => {
       <Card className="mt-4">
         <CardHeader>
           <CardTitle style={isDarkMode ? styles.darkText : styles.lightText}>
+            Mã giảm giá
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Controller
+            control={control}
+            name="voucherCode"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View className="mb-2">
+                <View className="flex-row">
+                  <TextInput
+                    style={[
+                      isDarkMode ? styles.darkInput : styles.lightInput,
+                      voucherError ? { borderColor: "#ef4444" } : {},
+                      { flex: 1, marginRight: 8 },
+                    ]}
+                    placeholder="Nhập mã giảm giá"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    editable={!voucher}
+                    autoCapitalize="characters"
+                  />
+                  <Button
+                    className={voucher ? "bg-red-500" : "bg-orange-500"}
+                    onPress={voucher ? handleRemoveVoucher : handleApplyVoucher}
+                    disabled={isApplyingVoucher}
+                  >
+                    <Text className="text-white font-semibold">
+                      {isApplyingVoucher
+                        ? "Đang xử lý..."
+                        : voucher
+                        ? "Hủy"
+                        : "Áp dụng"}
+                    </Text>
+                  </Button>
+                </View>
+
+                {/* Toggle button for showing vouchers */}
+                {!voucher && (
+                  <TouchableOpacity
+                    className="flex-row items-center mt-2 mb-1"
+                    onPress={() => {
+                      setShowVoucherModal(true);
+                      loadUserVouchers(); // Refresh vouchers
+                    }}
+                  >
+                    <Text className="text-orange-500 mr-2">
+                      Chọn voucher có sẵn
+                    </Text>
+                    <ChevronDown size={16} color="#F97316" />
+                  </TouchableOpacity>
+                )}
+
+                {voucherError && (
+                  <Text className="text-red-500 text-sm mt-1">
+                    {voucherError}
+                  </Text>
+                )}
+                {voucher && (
+                  <View className="mt-2 p-3 bg-orange-100 rounded-md border border-orange-200">
+                    <View className="flex-row items-center">
+                      <Tag size={16} color="#F97316" />
+                      <Text className="font-bold text-orange-500 ml-2">
+                        {voucher.code}
+                      </Text>
+                    </View>
+                    <Text className="text-gray-700 mt-1">
+                      {voucher.description}
+                    </Text>
+                    <Text className="text-gray-700 mt-1">
+                      Giảm: {formatDiscountValue(voucher)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          />
+
+          {/* Voucher selection modal */}
+          <Modal
+            visible={showVoucherModal}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowVoucherModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View
+                style={[
+                  styles.modalContent,
+                  isDarkMode ? styles.darkBackground : styles.lightBackground,
+                ]}
+              >
+                <View style={styles.modalHeader}>
+                  <Text
+                    style={[
+                      styles.modalTitle,
+                      isDarkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    Chọn voucher
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowVoucherModal(false)}>
+                    <X color={isDarkMode ? "#FFFFFF" : "#000000"} size={24} />
+                  </TouchableOpacity>
+                </View>
+
+                {loadingUserVouchers ? (
+                  <View className="items-center justify-center p-4">
+                    <ActivityIndicator color="#F97316" size="large" />
+                    <Text
+                      style={isDarkMode ? styles.darkText : styles.lightText}
+                      className="mt-2"
+                    >
+                      Đang tải danh sách voucher...
+                    </Text>
+                  </View>
+                ) : userVouchers.length === 0 ? (
+                  <View className="items-center justify-center p-4">
+                    <Text
+                      style={isDarkMode ? styles.darkText : styles.lightText}
+                      className="text-center"
+                    >
+                      Bạn chưa có voucher nào.
+                    </Text>
+                    <TouchableOpacity
+                      className="mt-4 bg-orange-500 px-4 py-2 rounded-md"
+                      onPress={() => {
+                        setShowVoucherModal(false);
+                        router.push("/user/Vouchers" as any);
+                      }}
+                    >
+                      <Text className="text-white font-medium">
+                        Khám phá voucher
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={userVouchers}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.voucherItem,
+                          isDarkMode
+                            ? styles.voucherItemDark
+                            : styles.voucherItemLight,
+                        ]}
+                        onPress={() => handleSelectVoucher(item.voucher)}
+                      >
+                        <View style={styles.voucherContent}>
+                          <View style={styles.voucherIconContainer}>
+                            <Tag size={20} color="#F97316" />
+                          </View>
+                          <View style={styles.voucherDetails}>
+                            <Text
+                              style={[
+                                styles.voucherCode,
+                                isDarkMode ? styles.darkText : styles.lightText,
+                              ]}
+                            >
+                              {item.voucher.code}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.voucherDescription,
+                                isDarkMode
+                                  ? { color: "#CBD5E1" }
+                                  : { color: "#64748B" },
+                              ]}
+                            >
+                              {item.voucher.description}
+                            </Text>
+                            <Text style={styles.voucherDiscount}>
+                              Giảm: {formatDiscountValue(item.voucher)}
+                            </Text>
+
+                            {/* Show expiration date */}
+                            {item.voucher.endDate && (
+                              <Text
+                                style={[
+                                  styles.voucherExpiry,
+                                  isDarkMode
+                                    ? { color: "#CBD5E1" }
+                                    : { color: "#64748B" },
+                                ]}
+                              >
+                                Hết hạn:{" "}
+                                {new Date(
+                                  item.voucher.endDate.toMillis()
+                                ).toLocaleDateString()}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
+              </View>
+            </View>
+          </Modal>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle style={isDarkMode ? styles.darkText : styles.lightText}>
             Phương thức thanh toán
           </CardTitle>
         </CardHeader>
@@ -466,20 +765,20 @@ const CheckoutScreen: React.FC = () => {
               <View>
                 <TouchableOpacity
                   className={`flex-row items-center p-4 border rounded-md mb-2 ${
-                    value === "credit"
+                    value === "stripe"
                       ? "border-orange-500"
                       : errors.paymentMethod
                       ? "border-red-500"
                       : "border-gray-300"
                   }`}
-                  onPress={() => onChange("credit")}
+                  onPress={() => onChange("stripe")}
                 >
                   <CreditCard
-                    color={value === "credit" ? "#F97316" : "#6B7280"}
+                    color={value === "stripe" ? "#F97316" : "#6B7280"}
                     className="mr-2"
                   />
                   <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-                    Thẻ tín dụng / Ghi nợ
+                    Thanh toán qua Stripe
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -552,7 +851,7 @@ const CheckoutScreen: React.FC = () => {
                 style={isDarkMode ? styles.darkText : styles.lightText}
                 className="font-semibold"
               >
-                ${(item.price * item.quantity).toFixed(2)}
+                {(item.price * item.quantity).toFixed(2)}VNĐ
               </Text>
             </View>
           ))}
@@ -563,7 +862,7 @@ const CheckoutScreen: React.FC = () => {
                 Tổng tiền hàng
               </Text>
               <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-                ${subtotal.toFixed(2)}
+                {subtotal.toFixed(2)}VNĐ
               </Text>
             </View>
             <View className="flex-row justify-between">
@@ -571,9 +870,17 @@ const CheckoutScreen: React.FC = () => {
                 Phí vận chuyển
               </Text>
               <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-                ${shippingFee.toFixed(2)}
+                {shippingFee.toFixed(2)}VNĐ
               </Text>
             </View>
+            {discountAmount > 0 && (
+              <View className="flex-row justify-between">
+                <Text className="text-green-500">Giảm giá</Text>
+                <Text className="text-green-500">
+                  -{discountAmount.toFixed(2)}VNĐ
+                </Text>
+              </View>
+            )}
             <Separator />
             <View className="flex-row justify-between">
               <Text
@@ -590,7 +897,7 @@ const CheckoutScreen: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                ${total.toFixed(2)}
+                {total.toFixed(2)}VNĐ
               </Text>
             </View>
           </View>
@@ -600,19 +907,28 @@ const CheckoutScreen: React.FC = () => {
       <Button
         style={[
           styles.checkoutButton,
-          Object.keys(errors).length > 0 ? { backgroundColor: "#999" } : {},
+          Object.keys(errors).length > 0 || isPaymentLoading
+            ? { backgroundColor: "#999" }
+            : {},
         ]}
         className="w-full mt-4 mb-6"
         onPress={handleSubmit(onSubmit)}
+        disabled={isPaymentLoading}
       >
         <Text style={styles.checkoutButtonText}>
-          {Object.keys(errors).length > 0
+          {isPaymentLoading
+            ? "Đang xử lý thanh toán..."
+            : Object.keys(errors).length > 0
             ? "Vui lòng điền đầy đủ thông tin"
             : "Đặt hàng"}
         </Text>
       </Button>
     </ScrollView>
   );
+};
+
+const CheckoutScreen: React.FC = () => {
+  return <CheckoutContent />;
 };
 
 const styles = StyleSheet.create({
@@ -658,6 +974,78 @@ const styles = StyleSheet.create({
   },
   fontBold: {
     fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    borderRadius: 10,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    paddingTop: 15,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  voucherItem: {
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginHorizontal: 15,
+  },
+  voucherItemDark: {
+    backgroundColor: "#1E1E1E",
+    borderColor: "#333333",
+  },
+  voucherItemLight: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E0E0E0",
+  },
+  voucherContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  voucherIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(249, 115, 22, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  voucherDetails: {
+    flex: 1,
+  },
+  voucherCode: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  voucherDescription: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  voucherDiscount: {
+    marginTop: 4,
+    fontWeight: "bold",
+    color: "#F97316",
+  },
+  voucherExpiry: {
+    marginTop: 4,
+    fontSize: 12,
   },
 });
 

@@ -50,6 +50,13 @@ function HomeAdmin() {
       route: "/Admin/ReviewManagements/ReviewManagement",
     },
     {
+      title: "Voucher Management",
+      icon: isDarkMode
+        ? ("pricetag-outline" as IconName)
+        : ("pricetag" as IconName),
+      route: "/Admin/VoucherManagement/VoucherManager",
+    },
+    {
       title: "Quản lý thông báo",
       icon: "notifications" as IconName,
       route: "/Admin/NotificationManagement/NotificationManagement",
