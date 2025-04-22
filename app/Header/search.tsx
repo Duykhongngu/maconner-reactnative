@@ -29,7 +29,12 @@ interface Product {
   images?: string[]; // Thêm trường images
 }
 
-export default function SearchBar() {
+interface SearchBarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
   const router = useRouter();
   const [value, setValue] = React.useState<string>("");
   const [results, setResults] = React.useState<Product[]>([]);
@@ -97,7 +102,10 @@ export default function SearchBar() {
 
   // Hàm xử lý khi người dùng nhấn vào sản phẩm
   const handleProductPress = (productId: string) => {
+    setValue(""); // Xóa giá trị tìm kiếm
+    setResults([]); // Xóa kết quả tìm kiếm
     router.push(`/user/Products/${productId}`);
+    onClose(); // Đóng modal search khi chọn sản phẩm
   };
 
   // Hàm xử lý khi người dùng muốn xem tất cả sản phẩm trending
