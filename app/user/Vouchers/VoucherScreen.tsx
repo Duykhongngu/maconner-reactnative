@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  Clipboard,
 } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { auth } from "~/firebase.config";
@@ -21,7 +22,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Clipboard } from "react-native";
 
 const showNotification = (message: string) => {
   Alert.alert("Thông báo", message);

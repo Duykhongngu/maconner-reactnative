@@ -50,10 +50,6 @@ import {
 } from "~/service/categoryProduct";
 
 // Default fallback menu items in case categories can't be loaded
-const fallbackMenu = [
-  { title: "Valentine's Day", link: "/user/Products/[id]" },
-  { title: "All Products", link: "/user/Products/[id]" },
-];
 
 interface User {
   name: string;
@@ -470,27 +466,11 @@ function SiteHeader() {
               </TouchableOpacity>
             ))
           ) : (
-            // Fallback menu if no categories are available
-            fallbackMenu.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  router.push(item.link as any);
-                  setMenuVisible(false);
-                }}
-              >
-                <View style={styles.menuItem}>
-                  <Text
-                    style={[
-                      styles.menuText,
-                      isDarkColorScheme && styles.darkText,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
+            <View style={styles.loadingContainer}>
+              <Text style={[styles.loadingText, { color: iconColor }]}>
+                Không có danh mục nào.
+              </Text>
+            </View>
           )}
         </View>
       </Modal>
@@ -510,7 +490,10 @@ function SiteHeader() {
             </TouchableOpacity>
           </View>
           <View style={styles.searchContent}>
-            <SearchBar />
+            <SearchBar
+              isOpen={isSearchOpen}
+              onClose={() => setIsSearchOpen(false)}
+            />
           </View>
         </View>
       </Modal>
