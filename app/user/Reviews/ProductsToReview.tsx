@@ -7,9 +7,9 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  Alert,
   ActivityIndicator,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { auth, db } from "~/firebase.config";
@@ -56,7 +56,10 @@ export default function ProductsToReview() {
   const fetchOrderedProducts = async () => {
     try {
       if (!auth.currentUser) {
-        Alert.alert("Lỗi", "Vui lòng đăng nhập để xem đánh giá");
+        Alert.alert(
+          "Thông báo",
+          "Vui lòng đăng nhập để xem đánh giá"
+        );
         return;
       }
 
@@ -102,7 +105,10 @@ export default function ProductsToReview() {
       setProducts(productsToReview);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-      Alert.alert("Lỗi", "Không thể tải danh sách sản phẩm");
+      Alert.alert(
+        "Lỗi",
+        "Không thể tải danh sách sản phẩm"
+      );
     } finally {
       setLoading(false);
     }

@@ -10,6 +10,7 @@ import Background from "./background";
 import Trending from "./trending";
 import { fetchCategories, Category } from "~/service/categoryProduct";
 import { useColorScheme } from "~/lib/useColorScheme";
+import AllProducts from "./allProducts";
 
 // import ByProducts from "./byProducts";
 // import HappyCustomers from "./HappyCustomer";
@@ -118,33 +119,11 @@ function HomePage() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View>
-        <View>
-          <Background categories={categories} error={error} />
-        </View>
-
-        <View>
-          <Trending />
-        </View>
-        {/* <View>
-          <ShopAll />
-        </View>
-        <View>
-          <CarVisor />
-        </View>
-        <View>
-          <BottleLamp />
-        </View>
-        <View>
-          <Recipient />
-        </View>
-        <View>
-          <ByProducts />
-        </View>
-      </View>
-      <View>
-        <HappyCustomers /> */}
-      </View>
+      <Background categories={categories} error={error} />
+      <Trending />
+      <AllProducts />
+      {/* <ByProducts /> */}
+      {/* <HappyCustomers /> */}
     </SafeAreaView>
   );
 }
@@ -153,6 +132,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 10,
+    marginBottom: 35,
   },
   loadingContainer: {
     flex: 1,

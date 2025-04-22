@@ -5,10 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   TextInput,
-  Clipboard,
+  Alert,
+  Platform,
 } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { auth } from "~/firebase.config";
@@ -21,6 +21,11 @@ import {
 import { Button } from "~/components/ui/button";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { Clipboard } from "react-native";
+
+const showNotification = (message: string) => {
+  Alert.alert("Thông báo", message);
+};
 
 export default function VoucherScreen() {
   const router = useRouter();
@@ -47,16 +52,18 @@ export default function VoucherScreen() {
     try {
       setLoading(true);
 
-      // Tải danh sách voucher đang hoạt động
+      // Fetch active vouchers
       const activeVouchersData = await fetchActiveVouchers();
+
       setActiveVouchers(activeVouchersData);
 
-      // Tải danh sách voucher của người dùng
+      // Fetch user vouchers
       const userVouchersData = await getUserVouchers(auth.currentUser.uid);
+
       setUserVouchers(userVouchersData);
     } catch (error) {
       console.error("Error loading vouchers:", error);
-      Alert.alert("Lỗi", "Không thể tải danh sách voucher");
+      showNotification("Không thể tải danh sách voucher");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -70,12 +77,12 @@ export default function VoucherScreen() {
 
   const handleAddVoucher = async () => {
     if (!voucherCode.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã voucher");
+      showNotification("Vui lòng nhập mã voucher");
       return;
     }
 
     if (!auth.currentUser) {
-      Alert.alert("Lỗi", "Bạn cần đăng nhập để thêm voucher");
+      showNotification("Bạn cần đăng nhập để thêm voucher");
       return;
     }
 
@@ -86,7 +93,7 @@ export default function VoucherScreen() {
       );
 
       if (!matchedVoucher) {
-        Alert.alert("Lỗi", "Mã voucher không tồn tại hoặc đã hết hạn");
+        showNotification("Mã voucher không tồn tại hoặc đã hết hạn");
         return;
       }
 
@@ -96,47 +103,57 @@ export default function VoucherScreen() {
       );
 
       if (alreadyHasVoucher) {
-        Alert.alert("Thông báo", "Bạn đã có voucher này trong ví");
+        showNotification("Bạn đã có voucher này trong ví");
         return;
       }
 
       // Thêm voucher vào ví của người dùng
       await addVoucherToUser(auth.currentUser.uid, matchedVoucher.id);
 
-      Alert.alert("Thành công", "Đã thêm voucher vào ví của bạn");
+      showNotification("Đã thêm voucher vào ví của bạn");
 
       // Làm mới danh sách
       setVoucherCode("");
       loadVouchers();
     } catch (error) {
       console.error("Error adding voucher:", error);
-      Alert.alert("Lỗi", "Không thể thêm voucher");
+      showNotification("Không thể thêm voucher");
     }
   };
 
-  const handleCopyCode = (code: string) => {
-    Clipboard.setString(code);
-    Alert.alert("Thành công", "Đã sao chép mã voucher");
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setString(code);
+    showNotification("Đã sao chép mã voucher");
   };
 
-  // Phân loại voucher của người dùng
   const availableUserVouchers = userVouchers.filter((item) => !item.isUsed);
   const usedUserVouchers = userVouchers.filter((item) => item.isUsed);
 
-  const formatDate = (timestamp: any) => {
-    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString("vi-VN");
+  const formatDate = (timestamp: any): string => {
+    try {
+      if (!timestamp) return "N/A";
+      const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (isNaN(date.getTime())) return "N/A";
+      return date.toLocaleDateString("vi-VN");
+    } catch (error) {
+      console.error("Error formatting date:", timestamp, error);
+      return "N/A";
+    }
   };
 
-  const formatDiscountValue = (voucher: Voucher) => {
-    if (voucher.discountType === "percentage") {
-      let text = `${voucher.discountValue}%`;
-      if (voucher.maxDiscount) {
-        text += ` (tối đa ${voucher.maxDiscount} VNĐ)`;
+  const formatDiscountValue = (voucher: Voucher): string => {
+    try {
+      if (voucher.discountType === "percentage") {
+        const discount = String(voucher.discountValue || 0);
+        if (voucher.maxDiscount) {
+          return `${discount}% (tối đa ${String(voucher.maxDiscount)} VNĐ)`;
+        }
+        return `${discount}%`;
       }
-      return text;
-    } else {
-      return `${voucher.discountValue} VNĐ`;
+      return `${String(voucher.discountValue || 0)} VNĐ`;
+    } catch (error) {
+      console.error("Error formatting discount value:", voucher, error);
+      return "N/A";
     }
   };
 
@@ -145,6 +162,11 @@ export default function VoucherScreen() {
     userVoucherId?: string,
     isUsed = false
   ) => {
+    console.log("Rendering voucher item:", JSON.stringify(voucher, null, 2)); // Debug log
+
+    const discountText = formatDiscountValue(voucher);
+    console.log("Computed discountText:", discountText); // Debug log
+
     return (
       <View
         className={`rounded-xl p-4 mb-3 border border-dashed ${
@@ -166,14 +188,14 @@ export default function VoucherScreen() {
                 isDarkMode ? "text-white" : "text-black"
               } ${isUsed ? "text-gray-400" : ""}`}
             >
-              {voucher.code}
+              {String(voucher.code || "N/A")}
             </Text>
             <Text
               className={`text-base font-medium ${
                 isUsed ? "text-gray-400" : "text-orange-500"
               }`}
             >
-              Giảm {formatDiscountValue(voucher)}
+              Giảm {discountText}
             </Text>
           </View>
         </View>
@@ -183,18 +205,18 @@ export default function VoucherScreen() {
             isDarkMode ? "text-white" : "text-black"
           } ${isUsed ? "text-gray-400" : ""}`}
         >
-          {voucher.description}
+          {String(voucher.description || "Không có mô tả")}
         </Text>
 
-        {voucher.minPurchase && (
+        {voucher.minPurchase ? (
           <Text
             className={`text-sm mb-1 ${
               isDarkMode ? "text-white" : "text-black"
             } ${isUsed ? "text-gray-400" : ""}`}
           >
-            Đơn tối thiểu: {voucher.minPurchase} VNĐ
+            Đơn tối thiểu: {String(voucher.minPurchase)} VNĐ
           </Text>
-        )}
+        ) : null}
 
         <Text
           className={`text-xs mb-3 ${
@@ -230,28 +252,26 @@ export default function VoucherScreen() {
             className="flex-row items-center bg-orange-500 py-2 px-3 rounded"
             onPress={() => {
               if (auth.currentUser) {
-                // Kiểm tra xem người dùng đã có voucher này chưa
                 const alreadyHasVoucher = userVouchers.some(
                   (item) => item.voucher.id === voucher.id
                 );
 
                 if (alreadyHasVoucher) {
-                  Alert.alert("Thông báo", "Bạn đã có voucher này trong ví");
+                  showNotification("Bạn đã có voucher này trong ví");
                   return;
                 }
 
-                // Thêm voucher vào ví
                 addVoucherToUser(auth.currentUser.uid, voucher.id)
                   .then(() => {
-                    Alert.alert("Thành công", "Đã thêm voucher vào ví của bạn");
+                    showNotification("Đã thêm voucher vào ví của bạn");
                     loadVouchers();
                   })
                   .catch((error) => {
                     console.error("Error adding voucher to wallet:", error);
-                    Alert.alert("Lỗi", "Không thể thêm voucher vào ví");
+                    showNotification("Không thể thêm voucher vào ví");
                   });
               } else {
-                Alert.alert("Lỗi", "Bạn cần đăng nhập để lưu voucher");
+                showNotification("Bạn cần đăng nhập để lưu voucher");
               }
             }}
           >

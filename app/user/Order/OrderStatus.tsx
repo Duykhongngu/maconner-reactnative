@@ -6,6 +6,7 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
@@ -13,7 +14,6 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import { auth, db } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import Toast from "react-native-toast-message";
 import { Order } from "./components/types";
 
 // Interface for Firebase order data
@@ -57,22 +57,20 @@ const OrderStatus: React.FC = () => {
           },
           (error) => {
             console.error("Error fetching orders from Firestore:", error);
-            Toast.show({
-              type: "error",
-              text1: "Error",
-              text2: "Unable to load order list.",
-            });
+            Alert.alert(
+              "Error",
+              "Unable to load order list."
+            );
             setLoading(false);
           }
         );
       } else {
         setOrders([]);
         setLoading(false);
-        Toast.show({
-          type: "info",
-          text1: "Notice",
-          text2: "Please log in to view your orders.",
-        });
+        Alert.alert(
+          "Notice",
+          "Please log in to view your orders."
+        );
         router.replace("/" as any);
       }
     };

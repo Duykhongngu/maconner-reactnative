@@ -15,6 +15,7 @@ export interface Product {
   purchaseCount?: number;
   trending?: boolean;
   stockQuantity?: number;
+  totalReviews?: number;
 }
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -47,7 +48,7 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
   try {
     const q = query(
       collection(db, "products"),
-      where("Trending", "==", true),
+      where("trending", "==", true),
       limit(10)
     );
     
@@ -65,7 +66,7 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
         description: data.description || "",
         color: data.color || [],
         purchaseCount: data.purchaseCount || 0,
-        trending: data.Trending || false,
+        trending: data.trending || false,
         stockQuantity: data.stockQuantity || 0,
       };
     });

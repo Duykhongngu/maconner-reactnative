@@ -11,7 +11,27 @@ import {
 import { useRouter } from "expo-router";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchVouchers, deleteVoucher, Voucher } from "~/service/vouchers";
+import { fetchVouchers, deleteVoucher } from "~/service/vouchers";
+
+// Updated Voucher interface to include applicableCategories
+interface Voucher {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  maxDiscount?: number;
+  minPurchase?: number;
+  startDate: any; // Firestore Timestamp or Date
+  endDate: any; // Firestore Timestamp or Date
+  isActive: boolean;
+  usageCount: number;
+  usageLimit?: number;
+  applicableProducts: string[] | "all";
+  applicableCategories?: string[] | "all"; // Added from logged data
+  createdAt?: any; // Firestore Timestamp
+  updatedAt?: any; // Firestore Timestamp
+}
 
 export default function VoucherManager() {
   const router = useRouter();
@@ -24,12 +44,12 @@ export default function VoucherManager() {
 
   useEffect(() => {
     loadVouchers();
-  }, [setVouchers]);
+  }, []);
 
   const loadVouchers = async () => {
     try {
-      setLoading(true);
       const data = await fetchVouchers();
+      console.log("Fetched vouchers:", JSON.stringify(data, null, 2)); // Pretty-print data
       setVouchers(data);
     } catch (error) {
       console.error("Error loading vouchers:", error);
@@ -59,7 +79,7 @@ export default function VoucherManager() {
   const handleDeleteVoucher = (voucher: Voucher) => {
     Alert.alert(
       "Xác nhận xóa",
-      `Bạn có chắc chắn muốn xóa voucher ${voucher.code} không?`,
+      `Bạn có chắc chắn muốn xóa voucher ${voucher.code || "N/A"} không?`,
       [
         {
           text: "Hủy",
@@ -83,19 +103,30 @@ export default function VoucherManager() {
     );
   };
 
-  const formatDate = (timestamp: any) => {
-    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString("vi-VN");
+  const formatDate = (timestamp: any): string => {
+    try {
+      if (!timestamp) return "N/A";
+      const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (isNaN(date.getTime())) return "N/A";
+      return date.toLocaleDateString("vi-VN");
+    } catch (error) {
+      console.error("Error formatting date:", timestamp, error);
+      return "N/A";
+    }
   };
 
   const getStatusText = (voucher: Voucher) => {
     const now = new Date();
-    const startDate = voucher.startDate?.toDate
-      ? voucher.startDate.toDate()
-      : new Date(voucher.startDate.toDate());
-    const endDate = voucher.endDate?.toDate
-      ? voucher.endDate.toDate()
-      : new Date(voucher.endDate.toDate());
+    const startDate = voucher.startDate
+      ? voucher.startDate?.toDate
+        ? voucher.startDate.toDate()
+        : new Date(voucher.startDate)
+      : now;
+    const endDate = voucher.endDate
+      ? voucher.endDate?.toDate
+        ? voucher.endDate.toDate()
+        : new Date(voucher.endDate)
+      : now;
 
     if (!voucher.isActive) {
       return { text: "Vô hiệu", color: "bg-gray-500" };
@@ -111,7 +142,36 @@ export default function VoucherManager() {
   };
 
   const renderVoucherItem = ({ item }: { item: Voucher }) => {
+    console.log("Rendering voucher item:", JSON.stringify(item, null, 2)); // Pretty-print item
+
     const status = getStatusText(item);
+
+    // Log computed values to ensure they are strings
+    const discountText =
+      item.discountType === "percentage"
+        ? `${String(item.discountValue || 0)}%`
+        : `${String(item.discountValue || 0)} VNĐ`;
+    const maxDiscountText = item.maxDiscount
+      ? `(tối đa ${String(item.maxDiscount)} VNĐ)`
+      : "";
+    const usageText = `${String(item.usageCount || 0)}${
+      item.usageLimit ? `/${String(item.usageLimit)}` : ""
+    }`;
+    const applicableText =
+      item.applicableProducts === "all"
+        ? "Tất cả sản phẩm"
+        : `${String(
+            Array.isArray(item.applicableProducts)
+              ? item.applicableProducts.length
+              : 0
+          )} sản phẩm`;
+
+    console.log("Computed values:", {
+      discountText,
+      maxDiscountText,
+      usageText,
+      applicableText,
+    });
 
     return (
       <View
@@ -127,7 +187,7 @@ export default function VoucherManager() {
               isDarkMode ? "text-white" : "text-gray-900"
             }`}
           >
-            {item.code}
+            {String(item.code || "N/A")}
           </Text>
           <View className={`px-2.5 py-1 rounded-full ${status.color}`}>
             <Text className="text-white font-semibold text-xs">
@@ -139,20 +199,17 @@ export default function VoucherManager() {
         <Text
           className={`mb-3 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
         >
-          {item.description}
+          {String(item.description || "Không có mô tả")}
         </Text>
 
         <View className="mb-4">
           <Text
             className={`mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
           >
-            Giảm giá:{" "}
-            {item.discountType === "percentage"
-              ? `${item.discountValue}%`
-              : `${item.discountValue} VNĐ`}
-            {item.maxDiscount && item.discountType === "percentage"
-              ? ` (tối đa ${item.maxDiscount} VNĐ)`
-              : ""}
+            Giảm giá: {discountText}
+            {item.maxDiscount && item.discountType === "percentage" ? (
+              <Text className="text-gray-300"> {maxDiscountText}</Text> // Wrap in Text
+            ) : null}
           </Text>
 
           <Text
@@ -161,30 +218,26 @@ export default function VoucherManager() {
             Hiệu lực: {formatDate(item.startDate)} - {formatDate(item.endDate)}
           </Text>
 
-          {item.minPurchase && (
+          {item.minPurchase ? (
             <Text
               className={`mb-1 ${
                 isDarkMode ? "text-gray-300" : "text-gray-700"
               }`}
             >
-              Đơn tối thiểu: {item.minPurchase} VNĐ
+              Đơn tối thiểu: {String(item.minPurchase)} VNĐ
             </Text>
-          )}
+          ) : null}
 
           <Text
             className={`mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
           >
-            Đã sử dụng: {item.usageCount}
-            {item.usageLimit ? `/${item.usageLimit}` : ""}
+            Đã sử dụng: {usageText}
           </Text>
 
           <Text
             className={`mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
           >
-            Áp dụng cho:{" "}
-            {item.applicableProducts === "all"
-              ? "Tất cả sản phẩm"
-              : `${item.applicableProducts.length} sản phẩm`}
+            Áp dụng cho: {applicableText}
           </Text>
         </View>
 

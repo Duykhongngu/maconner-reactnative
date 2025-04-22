@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "expo-router";
 import {
   View,
@@ -5,8 +7,8 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
-import { useWindowDimensions } from "react-native";
 import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { useState, useEffect } from "react";
@@ -28,9 +30,9 @@ interface Product {
 
 function Trending() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const { colorScheme } = useColorScheme();
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const isDarkColorScheme = colorScheme === "dark";
 
@@ -38,10 +40,13 @@ function Trending() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const products = await fetchTrendingProducts();
         setTrendingProducts(products);
       } catch (error) {
         console.error("Error fetching trending products:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -51,77 +56,101 @@ function Trending() {
   return (
     <SafeAreaView
       className={`flex-1 my-2.5 ${
-        isDarkColorScheme ? "bg-[#121212]" : "bg-white"
+        isDarkColorScheme ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
       <View className="flex-1 px-4">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-2xl font-bold text-[#F97316]">
+          <Text className="text-2xl font-bold text-orange-500">
             Sản phẩm bán chạy
           </Text>
           <Button
             onPress={() => router.push(`/user/Collections/Trending`)}
-            variant="secondary"
-            className="bg-[#F97316] justify-center items-center py-2 px-4 rounded-full h-10"
+            className="bg-orange-500 py-2 px-4 rounded-full"
           >
-            <Text className="text-base font-semibold text-white">
-              Xem tất cả
-            </Text>
+            <Text className="text-white font-semibold text-sm">Xem tất cả</Text>
           </Button>
         </View>
 
-        {trendingProducts.length > 0 ? (
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#F97316" />
+          </View>
+        ) : trendingProducts.length > 0 ? (
           <View className="flex-row flex-wrap justify-between">
             {trendingProducts.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => router.push(`/user/Products/${item.id}`)}
-                className={`rounded-lg p-4 mb-4 border ${
+                className={`rounded-xl mb-4 overflow-hidden border shadow-sm w-[48%] ${
                   isDarkColorScheme
-                    ? "bg-[#1E1E1E] border-[#374151]"
-                    : "bg-white border-[#E5E7EB]"
-                } w-[48%]`}
+                    ? "bg-gray-800 border-gray-700"
+                    : "bg-white border-gray-200"
+                }`}
               >
-                <Image
-                  source={{ uri: item.images?.[0] || item.link }}
-                  className="w-full h-40 rounded-lg"
-                  onError={(e) =>
-                    console.error("Image loading error:", e.nativeEvent.error)
-                  }
-                />
-                <Text
-                  className={`text-base font-semibold ${
-                    isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  {item.name}
-                </Text>
-                <Text
-                  className={`text-base font-semibold ${
-                    isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  {item.description}
-                </Text>
-                <Text className="text-lg font-bold text-[#F97316]">
-                  {item.price} VNĐ
-                </Text>
-                {item.purchaseCount !== undefined && item.purchaseCount > 0 && (
-                  <Text className="text-sm text-[#6B7280] italic mt-1">
-                    Đã bán {item.purchaseCount} lần
+                <View className="relative">
+                  <Image
+                    source={{ uri: item.images?.[0] || item.link }}
+                    className="w-full h-40 rounded-t-xl"
+                    onError={(e) =>
+                      console.error("Image loading error:", e.nativeEvent.error)
+                    }
+                  />
+
+                  <View className="absolute top-2 left-2">
+                    <View className="bg-red-500 px-2 py-1 rounded">
+                      <Text className="text-white text-xs font-bold">Hot</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View className="p-3">
+                  <Text
+                    className={`text-base font-semibold ${
+                      isDarkColorScheme ? "text-gray-200" : "text-gray-800"
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {item.name}
                   </Text>
-                )}
+
+                  <Text
+                    className={`text-sm mt-1 ${
+                      isDarkColorScheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                    numberOfLines={2}
+                  >
+                    {item.description}
+                  </Text>
+
+                  <View className="flex-row justify-between items-center mt-2">
+                    <Text className="text-lg font-bold text-orange-500">
+                      {item.price.toLocaleString()} VNĐ
+                    </Text>
+
+                    {item.purchaseCount !== undefined &&
+                      item.purchaseCount > 0 && (
+                        <View className="bg-orange-500 px-2 py-0.5 rounded-full">
+                          <Text className="text-white text-xs font-bold">
+                            {item.purchaseCount}
+                          </Text>
+                        </View>
+                      )}
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         ) : (
-          <Text
-            className={`text-center italic my-2.5 ${
-              isDarkColorScheme ? "text-[#E5E7EB]" : "text-[#1E1E1E]"
-            }`}
-          >
-            Không có sản phẩm bán chạy
-          </Text>
+          <View className="flex-1 justify-center items-center">
+            <Text
+              className={`text-center italic ${
+                isDarkColorScheme ? "text-gray-200" : "text-gray-800"
+              }`}
+            >
+              Không có sản phẩm bán chạy
+            </Text>
+          </View>
         )}
       </View>
     </SafeAreaView>

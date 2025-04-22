@@ -30,7 +30,7 @@ import QuantitySelector from "./components/QuantitySelector";
 import AddToCartButton from "./components/AddToCartButton";
 import { CartItem } from "../Cart/CartContext";
 import { AntDesign } from "@expo/vector-icons";
-import Toast from "react-native-toast-message";
+
 import { useColorScheme } from "~/lib/useColorScheme";
 
 // Khai báo mảng màu cố định
@@ -81,6 +81,7 @@ interface Review {
   userName?: string;
   userAvatar?: string;
   replies?: ReviewReply[];
+  reviewImages?: string[]; // Add support for multiple review images
 }
 
 interface ReviewReply {
@@ -296,12 +297,16 @@ export default function ProductDetail(): JSX.Element {
   // Thêm hàm tính và cập nhật rating trung bình
   const updateAverageRating = async (productId: string, reviews: Review[]) => {
     try {
-      if (!reviews.length) {
-        // Nếu không có đánh giá, cập nhật rating về 0
+      // Cập nhật totalReviews trước khi xử lý rating
+      const totalReviews = reviews.length;
+
+      // Nếu không có đánh giá, cập nhật cả rating và totalReviews về 0
+      if (totalReviews === 0) {
         await updateDoc(doc(db, "products", productId), {
           rating: 0,
           totalReviews: 0,
         });
+        setAverageRating(0);
         return;
       }
 
@@ -310,15 +315,15 @@ export default function ProductDetail(): JSX.Element {
         (sum, review) => sum + review.rating,
         0
       );
-      const averageRating = totalRating / reviews.length;
+      const averageRating = totalRating / totalReviews;
 
-      // Cập nhật rating trong collection products
+      // Cập nhật cả rating và totalReviews trong collection products
       await updateDoc(doc(db, "products", productId), {
         rating: averageRating,
-        totalReviews: reviews.length,
+        totalReviews: totalReviews,
       });
 
-      // Cập nhật state averageRating
+      // Cập nhật state
       setAverageRating(averageRating);
     } catch (error) {
       console.error("Lỗi khi cập nhật rating trung bình:", error);
@@ -399,21 +404,13 @@ export default function ProductDetail(): JSX.Element {
     if (!product) return;
 
     if (!selectedColor) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng chọn màu sắc trước khi thêm vào giỏ hàng",
-      });
+      Alert.alert("Lỗi", "Vui lòng chọn màu sắc trước khi thêm vào giỏ hàng");
       return;
     }
 
     // Kiểm tra xem màu đã chọn có hợp lệ không
     if (!product.color.includes(selectedColor)) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Màu sắc đã chọn không hợp lệ",
-      });
+      Alert.alert("Lỗi", "Màu sắc đã chọn không hợp lệ");
       return;
     }
 
@@ -429,21 +426,7 @@ export default function ProductDetail(): JSX.Element {
     };
 
     addToCart(cartItem);
-    Toast.show({
-      type: "success",
-      text1: "Thành công",
-      text2: "Đã thêm sản phẩm vào giỏ hàng",
-    });
-  };
-
-  // Hàm lấy thông tin màu từ tên màu
-  const getColorInfo = (colorName: string) => {
-    const colorInfo = AVAILABLE_COLORS.find(
-      (c) => c.name.toLowerCase() === colorName.toLowerCase()
-    );
-    return (
-      colorInfo || { name: colorName, value: "#CCCCCC", textColor: "#000000" }
-    );
+    Alert.alert("Thành công", "Đã thêm sản phẩm vào giỏ hàng");
   };
 
   if (loading) {
@@ -667,6 +650,26 @@ export default function ProductDetail(): JSX.Element {
                 {review.comment}
               </Text>
 
+              {/* Hiển thị hình ảnh đánh giá */}
+              {review.reviewImages && review.reviewImages.length > 0 && (
+                <View className="flex-row flex-wrap mt-2">
+                  {review.reviewImages.map((image, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      className="w-[70px] h-[70px] m-1"
+                      onPress={() => {
+                        // TODO: Add image preview functionality
+                      }}
+                    >
+                      <Image
+                        source={{ uri: image }}
+                        className="w-full h-full rounded-md"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
               {/* Hiển thị phần trả lời */}
               {review.replies && review.replies.length > 0 && (
                 <View className="mt-3 pl-4 border-l-2 border-orange-500">
@@ -705,7 +708,7 @@ export default function ProductDetail(): JSX.Element {
 
         {/* Phần sản phẩm đề xuất */}
         {suggestedProducts.length > 0 && (
-          <View className="p-4 border-t border-gray-200">
+          <View className="p-4 border-t mb-4 border-gray-200">
             <Text
               className={`text-lg font-bold mb-3 ${
                 isDarkColorScheme ? "text-white" : "text-gray-800"

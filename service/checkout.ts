@@ -1,3 +1,4 @@
+
 import { Alert } from "react-native";
 import { auth, db } from "~/firebase.config";
 import {
@@ -65,31 +66,22 @@ export const initializeStripePayment = async (values: FormData): Promise<boolean
   try {
     // Đây là mô phỏng, trong thực tế sẽ kết nối với Stripe API
     return new Promise<boolean>((resolve) => {
-      Alert.alert(
-        "Payment Simulation",
-        "In a real implementation, this would connect to Stripe's servers. For now, we'll simulate a successful payment.",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {
-              resolve(false);
-            },
-          },
-          {
-            text: "Simulate Success",
-            onPress: () => {
-              // Mô phỏng thanh toán thành công
-              resolve(true);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
+      Alert.alert("Thông báo", "Đang xử lý thanh toán qua Stripe...");
+      setTimeout(() => {
+        // Giả lập thanh toán thành công
+        const paymentSuccess = Math.random() > 0.2; // 80% xác suất thành công
+        if (paymentSuccess) {
+          Alert.alert("Thông báo", "Thanh toán thành công!");
+          resolve(true);
+        } else {
+          Alert.alert("Thông báo", "Thanh toán thất bại. Vui lòng thử lại.");
+          resolve(false);
+        }
+      }, 1000); // Giả lập thời gian xử lý 1 giây
     });
   } catch (error) {
     console.error("Payment error:", error);
-    Alert.alert("Error", "Could not process payment. Please try again.");
+    Alert.alert("Lỗi", "Có lỗi xảy ra trong quá trình thanh toán.");
     return false;
   }
 };
@@ -180,10 +172,7 @@ export const updateProductStock = async (item: CartItem): Promise<boolean> => {
 
       // Kiểm tra nếu còn đủ hàng
       if (currentStock < item.quantity) {
-        Alert.alert(
-          "Out of Stock",
-          `Sorry, there are only ${currentStock} units of "${item.name}" available.`
-        );
+        Alert.alert("Thông báo", `Rất tiếc, chỉ còn ${currentStock} sản phẩm "${item.name}" trong kho`);
         return false;
       }
 
@@ -199,6 +188,7 @@ export const updateProductStock = async (item: CartItem): Promise<boolean> => {
     return false;
   } catch (error) {
     console.error(`Error updating product ${item.id}:`, error);
+    Alert.alert("Lỗi", "Không thể xử lý thanh toán. Vui lòng thử lại.");
     return false;
   }
 };
@@ -273,13 +263,13 @@ export const processCheckout = async (
 ): Promise<Order | null> => {
   // Kiểm tra đăng nhập
   if (!auth.currentUser) {
-    Alert.alert("Error", "You need to be logged in to place an order.");
+    Alert.alert("Thông báo", "Bạn cần đăng nhập để đặt hàng");
     return null;
   }
 
   // Kiểm tra giỏ hàng
   if (cartItems.length === 0) {
-    Alert.alert("Error", "Your cart is empty!");
+    Alert.alert("Thông báo", "Giỏ hàng của bạn đang trống!");
     return null;
   }
 
@@ -344,7 +334,7 @@ export const processCheckout = async (
     return newOrder;
   } catch (error) {
     console.error("Error placing order:", error);
-    Alert.alert("Error", "Failed to place your order. Please try again.");
+    Alert.alert("Lỗi", "Không thể đặt hàng. Vui lòng thử lại.");
     return null;
   }
-}; 
+};
