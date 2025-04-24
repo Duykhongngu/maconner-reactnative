@@ -76,7 +76,7 @@ function CategoryProducts() {
   useEffect(() => {
     const fetchCategoryAndProducts = async () => {
       if (!categoryId) {
-        setError("Category ID is missing");
+        setError("Không tìm thấy mã danh mục");
         setLoading(false);
         return;
       }
@@ -90,7 +90,7 @@ function CategoryProducts() {
 
         if (categorySnap.exists()) {
           const categoryData = categorySnap.data();
-          setCategoryName(categoryData.name || "Products");
+          setCategoryName(categoryData.name || "Sản phẩm");
 
           // Step 2: Fetch products that belong to this category
           const productsQuery = query(
@@ -116,11 +116,11 @@ function CategoryProducts() {
           setProducts(productsList);
           setFilteredProducts(productsList);
         } else {
-          setError("Category not found");
+          setError("Không tìm thấy danh mục");
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load products");
+        console.error("Lỗi tải dữ liệu:", err);
+        setError("Không thể tải sản phẩm");
       } finally {
         setLoading(false);
       }
@@ -204,17 +204,17 @@ function CategoryProducts() {
           style={{ minHeight: 300 }}
         >
           <View className="flex-row justify-between items-center mb-5">
-            <Text className="text-lg font-bold dark:text-white">Filters</Text>
+            <Text className="text-lg font-bold dark:text-white">Bộ lọc</Text>
             <TouchableOpacity onPress={() => setShowFilterModal(false)}>
               <X size={24} color={iconColor} />
             </TouchableOpacity>
           </View>
 
-          <Text className="text-base mb-2 dark:text-gray-300">Price Range</Text>
+          <Text className="text-base mb-2 dark:text-gray-300">Khoảng giá</Text>
           <View className="flex-row mb-5">
             <TextInput
               className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 mr-2 dark:bg-[#2D2D2D] dark:text-white"
-              placeholder="Min"
+              placeholder="Tối thiểu"
               placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
               keyboardType="numeric"
               value={tempPriceRange.min}
@@ -224,7 +224,7 @@ function CategoryProducts() {
             />
             <TextInput
               className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 dark:bg-[#2D2D2D] dark:text-white"
-              placeholder="Max"
+              placeholder="Tối đa"
               placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
               keyboardType="numeric"
               value={tempPriceRange.max}
@@ -243,14 +243,14 @@ function CategoryProducts() {
                 setShowFilterModal(false);
               }}
             >
-              <Text className="font-semibold dark:text-white">Reset</Text>
+              <Text className="font-semibold dark:text-white">Đặt lại</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               className="bg-orange-500 rounded-lg p-3 flex-1 items-center"
               onPress={applyPriceFilter}
             >
-              <Text className="text-white font-semibold">Apply</Text>
+              <Text className="text-white font-semibold">Áp dụng</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -272,7 +272,9 @@ function CategoryProducts() {
       >
         <View className="bg-white dark:bg-[#1A1A1A] rounded-t-3xl p-5">
           <View className="flex-row justify-between items-center mb-5">
-            <Text className="text-lg font-bold dark:text-white">Sort By</Text>
+            <Text className="text-lg font-bold dark:text-white">
+              Sắp xếp theo
+            </Text>
             <TouchableOpacity onPress={() => setShowSortModal(false)}>
               <X size={24} color={iconColor} />
             </TouchableOpacity>
@@ -287,7 +289,7 @@ function CategoryProducts() {
               setShowSortModal(false);
             }}
           >
-            <Text className="text-base dark:text-white">Default</Text>
+            <Text className="text-base dark:text-white">Mặc định</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -311,9 +313,7 @@ function CategoryProducts() {
               setShowSortModal(false);
             }}
           >
-            <Text className="text-base dark:text-white">
-              Giá: Cao đến thấp{" "}
-            </Text>
+            <Text className="text-base dark:text-white">Giá: Cao đến thấp</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -325,7 +325,7 @@ function CategoryProducts() {
       <SafeAreaView className="flex-1 bg-white dark:bg-black">
         <View className="flex-1 justify-center items-center h-[400px]">
           <ActivityIndicator size="large" color="#F97316" />
-          <Text className="mt-3 dark:text-white">Loading products...</Text>
+          <Text className="mt-3 dark:text-white">Đang tải sản phẩm...</Text>
         </View>
       </SafeAreaView>
     );
@@ -340,7 +340,7 @@ function CategoryProducts() {
             className="bg-orange-500 py-2.5 px-5 rounded-lg"
             onPress={() => router.back()}
           >
-            <Text className="text-white font-medium">Go Back</Text>
+            <Text className="text-white font-medium">Quay lại</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -364,7 +364,7 @@ function CategoryProducts() {
               />
               <TextInput
                 className="flex-1 ml-2 dark:text-white text-base"
-                placeholder="Search products..."
+                placeholder="Tìm kiếm sản phẩm..."
                 placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -423,7 +423,9 @@ function CategoryProducts() {
 
               {priceRange.min !== null ? (
                 <View className="bg-orange-500 rounded-full px-2 py-1 flex-row items-center mr-2 mb-1.5">
-                  <Text className="text-white text-xs mr-1">{`Min: $${priceRange.min}`}</Text>
+                  <Text className="text-white text-xs mr-1">{`Tối thiểu: ${priceRange.min.toLocaleString(
+                    "vi-VN"
+                  )} VNĐ`}</Text>
                   <TouchableOpacity
                     onPress={() => setPriceRange({ ...priceRange, min: null })}
                   >
@@ -434,7 +436,9 @@ function CategoryProducts() {
 
               {priceRange.max !== null ? (
                 <View className="bg-orange-500 rounded-full px-2 py-1 flex-row items-center mr-2 mb-1.5">
-                  <Text className="text-white text-xs mr-1">{`Max: $${priceRange.max}`}</Text>
+                  <Text className="text-white text-xs mr-1">{`Tối đa: ${priceRange.max.toLocaleString(
+                    "vi-VN"
+                  )} VNĐ`}</Text>
                   <TouchableOpacity
                     onPress={() => setPriceRange({ ...priceRange, max: null })}
                   >
@@ -497,7 +501,7 @@ function CategoryProducts() {
                             {item.description}
                           </Text>
                           <Text className="text-lg font-bold text-orange-500">
-                            ${item.price.toFixed(2)}
+                            {item.price.toLocaleString("vi-VN")} VNĐ
                           </Text>
                         </View>
                       </TouchableOpacity>

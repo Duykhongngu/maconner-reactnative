@@ -323,7 +323,6 @@ const CheckoutContent: React.FC = () => {
 
   // Handle form submission and save the order to Firestore with userId
   const onSubmit = async (values: FormData) => {
-    // First check if the form is valid
     const isValid = await trigger();
     if (!isValid) {
       Alert.alert(
@@ -336,12 +335,16 @@ const CheckoutContent: React.FC = () => {
     setIsPaymentLoading(true);
 
     try {
-      // Add voucher information to the checkout process
-      const checkoutData = {
+      // Only include voucher data if a voucher is selected and valid
+      const checkoutData: any = {
         ...values,
-        voucherId: voucher?.id,
-        discountAmount: discountAmount.toFixed(2),
       };
+
+      // Only add voucher data if a voucher is selected and valid
+      if (voucher && discountAmount > 0) {
+        checkoutData.voucherId = voucher.id;
+        checkoutData.discountAmount = discountAmount.toFixed(2);
+      }
 
       const order = await processCheckout(
         checkoutData,

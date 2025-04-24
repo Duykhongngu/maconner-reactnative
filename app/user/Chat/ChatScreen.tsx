@@ -15,7 +15,8 @@ import {
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
-import { sendMessageToChatGPT } from "~/app/GeminiService";
+import { sendMessageToChatGPT } from "~/service/GeminiService";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   id: string;
@@ -29,23 +30,23 @@ interface Message {
 const INITIAL_MESSAGES: Message[] = [
   {
     id: "welcome",
-    text: "Xin chào! Tôi là trợ lý ảo của Maconner Shop. Tôi có thể giúp gì cho bạn?",
+    text: "chat_bot_welcome",
     isUser: false,
     timestamp: new Date(),
     type: "text",
   },
   {
     id: "suggestions",
-    text: "Bạn có thể hỏi tôi về:",
+    text: "chat_help_topics",
     isUser: false,
     timestamp: new Date(),
     type: "suggestion",
     suggestions: [
-      "Thông tin về shop",
-      "Chính sách đổi trả",
-      "Phương thức thanh toán",
-      "Tình trạng đơn hàng",
-      "Sản phẩm mới",
+      "chat_about_shop",
+      "chat_return_policy",
+      "chat_payment_methods",
+      "chat_order_status",
+      "chat_new_products",
     ],
   },
 ];
@@ -54,24 +55,25 @@ const CONTACT_BUTTONS = [
   {
     id: "phone",
     icon: "call-outline" as const,
-    label: "Gọi điện",
+    label: "contact_phone",
     action: () => Linking.openURL("tel:0389693329"),
   },
   {
     id: "email",
     icon: "mail-outline" as const,
-    label: "Email",
+    label: "contact_email",
     action: () => Linking.openURL("mailto:duyngdev@gmail.com"),
   },
   {
     id: "facebook",
     icon: "logo-facebook" as const,
-    label: "Facebook",
+    label: "contact_facebook",
     action: () => Linking.openURL("https://www.facebook.com/duydangngu15"),
   },
 ];
 
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -225,7 +227,7 @@ export default function ChatScreen() {
               message.isUser ? "text-white" : "text-gray-800"
             }`}
           >
-            {message.text}
+            {message.text.startsWith("chat_") ? t(message.text) : message.text}
           </Text>
           <Text
             className={`text-xs mt-1 ${
@@ -250,7 +252,7 @@ export default function ChatScreen() {
           <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mb-1">
             <Ionicons name={button.icon} size={20} color="#3B82F6" />
           </View>
-          <Text className="text-sm text-gray-600">{button.label}</Text>
+          <Text className="text-sm text-gray-600">{t(button.label)}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -292,7 +294,7 @@ export default function ChatScreen() {
             <View className="flex-row items-center space-x-2">
               <TextInput
                 className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-base"
-                placeholder="Nhập tin nhắn..."
+                placeholder={t("chat_placeholder")}
                 value={inputMessage}
                 onChangeText={setInputMessage}
                 multiline

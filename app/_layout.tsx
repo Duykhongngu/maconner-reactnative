@@ -19,6 +19,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { CartProvider } from "./user/Cart/CartContext";
+import '../lib/translations/i18n';
 
 const LIGHT_THEME = { ...DefaultTheme, colors: NAV_THEME.light };
 const DARK_THEME = { ...DarkTheme, colors: NAV_THEME.dark };

@@ -32,7 +32,7 @@ const CategoryList = ({
           />
         ) : (
           <View className="w-14 h-14 bg-gray-300 rounded-lg mr-3 justify-center items-center">
-            <Text className="text-gray-500 font-bold">No IMG</Text>
+            <Text className="text-gray-500 font-bold">Không có hình ảnh</Text>
           </View>
         )}
         <View className="flex-1">
@@ -57,7 +57,7 @@ const CategoryList = ({
           onPress={() => handleEditCategory(item)}
           className="bg-orange-500 py-1.5 px-3 rounded mr-2"
         >
-          <Text className="text-white font-medium">Edit</Text>
+          <Text className="text-white font-medium">Sửa</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => handleDeleteCategory(item.id)}
@@ -65,7 +65,7 @@ const CategoryList = ({
             isDarkColorScheme ? "bg-red-700" : "bg-red-500"
           } py-1.5 px-3 rounded`}
         >
-          <Text className="text-white font-medium">Delete</Text>
+          <Text className="text-white font-medium">Xóa</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -82,7 +82,7 @@ const CategoryList = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        All Categories:
+        Danh sách danh mục
       </Text>
 
       {categories.length === 0 && !loading ? (
@@ -91,7 +91,7 @@ const CategoryList = ({
             isDarkColorScheme ? "text-gray-400" : "text-gray-500"
           } italic`}
         >
-          No categories found. Add one to get started.
+          Chưa có danh mục nào
         </Text>
       ) : (
         <FlatList

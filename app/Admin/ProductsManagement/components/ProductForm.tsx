@@ -68,7 +68,7 @@ const ProductForm = ({
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Error", "Media library permission is required");
+        Alert.alert("Lỗi", "Cần cấp quyền truy cập thư viện ảnh");
         return;
       }
 
@@ -86,12 +86,12 @@ const ProductForm = ({
           setMultipleImages([...multipleImages, uploadedUrl]);
         } catch (error) {
           console.error("Error uploading image:", error);
-          Alert.alert("Error", "Failed to upload image. Please try again.");
+          Alert.alert("Lỗi", "Tải ảnh lên thất bại. Vui lòng thử lại.");
         }
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select image. Please try again.");
+      Alert.alert("Lỗi", "Chọn ảnh thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -125,7 +125,7 @@ const ProductForm = ({
                 : "text-black"
             }`}
           >
-            {selectedCategory?.label || "Select Category"}
+            {selectedCategory?.label || "Chọn danh mục"}
           </Text>
         </TouchableOpacity>
 
@@ -145,7 +145,7 @@ const ProductForm = ({
                   isDarkColorScheme ? "text-white" : "text-gray-800"
                 }`}
               >
-                Select Category
+                Chọn danh mục
               </Text>
 
               <ScrollView className="mb-4">
@@ -197,7 +197,7 @@ const ProductForm = ({
                     isDarkColorScheme ? "text-blue-400" : "text-blue-600"
                   }`}
                 >
-                  Cancel
+                  Hủy
                 </Text>
               </TouchableOpacity>
             </View>
@@ -208,7 +208,14 @@ const ProductForm = ({
   };
 
   const renderColorPicker = () => {
-    const colors = ["Red", "Green", "Blue", "Yellow", "Black", "White"];
+    const colors = [
+      { en: "Red", vi: "Đỏ" },
+      { en: "Green", vi: "Xanh lá" },
+      { en: "Blue", vi: "Xanh dương" },
+      { en: "Yellow", vi: "Vàng" },
+      { en: "Black", vi: "Đen" },
+      { en: "White", vi: "Trắng" },
+    ];
 
     return (
       <View>
@@ -217,31 +224,33 @@ const ProductForm = ({
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          Select Colors:
+          Chọn màu sắc:
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
           {colors.map((color) => (
             <TouchableOpacity
-              key={color}
+              key={color.en}
               onPress={() => {
-                if (selectedColors.includes(color)) {
-                  setSelectedColors(selectedColors.filter((c) => c !== color));
+                if (selectedColors.includes(color.en)) {
+                  setSelectedColors(
+                    selectedColors.filter((c) => c !== color.en)
+                  );
                 } else {
-                  setSelectedColors([...selectedColors, color]);
+                  setSelectedColors([...selectedColors, color.en]);
                 }
               }}
               style={{
-                backgroundColor: color.toLowerCase(),
+                backgroundColor: color.en.toLowerCase(),
                 padding: 10,
                 borderRadius: 5,
                 margin: 5,
-                borderWidth: selectedColors.includes(color) ? 2 : 0,
-                borderColor: selectedColors.includes(color)
+                borderWidth: selectedColors.includes(color.en) ? 2 : 0,
+                borderColor: selectedColors.includes(color.en)
                   ? "black"
                   : "transparent",
               }}
             >
-              <Text style={{ color: "white" }}>{color}</Text>
+              <Text style={{ color: "gray" }}>{color.vi}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -260,7 +269,7 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Category:
+        Danh mục:
       </Text>
       {renderCategorySelector()}
 
@@ -269,10 +278,10 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Product Name:
+        Tên sản phẩm:
       </Text>
       <TextInput
-        placeholder="Product Name"
+        placeholder="Nhập tên sản phẩm"
         placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
         value={newProduct.name}
         onChangeText={(text: string) =>
@@ -290,10 +299,10 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Selling Price:
+        Giá bán:
       </Text>
       <TextInput
-        placeholder="Selling Price (e.g., 12.50)"
+        placeholder="Nhập giá bán (VD: 12.50)"
         placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
         value={priceText}
         onChangeText={(text: string) => {
@@ -322,10 +331,10 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Purchase Price:
+        Giá nhập:
       </Text>
       <TextInput
-        placeholder="Purchase Price (e.g., 8.50)"
+        placeholder="Nhập giá nhập (VD: 8.50)"
         placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
         value={purchasePriceText}
         onChangeText={(text: string) => {
@@ -355,15 +364,17 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Description:
+        Mô tả:
       </Text>
       <TextInput
-        placeholder="Enter description"
+        placeholder="Nhập mô tả sản phẩm"
         placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
         value={newProduct.description}
         onChangeText={(text: string) =>
           setNewProduct({ ...newProduct, description: text })
         }
+        multiline={true}
+        numberOfLines={4}
         className={`border ${
           isDarkColorScheme
             ? "border-gray-600 bg-gray-700 text-white"
@@ -376,11 +387,11 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Image Products:
+        Hình ảnh sản phẩm:
       </Text>
       <View className="flex-row items-center my-1">
         <TextInput
-          placeholder="Image URL (or pick images)"
+          placeholder="URL hình ảnh (hoặc chọn hình)"
           placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
           value={newProduct.link}
           onChangeText={(text: string) =>
@@ -397,7 +408,7 @@ const ProductForm = ({
           onPress={pickImage}
           disabled={loading}
         >
-          <Text className="text-white font-semibold text-base">Pick</Text>
+          <Text className="text-white font-semibold text-base">Chọn</Text>
         </TouchableOpacity>
       </View>
 
@@ -409,7 +420,7 @@ const ProductForm = ({
               isDarkColorScheme ? "text-gray-100" : "text-gray-800"
             }`}
           >
-            Selected Images ({multipleImages.length}):
+            Hình ảnh đã chọn ({multipleImages.length}):
           </Text>
           <ScrollView
             horizontal
@@ -455,7 +466,7 @@ const ProductForm = ({
             className="w-[200px] h-[200px]"
             style={{ resizeMode: "contain" }}
             onError={() => {
-              Alert.alert("Error", "Failed to load image preview");
+              Alert.alert("Lỗi", "Không thể tải ảnh xem trước");
               setNewProduct({ ...newProduct, link: "" });
             }}
           />
@@ -466,7 +477,7 @@ const ProductForm = ({
               setNewProduct({ ...newProduct, link: "" });
             }}
           >
-            <Text className="text-white font-semibold">Add to Images</Text>
+            <Text className="text-white font-semibold">Thêm vào hình ảnh</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -477,7 +488,7 @@ const ProductForm = ({
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          In Stock:
+          Còn hàng:
         </Text>
         <Switch
           value={newProduct.inStock}
@@ -495,7 +506,7 @@ const ProductForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Color:
+        Màu sắc:
       </Text>
       {renderColorPicker()}
 
@@ -505,10 +516,10 @@ const ProductForm = ({
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          Stock Quantity:
+          Số lượng trong kho:
         </Text>
         <TextInput
-          placeholder="Enter stock quantity"
+          placeholder="Nhập số lượng"
           placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
           value={String(newProduct.stockQuantity || 0)}
           onChangeText={(text) =>
@@ -532,10 +543,10 @@ const ProductForm = ({
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          Purchase Count:
+          Số lượt mua:
         </Text>
         <TextInput
-          placeholder="Enter purchase count"
+          placeholder="Nhập số lượt mua"
           placeholderTextColor={isDarkColorScheme ? "#9ca3af" : "#6b7280"}
           value={String(newProduct.purchaseCount || 0)}
           onChangeText={(text) =>
@@ -559,7 +570,7 @@ const ProductForm = ({
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          Mark as Trending Product:
+          Đánh dấu là sản phẩm thịnh hành:
         </Text>
         <Switch
           value={newProduct.trending || false}
@@ -583,7 +594,7 @@ const ProductForm = ({
             disabled={loading || !newProduct.category || !newProduct.name}
           >
             <Text className="text-black text-center font-bold text-base">
-              {loading ? "Updating..." : "Update Product"}
+              {loading ? "Đang cập nhật..." : "Cập nhật sản phẩm"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -593,7 +604,7 @@ const ProductForm = ({
             onPress={resetForm}
           >
             <Text className="text-white text-center font-bold text-base">
-              Cancel Edit
+              Hủy chỉnh sửa
             </Text>
           </TouchableOpacity>
         </>
@@ -608,7 +619,7 @@ const ProductForm = ({
           disabled={loading || !newProduct.category || !newProduct.name}
         >
           <Text className="text-black text-center font-bold text-base">
-            {loading ? "Adding..." : "Add Product"}
+            {loading ? "Đang thêm..." : "Thêm sản phẩm"}
           </Text>
         </TouchableOpacity>
       )}

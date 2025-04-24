@@ -42,8 +42,9 @@ const TrendingManager = ({
               isDarkColorScheme ? "text-gray-300" : "text-gray-600"
             } mb-4`}
           >
-            No trending category found. Create one to automatically display
-            best-selling products.
+            Không có danh mục nào được chỉ định là danh mục sản phẩm thịnh hành.
+            {"\n"}Vui lòng tạo một danh mục mới để sử dụng làm danh mục sản phẩm
+            thịnh hành.
           </Text>
           <TouchableOpacity
             onPress={handleCreateTrendingCategory}
@@ -65,7 +66,7 @@ const TrendingManager = ({
                 isDarkColorScheme ? "text-gray-100" : "text-gray-800"
               }`}
             >
-              Auto-update trending products:
+              Tự động cập nhật danh mục thịnh hành:
             </Text>
             <Switch
               value={isAutoUpdateTrending}

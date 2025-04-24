@@ -38,7 +38,7 @@ const CategoryForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Category Name:
+        Tên danh mục:
       </Text>
       <TextInput
         placeholder="Enter category name"
@@ -57,7 +57,7 @@ const CategoryForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Category Description:
+        Mô tả danh mục:
       </Text>
       <TextInput
         placeholder="Enter category description"
@@ -80,7 +80,7 @@ const CategoryForm = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        Category Image:
+        Hình ảnh danh mục:
       </Text>
       <View className="flex-row items-center mb-4">
         <TouchableOpacity
@@ -91,7 +91,7 @@ const CategoryForm = ({
           } py-2 px-4 rounded mr-3`}
         >
           <Text className="text-white font-medium">
-            {imageUploading ? "Uploading..." : "Choose Image"}
+            {imageUploading ? "Đang tải..." : "Chọn hình ảnh"}
           </Text>
         </TouchableOpacity>
         {newCategory.image ? (
@@ -101,7 +101,7 @@ const CategoryForm = ({
             } flex-1`}
             numberOfLines={1}
           >
-            Image selected
+            Chọn hình ảnh
           </Text>
         ) : (
           <Text
@@ -109,7 +109,7 @@ const CategoryForm = ({
               isDarkColorScheme ? "text-gray-400" : "text-gray-500"
             } flex-1`}
           >
-            No image selected
+            Không có hình ảnh nào được chọn
           </Text>
         )}
       </View>
@@ -143,12 +143,12 @@ const CategoryForm = ({
       >
         <Text className="text-white text-center font-bold text-lg">
           {loading
-            ? "Loading..."
+            ? "Đang Tải..."
             : imageUploading
-            ? "Uploading Image..."
+            ? "Tải ảnh lên..."
             : editingCategory
-            ? "Update Category"
-            : "Add Category"}
+            ? "Cập nhật danh mục "
+            : "Thêm danh mục"}
         </Text>
       </TouchableOpacity>
 
@@ -164,7 +164,7 @@ const CategoryForm = ({
               isDarkColorScheme ? "text-gray-200" : "text-gray-700"
             } text-center font-medium text-lg`}
           >
-            Cancel
+            Hủy
           </Text>
         </TouchableOpacity>
       )}

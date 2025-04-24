@@ -28,7 +28,7 @@ const ProductList = ({
           isDarkColorScheme ? "text-gray-100" : "text-gray-800"
         }`}
       >
-        {item.name} - ${(item.price ?? 0).toFixed(2)}
+        {item.name} - {(item.price ?? 0).toFixed(2)} đ
       </Text>
 
       {/* Display multiple images in a row */}
@@ -45,7 +45,7 @@ const ProductList = ({
               className="w-[100px] h-[100px] mr-2 bg-gray-100"
               style={{ resizeMode: "contain" }}
               onError={(e) =>
-                console.error("Image loading error:", e.nativeEvent.error)
+                console.error("Lỗi tải hình ảnh:", e.nativeEvent.error)
               }
             />
           ))}
@@ -56,44 +56,44 @@ const ProductList = ({
           className="w-[100px] h-[100px] my-2 bg-gray-100"
           style={{ resizeMode: "contain" }}
           onError={(e) =>
-            console.error("Image loading error:", e.nativeEvent.error)
+            console.error("Lỗi tải hình ảnh:", e.nativeEvent.error)
           }
         />
       ) : null}
 
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        Category: {categories.find((cat) => cat.value === item.category)?.label}
+        Danh mục: {categories.find((cat) => cat.value === item.category)?.label}
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        Description: {item.description}
+        Mô tả: {item.description}
       </Text>
       <View className="flex-row justify-between">
         <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-          Selling Price: ${(item.price ?? 0).toFixed(2)}
+          Giá bán: {(item.price ?? 0).toFixed(2)} đ
         </Text>
         <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-          Purchase Price: ${(item.purchasePrice ?? 0).toFixed(2)}
+          Giá nhập: {(item.purchasePrice ?? 0).toFixed(2)} đ
         </Text>
       </View>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        In Stock: {item.inStock ? "Yes" : "No"}
+        Còn hàng: {item.inStock ? "Có" : "Không"}
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        Stock Quantity: {item.stockQuantity || 0}
+        Số lượng trong kho: {item.stockQuantity || 0}
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        Purchase Count: {item.purchaseCount || 0}
+        Số lượt mua: {item.purchaseCount || 0}
       </Text>
       <Text className={isDarkColorScheme ? "text-gray-300" : "text-gray-700"}>
-        Colors:{" "}
-        {Array.isArray(item.color) ? item.color.join(", ") : "Not specified"}
+        Màu sắc:{" "}
+        {Array.isArray(item.color) ? item.color.join(", ") : "Chưa chọn"}
       </Text>
       <View className="flex-row justify-end mt-2 gap-2">
         <TouchableOpacity
           className="bg-yellow-400 py-2 px-4 rounded"
           onPress={() => handleEditProduct(item)}
         >
-          <Text className="text-black font-semibold text-sm">Edit</Text>
+          <Text className="text-black font-semibold text-sm">Sửa</Text>
         </TouchableOpacity>
         <TouchableOpacity
           className={`${
@@ -101,7 +101,7 @@ const ProductList = ({
           } py-2 px-4 rounded`}
           onPress={() => handleDeleteProduct(item.id)}
         >
-          <Text className="text-white font-semibold text-sm">Delete</Text>
+          <Text className="text-white font-semibold text-sm">Xóa</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -109,28 +109,51 @@ const ProductList = ({
 
   return (
     <View>
-      <Text
-        className={`text-xl font-bold mt-5 mb-2 ${
-          isDarkColorScheme
-            ? "text-gray-100 bg-black"
-            : "text-gray-800 bg-gray-100"
-        } p-2 rounded`}
-      >
-        All Products:
-      </Text>
+      <View className="flex-row justify-between items-center mb-2">
+        <Text
+          className={`text-xl font-bold ${
+            isDarkColorScheme
+              ? "text-gray-100 bg-black"
+              : "text-gray-800 bg-gray-100"
+          } p-2 rounded`}
+        >
+          Danh sách sản phẩm
+        </Text>
+        <Text
+          className={`${
+            isDarkColorScheme ? "text-gray-300" : "text-gray-600"
+          } text-base`}
+        >
+          {products.length} sản phẩm
+        </Text>
+      </View>
+
       <View>
         {products.length > 0 ? (
           products.map((item) => (
             <View key={item.id}>{renderProduct(item)}</View>
           ))
         ) : (
-          <Text
-            className={`text-center py-5 italic ${
-              isDarkColorScheme ? "text-gray-400" : "text-gray-500"
-            }`}
+          <View
+            className={`p-8 border ${
+              isDarkColorScheme ? "border-gray-700" : "border-gray-200"
+            } rounded-lg my-2 items-center justify-center`}
           >
-            No products found
-          </Text>
+            <Text
+              className={`text-center py-2 italic ${
+                isDarkColorScheme ? "text-gray-400" : "text-gray-500"
+              } text-base`}
+            >
+              Không tìm thấy sản phẩm nào
+            </Text>
+            <Text
+              className={`text-center ${
+                isDarkColorScheme ? "text-gray-500" : "text-gray-600"
+              }`}
+            >
+              Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
+            </Text>
+          </View>
         )}
       </View>
     </View>

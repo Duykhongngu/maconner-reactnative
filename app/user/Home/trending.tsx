@@ -13,6 +13,7 @@ import { Button } from "~/components/ui/button";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { useState, useEffect } from "react";
 import { fetchTrendingProducts } from "~/service/products";
+import { useTranslation } from "react-i18next";
 
 // Định nghĩa interface cho sản phẩm
 interface Product {
@@ -33,6 +34,7 @@ function Trending() {
   const { colorScheme } = useColorScheme();
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   const isDarkColorScheme = colorScheme === "dark";
 
@@ -62,13 +64,15 @@ function Trending() {
       <View className="flex-1 px-4">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-2xl font-bold text-orange-500">
-            Sản phẩm bán chạy
+            {t("trending_products")}
           </Text>
           <Button
             onPress={() => router.push(`/user/Collections/Trending`)}
             className="bg-orange-500 py-2 px-4 rounded-full"
           >
-            <Text className="text-white font-semibold text-sm">Xem tất cả</Text>
+            <Text className="text-white font-semibold text-sm">
+              {t("view_all")}
+            </Text>
           </Button>
         </View>
 
@@ -93,13 +97,18 @@ function Trending() {
                     source={{ uri: item.images?.[0] || item.link }}
                     className="w-full h-40 rounded-t-xl"
                     onError={(e) =>
-                      console.error("Image loading error:", e.nativeEvent.error)
+                      console.error(
+                        t("image_loading_error"),
+                        e.nativeEvent.error
+                      )
                     }
                   />
 
                   <View className="absolute top-2 left-2">
                     <View className="bg-red-500 px-2 py-1 rounded">
-                      <Text className="text-white text-xs font-bold">Hot</Text>
+                      <Text className="text-white text-xs font-bold">
+                        {t("hot_label")}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -148,7 +157,7 @@ function Trending() {
                 isDarkColorScheme ? "text-gray-200" : "text-gray-800"
               }`}
             >
-              Không có sản phẩm bán chạy
+              {t("no_trending_products")}
             </Text>
           </View>
         )}

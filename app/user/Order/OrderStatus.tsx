@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Text,
   StyleSheet,
@@ -25,6 +26,7 @@ const OrderStatus: React.FC = () => {
   const isDarkMode = colorScheme === "dark";
   const [orders, setOrders] = useState<FirebaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   // Fetch orders from Firestore by userId
   useEffect(() => {
@@ -56,21 +58,15 @@ const OrderStatus: React.FC = () => {
             setLoading(false);
           },
           (error) => {
-            console.error("Error fetching orders from Firestore:", error);
-            Alert.alert(
-              "Error",
-              "Unable to load order list."
-            );
+            console.error("Error loading orders:", error);
+            Alert.alert(t("error"), t("load_orders_error"));
             setLoading(false);
           }
         );
       } else {
         setOrders([]);
         setLoading(false);
-        Alert.alert(
-          "Notice",
-          "Please log in to view your orders."
-        );
+        Alert.alert(t("notification"), t("please_login"));
         router.replace("/" as any);
       }
     };
@@ -86,7 +82,35 @@ const OrderStatus: React.FC = () => {
       if (unsubscribe) unsubscribe();
       authUnsubscribe();
     };
-  }, [router]);
+  }, [router, t]);
+
+  // Format date to Vietnamese format
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Translate status to Vietnamese
+  const translateStatus = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return t("status_pending");
+      case "completed":
+        return t("status_completed");
+      case "cancelled":
+        return t("status_cancelled");
+      default:
+        return status;
+    }
+  };
 
   // Show loading spinner
   if (loading) {
@@ -104,7 +128,7 @@ const OrderStatus: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Đang tải danh sách đơn hàng...
+          {t("loading_orders")}
         </Text>
       </View>
     );
@@ -128,7 +152,7 @@ const OrderStatus: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Trạng thái đơn hàng
+          {t("order_status_title")}
         </Text>
         <Text
           style={[
@@ -136,7 +160,7 @@ const OrderStatus: React.FC = () => {
             isDarkMode ? styles.darkText : styles.lightText,
           ]}
         >
-          Tổng đơn hàng: {orders.length}
+          {t("total_orders", { count: orders.length })}
         </Text>
 
         {orders.length === 0 ? (
@@ -146,7 +170,7 @@ const OrderStatus: React.FC = () => {
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            Chưa có đơn hàng nào được đặt.
+            {t("no_orders")}
           </Text>
         ) : (
           orders.map((item) => (
@@ -166,7 +190,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Order ID: {item.id}
+                {t("order_id")}: {item.id}
               </Text>
               {item.name && (
                 <Text
@@ -175,7 +199,7 @@ const OrderStatus: React.FC = () => {
                     isDarkMode ? styles.darkText : styles.lightText,
                   ]}
                 >
-                  Name: {item.name}
+                  {t("order_customer")}: {item.name}
                 </Text>
               )}
               <Text
@@ -184,7 +208,7 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Date: {new Date(item.date).toLocaleDateString()}
+                {t("order_date")}: {formatDate(item.date)}
               </Text>
               <Text
                 style={[
@@ -192,15 +216,19 @@ const OrderStatus: React.FC = () => {
                   isDarkMode ? styles.darkText : styles.lightText,
                 ]}
               >
-                Total: ${item.total.toFixed(2)}
+                {t("order_total")}: {item.total.toLocaleString("vi-VN")} VNĐ
               </Text>
               <Text
                 style={[
                   styles.orderInfo,
-                  isDarkMode ? styles.darkText : styles.lightText,
+                  item.status === "completed"
+                    ? styles.statusCompleted
+                    : item.status === "cancelled"
+                    ? styles.statusCancelled
+                    : styles.statusPending,
                 ]}
               >
-                Status: {item.status}
+                {t("order_status")}: {translateStatus(item.status)}
               </Text>
             </TouchableOpacity>
           ))
@@ -210,7 +238,7 @@ const OrderStatus: React.FC = () => {
           <Text
             style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
           >
-            Tiếp tục mua hàng
+            {t("continue_shopping")}
           </Text>
         </Button>
       </ScrollView>
@@ -286,6 +314,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "500",
     color: "#f97316",
+  },
+  statusCompleted: {
+    color: "#10b981",
+    fontWeight: "500",
+  },
+  statusCancelled: {
+    color: "#ef4444",
+    fontWeight: "500",
+  },
+  statusPending: {
+    color: "#f97316",
+    fontWeight: "500",
   },
   message: {
     fontSize: 18,

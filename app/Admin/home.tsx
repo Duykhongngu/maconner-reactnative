@@ -71,14 +71,14 @@ function HomeAdmin() {
       icon: isDarkMode
         ? ("stats-chart-outline" as IconName)
         : ("stats-chart" as IconName),
-      route: "/Admin/AccountsManage/Accounts",
+      route: "/Admin/SalesAnalysis/SalesAnalytics",
     },
     {
       title: "Reports",
       icon: isDarkMode
         ? ("document-text-outline" as IconName)
         : ("document-text" as IconName),
-      route: "/Admin/AccountsManage/Accounts",
+      route: "/Admin/SalesAnalysis/SalesReport",
     },
   ];
 

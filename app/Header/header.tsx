@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Logo from "~/assets/logo.svg";
 import { useColorScheme } from "~/lib/useColorScheme";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "~/components/LanguageSwitcher";
 
 import {
   Modal,
@@ -57,6 +59,7 @@ interface User {
 
 function SiteHeader() {
   const { isDarkColorScheme } = useColorScheme();
+  const { t } = useTranslation();
   const iconColor = isDarkColorScheme ? "white" : "black";
   const { cartItems } = useCart();
   const totalItems = cartItems.reduce(
@@ -323,6 +326,7 @@ function SiteHeader() {
               isDarkColorScheme && styles.darkProfileMenu,
             ]}
           >
+            <LanguageSwitcher />
             <TouchableOpacity
               style={styles.profileMenuItem}
               onPress={() => {
@@ -336,7 +340,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                {userProfile?.displayName || user?.displayName || "User"}
+                {userProfile?.displayName || user?.displayName || t("user")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -352,7 +356,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Đánh giá sản phẩm
+                {t("reviewProducts")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -368,7 +372,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Nhắn tin với Admin
+                {t("chatWithAdmin")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -384,7 +388,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Nhắn tin với trợ lý ảo
+                {t("chatWithAI")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -400,7 +404,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Voucher
+                {t("Vouchers")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -413,7 +417,7 @@ function SiteHeader() {
                   isDarkColorScheme && styles.darkText,
                 ]}
               >
-                Log Out
+                {t("logout")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -430,7 +434,9 @@ function SiteHeader() {
             onPress={() => setMenuVisible(false)}
           >
             <ChevronLeft size={24} color={iconColor} />
-            <Text style={[styles.backText, { color: iconColor }]}>Back</Text>
+            <Text style={[styles.backText, { color: iconColor }]}>
+              {t("back")}
+            </Text>
           </TouchableOpacity>
 
           {/* Menu list with dynamic categories */}
@@ -438,7 +444,7 @@ function SiteHeader() {
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#FF6B00" />
               <Text style={[styles.loadingText, { color: iconColor }]}>
-                Loading categories...
+                {t("loadingCategories")}
               </Text>
             </View>
           ) : categories.length > 0 ? (
@@ -468,7 +474,7 @@ function SiteHeader() {
           ) : (
             <View style={styles.loadingContainer}>
               <Text style={[styles.loadingText, { color: iconColor }]}>
-                Không có danh mục nào.
+                {t("noCategories")}
               </Text>
             </View>
           )}
@@ -486,7 +492,7 @@ function SiteHeader() {
               style={styles.cancelButton}
             >
               <ChevronLeft size={24} color={iconColor} />
-              <Text style={{ color: iconColor }}>Cancel</Text>
+              <Text style={{ color: iconColor }}>{t("cancel")}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.searchContent}>

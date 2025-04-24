@@ -33,6 +33,7 @@ import { ChatHeader } from "./components/ChatHeader";
 import { ChatInput } from "./components/ChatInput";
 import { MessageItem } from "./components/MessageItem";
 import { UserListItem } from "./components/UserListItem";
+import { useTranslation } from "react-i18next";
 
 // Cập nhật hàm gửi thông báo
 const sendPushNotification = async (userId: string, message: string) => {
@@ -75,6 +76,7 @@ const sendPushNotification = async (userId: string, message: string) => {
 };
 
 export default function AdminChatManagement() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -369,7 +371,18 @@ export default function AdminChatManagement() {
     return (
       <View className="flex-1 justify-center items-center bg-white dark:bg-black">
         <Text className="text-lg text-black dark:text-white">
-          Vui lòng đăng nhập để quản lý chat
+          {t("please_login")}
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white dark:bg-black">
+        <Text className="text-lg text-red-500">{t("error")}</Text>
+        <Text className="text-base text-gray-600 dark:text-gray-400 mt-2">
+          {error}
         </Text>
       </View>
     );
@@ -400,6 +413,13 @@ export default function AdminChatManagement() {
               />
             )}
             keyExtractor={(item) => item.id}
+            ListEmptyComponent={() => (
+              <View className="flex-1 justify-center items-center py-8">
+                <Text className="text-gray-500 dark:text-gray-400">
+                  {t("chat_empty")}
+                </Text>
+              </View>
+            )}
           />
         ) : selectedUser ? (
           <View className="flex-1 bg-white dark:bg-black">
@@ -428,7 +448,7 @@ export default function AdminChatManagement() {
           <View className="flex-1 justify-center items-center">
             <Ionicons name="chatbubbles-outline" size={48} color="#9CA3AF" />
             <Text className="mt-4 text-gray-500 dark:text-white">
-              Chọn một cuộc trò chuyện để bắt đầu
+              {t("select_chat")}
             </Text>
           </View>
         )}

@@ -10,6 +10,7 @@ export interface Product {
   images?: string[];
   name: string;
   price: number;
+  purchasePrice: number; // Add this as required field
   description: string;
   color: string[];
   purchaseCount?: number;
@@ -31,6 +32,7 @@ export async function fetchProducts(): Promise<Product[]> {
         images: data.images || [],
         name: data.name || "",
         price: data.price || 0,
+        purchasePrice: data.purchasePrice || 0,
         description: data.description || "",
         color: data.color || [],
         purchaseCount: data.purchaseCount || 0,
@@ -63,6 +65,7 @@ export async function fetchTrendingProducts(): Promise<Product[]> {
         images: data.images || [],
         name: data.name || "",
         price: data.price || 0,
+        purchasePrice: data.purchasePrice || 0,
         description: data.description || "",
         color: data.color || [],
         purchaseCount: data.purchaseCount || 0,

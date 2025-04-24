@@ -2,11 +2,14 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MessageItemProps } from "../types";
+import { useTranslation } from "react-i18next";
 
 export const MessageItem: React.FC<MessageItemProps> = ({
   message,
   formatTime,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <View
       className={`flex-row ${
@@ -32,7 +35,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             message.isAdmin ? "text-white" : "text-gray-800 dark:text-white"
           }`}
         >
-          {message.text}
+          {message.text.startsWith("chat_") ? t(message.text) : message.text}
         </Text>
         <View className="flex-row items-center justify-between mt-1">
           <Text

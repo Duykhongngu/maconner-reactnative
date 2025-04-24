@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ChatInputProps } from "../types";
+import { useTranslation } from "react-i18next";
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   inputMessage,
@@ -14,12 +15,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleSend,
   isLoading,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <View className="p-4 border-t border-gray-200 bg-white dark:bg-black">
       <View className="flex-row items-center space-x-2">
         <TextInput
           className="flex-1 bg-gray-100 dark:bg-gray-600 rounded-full px-4 py-2 text-base"
-          placeholder="Nhập tin nhắn..."
+          placeholder={t("chat_placeholder")}
           placeholderTextColor="black dark:text-white"
           value={inputMessage}
           onChangeText={setInputMessage}

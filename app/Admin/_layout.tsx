@@ -22,6 +22,7 @@ export default function AdminLayout() {
         <Stack.Screen name="VoucherManagement/VoucherManager" />
         <Stack.Screen name="VoucherManagement/EditVoucher" />
         <Stack.Screen name="VoucherManagement/CreateVoucher" />
+        <Stack.Screen name="SalesAnalysis/SalesAnalytics" />
       </Stack>
     </SafeAreaView>
   );

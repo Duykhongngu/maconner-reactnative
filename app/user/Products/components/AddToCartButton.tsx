@@ -53,7 +53,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         disabled={disabled}
       >
         <Text style={styles.addToCartText}>
-          Add to Cart - ${price?.toFixed(2)}
+          Thêm vào giỏ hàng - {price?.toLocaleString("vi-VN")} VNĐ
         </Text>
       </TouchableOpacity>
     </Animated.View>

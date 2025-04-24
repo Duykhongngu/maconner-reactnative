@@ -68,9 +68,9 @@ const OrderManager: React.FC = () => {
       if (isNaN(date.getTime())) {
         throw new Error("Invalid date");
       }
-      return date.toLocaleDateString();
+      return date.toLocaleDateString("vi-VN");
     } catch (error) {
-      return "Invalid date";
+      return "Ngày không hợp lệ";
     }
   }, []);
 
@@ -96,7 +96,7 @@ const OrderManager: React.FC = () => {
           setOrders(ordersData);
           setFilteredOrders(ordersData);
         } catch (error) {
-          setError("Error processing orders data");
+          setError("Lỗi xử lý dữ liệu đơn hàng");
           console.error(error);
         } finally {
           setIsLoading(false);
@@ -104,7 +104,7 @@ const OrderManager: React.FC = () => {
       },
       (error) => {
         console.error("Error fetching orders:", error);
-        setError("Failed to load orders");
+        setError("Không thể tải danh sách đơn hàng");
         setIsLoading(false);
       }
     );
@@ -137,14 +137,14 @@ const OrderManager: React.FC = () => {
       const orderSnap = await getDoc(orderRef);
 
       if (!orderSnap.exists()) {
-        console.error("Order not found");
+        console.error("Không tìm thấy đơn hàng");
         return;
       }
 
       const orderData = orderSnap.data() as Order;
 
       if (!orderData.cartItems || orderData.cartItems.length === 0) {
-        console.log("Order has no items to update purchase count");
+        console.log("Đơn hàng không có sản phẩm để cập nhật số lượng mua");
         return;
       }
 
@@ -163,9 +163,9 @@ const OrderManager: React.FC = () => {
           });
 
           console.log(
-            `Updated product ${item.id}: purchased ${
+            `Đã cập nhật sản phẩm ${item.id}: đã mua ${
               item.quantity
-            }, remaining stock ${currentStock - item.quantity}`
+            }, còn lại ${currentStock - item.quantity}`
           );
         }
       }
@@ -213,17 +213,17 @@ const OrderManager: React.FC = () => {
 
         await batch.commit();
 
-        console.log("Trending products updated automatically");
+        console.log("Đã cập nhật sản phẩm thịnh hành tự động");
       }
     } catch (error) {
-      console.error("Error updating product purchase counts:", error);
+      console.error("Lỗi cập nhật số lượng mua sản phẩm:", error);
     }
   };
 
   const updateOrderStatus = useCallback(
     async (orderId: string, newStatus: string) => {
       if (!["pending", "completed", "cancelled"].includes(newStatus)) {
-        Alert.alert("Error", "Invalid status");
+        Alert.alert("Lỗi", "Trạng thái không hợp lệ");
         return;
       }
 
@@ -238,10 +238,10 @@ const OrderManager: React.FC = () => {
           await updateProductPurchaseCount(orderId);
         }
 
-        Alert.alert("Success", "Order status updated successfully");
+        Alert.alert("Thành công", "Đã cập nhật trạng thái đơn hàng");
       } catch (error) {
-        console.error("Error updating order status:", error);
-        Alert.alert("Error", "Failed to update order status");
+        console.error("Lỗi cập nhật trạng thái đơn hàng:", error);
+        Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng");
       }
     },
     []
@@ -270,7 +270,7 @@ const OrderManager: React.FC = () => {
               isDarkColorScheme ? "text-gray-100" : "text-gray-800"
             }`}
           >
-            Loading...
+            Đang tải...
           </Text>
         </View>
       </SafeAreaView>
@@ -293,7 +293,7 @@ const OrderManager: React.FC = () => {
             {error}
           </Text>
           <Button onPress={onRefresh} className="mt-4 bg-blue-500 p-2 rounded">
-            <Text className="text-white text-center">Retry</Text>
+            <Text className="text-white text-center">Thử lại</Text>
           </Button>
         </View>
       </SafeAreaView>
@@ -310,7 +310,7 @@ const OrderManager: React.FC = () => {
             isDarkColorScheme ? "text-gray-100" : "text-gray-800"
           }`}
         >
-          Order Management
+          Quản lý đơn hàng
         </Text>
 
         <SearchFilter
@@ -328,15 +328,27 @@ const OrderManager: React.FC = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {filteredOrders.map((order) => (
-            <OrderItemComponent
-              key={order.id}
-              order={order}
-              updateOrderStatus={updateOrderStatus}
-              isDarkMode={isDarkMode}
-              formatDate={formatDate}
-            />
-          ))}
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <OrderItemComponent
+                key={order.id}
+                order={order}
+                updateOrderStatus={updateOrderStatus}
+                isDarkMode={isDarkMode}
+                formatDate={formatDate}
+              />
+            ))
+          ) : (
+            <View className="py-8 items-center justify-center">
+              <Text
+                className={`text-lg ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Không tìm thấy đơn hàng nào
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>

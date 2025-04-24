@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import type React from "react";
 import {
   View,
@@ -30,6 +31,7 @@ interface BackgroundProps {
 }
 
 const Background: React.FC<BackgroundProps> = ({ categories, error }) => {
+  const { t } = useTranslation();
   const { isDarkColorScheme } = useColorScheme();
   const router = useRouter();
 
@@ -45,7 +47,7 @@ const Background: React.FC<BackgroundProps> = ({ categories, error }) => {
             isDarkColorScheme ? "text-gray-200" : "text-gray-800"
           }`}
         >
-          {error || "Không tìm thấy danh mục nào"}
+          {error || t("no_categories")}
         </Text>
       </View>
     );
@@ -57,7 +59,7 @@ const Background: React.FC<BackgroundProps> = ({ categories, error }) => {
     >
       <View className="flex-1 py-4">
         <Text className="text-xl font-bold text-orange-500 mx-4 mb-3">
-          Danh mục sản phẩm
+          {t("product_categories")}
         </Text>
         <ScrollView
           horizontal={true}
@@ -80,6 +82,7 @@ const Background: React.FC<BackgroundProps> = ({ categories, error }) => {
                   : "bg-white border-gray-200"
               } border shadow-sm`}
               style={{ width: iconSize + 20 }}
+              accessibilityLabel={t("view_category", { name: category.name })}
             >
               <View
                 className={`rounded-full justify-center items-center mb-2 overflow-hidden ${
@@ -95,6 +98,9 @@ const Background: React.FC<BackgroundProps> = ({ categories, error }) => {
                   }
                   className="w-4/5 h-4/5"
                   resizeMode="contain"
+                  accessibilityLabel={t("category_image", {
+                    name: category.name,
+                  })}
                 />
               </View>
               <Text

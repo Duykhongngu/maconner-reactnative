@@ -9,11 +9,13 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchProducts } from "~/service/products";
 import Toast from "react-native-toast-message";
+import { useTranslation } from "react-i18next";
 
 // Product interface
 interface Product {
@@ -33,62 +35,33 @@ function AllProducts() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkColorScheme = colorScheme === "dark";
+  const { t } = useTranslation();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const productsPerPage = 10;
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch initial products
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  // Load products with pagination
-  const loadProducts = async () => {
-    if (loading || !hasMore) return;
-
+  const loadProducts = async (showToast = true) => {
     try {
       setLoading(true);
       const allProducts = await fetchProducts();
+      setProducts(allProducts);
 
-      // Calculate pagination
-      const start = (page - 1) * productsPerPage;
-      const end = start + productsPerPage;
-      const newProducts = allProducts.slice(start, end);
-
-      if (newProducts.length < productsPerPage) {
-        setHasMore(false);
-      }
-
-      if (page === 1) {
-        setProducts(newProducts);
+      if (showToast) {
         Toast.show({
           type: "success",
-          text1: "Sản phẩm đã được tải",
-          text2: `Đã tải ${newProducts.length} sản phẩm`,
-          position: "bottom",
-          visibilityTime: 2000,
-        });
-      } else {
-        setProducts((prev) => [...prev, ...newProducts]);
-        Toast.show({
-          type: "info",
-          text1: "Đã tải thêm sản phẩm",
-          text2: `Đã tải thêm ${newProducts.length} sản phẩm`,
+          text1: t("load_success"),
+          text2: t("load_products_success", { count: allProducts.length }),
           position: "bottom",
           visibilityTime: 2000,
         });
       }
-
-      setPage(page + 1);
     } catch (error) {
       console.error("Error fetching products:", error);
       Toast.show({
         type: "error",
-        text1: "Lỗi",
-        text2: "Không thể tải sản phẩm. Vui lòng thử lại sau.",
+        text1: t("load_error"),
+        text2: t("load_products_error"),
         position: "bottom",
         visibilityTime: 3000,
       });
@@ -97,14 +70,17 @@ function AllProducts() {
     }
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadProducts(false).finally(() => setRefreshing(false));
+  }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
   const handleProductPress = (productId: string) => {
     router.push(`/user/Products/${productId}`);
-    Toast.show({
-      type: "info",
-      text1: "Đang xem sản phẩm",
-      position: "bottom",
-      visibilityTime: 1500,
-    });
   };
 
   return (
@@ -113,21 +89,13 @@ function AllProducts() {
     >
       <View className="flex-1 px-4">
         <Text className="text-2xl font-bold text-orange-500 my-4">
-          Tất cả sản phẩm
+          {t("all_products")} ({products.length})
         </Text>
 
         <ScrollView
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } =
-              nativeEvent;
-            const isCloseToBottom =
-              layoutMeasurement.height + contentOffset.y >=
-              contentSize.height - 20;
-            if (isCloseToBottom && !loading && hasMore) {
-              loadProducts();
-            }
-          }}
-          scrollEventThrottle={400}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <View className="flex-row flex-wrap justify-between">
             {products.length === 0 ? (
@@ -136,14 +104,14 @@ function AllProducts() {
                   isDarkColorScheme ? "text-gray-200" : "text-gray-800"
                 }`}
               >
-                {loading ? "Đang tải sản phẩm..." : "Không có sản phẩm"}
+                {loading ? t("loading_products") : t("no_products")}
               </Text>
             ) : (
               products.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => handleProductPress(item.id)}
-                  className={`rounded-xl mb-4 overflow-hidden border shadow-sm w-[48%] ${
+                  className={`w-[48%] rounded-xl mb-4 overflow-hidden border shadow-sm ${
                     isDarkColorScheme
                       ? "bg-gray-800 border-gray-700"
                       : "bg-white border-gray-200"
@@ -153,15 +121,11 @@ function AllProducts() {
                     <Image
                       source={{ uri: item.images?.[0] || item.link }}
                       className="w-full h-40 rounded-t-xl"
-                      onError={(e) => {
-                        console.error(
-                          "Image loading error:",
-                          e.nativeEvent.error
-                        );
+                      onError={() => {
                         Toast.show({
                           type: "error",
-                          text1: "Lỗi hình ảnh",
-                          text2: "Không thể tải hình ảnh sản phẩm",
+                          text1: t("image_error"),
+                          text2: t("image_load_error"),
                           position: "bottom",
                           visibilityTime: 2000,
                         });
@@ -170,7 +134,7 @@ function AllProducts() {
                     {!item.inStock && (
                       <View className="absolute top-2 right-2 bg-red-500/90 px-2 py-1 rounded">
                         <Text className="text-white text-xs font-bold">
-                          Hết hàng
+                          {t("out_of_stock")}
                         </Text>
                       </View>
                     )}
@@ -203,7 +167,7 @@ function AllProducts() {
                       item.purchaseCount > 0 && (
                         <View className="flex-row items-center mt-1">
                           <Text className="text-xs text-gray-500 italic">
-                            Đã bán {item.purchaseCount} lần
+                            {t("sold_count", { count: item.purchaseCount })}
                           </Text>
                         </View>
                       )}
@@ -211,15 +175,15 @@ function AllProducts() {
                 </TouchableOpacity>
               ))
             )}
-
-            {loading && (
-              <View className="w-full py-4 items-center">
-                <ActivityIndicator size="large" color="#F97316" />
-              </View>
-            )}
           </View>
         </ScrollView>
       </View>
+
+      {loading && (
+        <View className="absolute inset-0  flex items-center justify-center">
+          <ActivityIndicator size="large" color="#F97316" />
+        </View>
+      )}
     </SafeAreaView>
   );
 }

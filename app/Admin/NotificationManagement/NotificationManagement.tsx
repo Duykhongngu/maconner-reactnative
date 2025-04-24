@@ -39,6 +39,7 @@ import {
   formatFirestoreTimestamp,
   NotificationData as ServiceNotificationData,
 } from "~/service/notifications";
+import CustomDateTimePicker from "../../../components/CustomDateTimePicker";
 
 interface FirebaseError extends Error {
   code?: string;
@@ -390,145 +391,6 @@ export default function NotificationManagement() {
     );
   };
 
-  // Helper functions for datetime picker
-  const addDays = (date: Date, days: number): Date => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  };
-
-  const addHours = (date: Date, hours: number): Date => {
-    const result = new Date(date);
-    result.setHours(result.getHours() + hours);
-    return result;
-  };
-
-  const addMinutes = (date: Date, minutes: number): Date => {
-    const result = new Date(date);
-    result.setMinutes(result.getMinutes() + minutes);
-    return result;
-  };
-
-  interface CustomDateTimePickerProps {
-    value: Date;
-    onChange?: (date: Date) => void;
-    onCancel: () => void;
-    onConfirm: (date: Date) => void;
-  }
-
-  const CustomDateTimePicker = ({
-    value,
-    onChange,
-    onCancel,
-    onConfirm,
-  }: CustomDateTimePickerProps) => {
-    const [tempDate, setTempDate] = useState<Date>(value || new Date());
-
-    return (
-      <View className="bg-white p-4 rounded-lg">
-        <View className="mb-4">
-          <Text className="text-lg font-semibold text-center mb-4">
-            Chọn ngày và giờ
-          </Text>
-
-          <View className="flex-row justify-around mb-4">
-            <Pressable
-              onPress={() => setTempDate(new Date())}
-              className="bg-blue-100 p-2 rounded-lg"
-            >
-              <Text>Hôm nay</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setTempDate(addDays(new Date(), 1))}
-              className="bg-blue-100 p-2 rounded-lg"
-            >
-              <Text>Ngày mai</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setTempDate(addDays(new Date(), 7))}
-              className="bg-blue-100 p-2 rounded-lg"
-            >
-              <Text>1 tuần sau</Text>
-            </Pressable>
-          </View>
-
-          <Text className="mb-2">
-            Ngày: {tempDate.toLocaleDateString("vi-VN")}
-          </Text>
-
-          <View className="flex-row justify-around mb-4">
-            <TouchableOpacity
-              onPress={() => setTempDate(addDays(tempDate, -1))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>-1 ngày</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setTempDate(addDays(tempDate, 1))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>+1 ngày</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text className="mb-2">
-            Giờ: {tempDate.getHours().toString().padStart(2, "0")}:
-            {tempDate.getMinutes().toString().padStart(2, "0")}
-          </Text>
-
-          <View className="flex-row justify-around mb-2">
-            <TouchableOpacity
-              onPress={() => setTempDate(addHours(tempDate, -1))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>-1 giờ</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setTempDate(addHours(tempDate, 1))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>+1 giờ</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="flex-row justify-around mb-4">
-            <TouchableOpacity
-              onPress={() => setTempDate(addMinutes(tempDate, -15))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>-15 phút</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setTempDate(addMinutes(tempDate, 15))}
-              className="bg-gray-200 p-2 rounded-lg"
-            >
-              <Text>+15 phút</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text className="text-center mb-4">
-            Thời gian đã chọn: {tempDate.toLocaleString("vi-VN")}
-          </Text>
-        </View>
-
-        <View className="flex-row justify-between">
-          <TouchableOpacity
-            onPress={onCancel}
-            className="bg-red-100 p-3 rounded-lg"
-          >
-            <Text className="text-red-700">Hủy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onConfirm(tempDate)}
-            className="bg-blue-500 p-3 rounded-lg"
-          >
-            <Text className="text-white">Xác nhận</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
   // Hàm chọn hình ảnh từ thiết bị
   const pickImage = async () => {
     try {
@@ -798,23 +660,17 @@ export default function NotificationManagement() {
                   <Text className="text-blue-500">Chọn</Text>
                 </TouchableOpacity>
 
-                <Modal
-                  visible={showDatePicker}
-                  transparent={true}
-                  animationType="slide"
-                  onRequestClose={() => setShowDatePicker(false)}
-                >
-                  <View className="flex-1 bg-black bg-opacity-50 justify-center items-center p-5">
-                    <CustomDateTimePicker
-                      value={scheduledDate || new Date()}
-                      onCancel={() => setShowDatePicker(false)}
-                      onConfirm={(date) => {
-                        setScheduledDate(date);
-                        setShowDatePicker(false);
-                      }}
-                    />
-                  </View>
-                </Modal>
+                <CustomDateTimePicker
+                  isVisible={showDatePicker}
+                  mode="datetime"
+                  onConfirm={(date) => {
+                    setScheduledDate(date);
+                    setShowDatePicker(false);
+                  }}
+                  onCancel={() => setShowDatePicker(false)}
+                  date={scheduledDate || new Date()}
+                  minimumDate={new Date()}
+                />
               </View>
 
               {/* Độ ưu tiên */}

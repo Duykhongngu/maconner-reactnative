@@ -6,7 +6,7 @@ export interface Product {
   images?: string[];
   name: string;
   price: number;
-  purchasePrice?: number;
+  purchasePrice: number;
   description: string;
   color: string[];
   purchaseCount?: number;
@@ -26,5 +26,5 @@ export interface NewProduct extends Omit<Product, 'id'> {
 // Thêm default export
 const ProductTypes = {};
 
-export default ProductTypes; 
+export default ProductTypes;
 

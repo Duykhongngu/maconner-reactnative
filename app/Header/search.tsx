@@ -16,6 +16,7 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import { fetchProducts, fetchTrendingProducts } from "~/service/products";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 // Định nghĩa kiểu cho sản phẩm
 interface Product {
@@ -35,6 +36,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [value, setValue] = React.useState<string>("");
   const [results, setResults] = React.useState<Product[]>([]);
@@ -138,7 +140,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
     >
       <View className="flex-row justify-between items-center mb-3">
         <Text className="text-base font-bold text-orange-500 tracking-wide">
-          SẢN PHẨM BÁN CHẠY
+          {t('trending_products')}
         </Text>
       </View>
 
@@ -168,6 +170,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
                   ? "rgba(255,255,255,0.1)"
                   : "rgba(0,0,0,0.1)",
               }}
+              accessibilityLabel={t('product_image', { name: product.name })}
             />
           ) : (
             <View className="bg-orange-100 h-12 w-12 rounded-md justify-center items-center">
@@ -208,7 +211,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
             isDarkColorScheme ? "text-white" : "text-black"
           }`}
         >
-          Xem tất cả
+          {t('view_all')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -222,7 +225,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
         <View className="relative mb-2">
           <TextInput
             ref={inputRef}
-            placeholder="Tìm kiếm sản phẩm..."
+            placeholder={t('search_placeholder')}
             className={`h-[50px] rounded-full px-5 pr-12 text-base border-[1.5px] ${
               isDarkColorScheme
                 ? "border-white/20 bg-gray-800 text-white placeholder:text-white/40"
@@ -279,7 +282,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
                     isDarkColorScheme ? "text-gray-300" : "text-gray-600"
                   }`}
                 >
-                  Đang tìm kiếm...
+                  {t('searching')}
                 </Text>
               </View>
             ) : results.length > 0 ? (
@@ -309,7 +312,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
                       numberOfLines={2}
                       ellipsizeMode="tail"
                     >
-                      {item.description || "Không có mô tả"}
+                      {item.description || t('no_description')}
                     </Text>
                     <Text className="text-sm font-bold text-orange-500">
                       {item.price?.toLocaleString("vi-VN") || "0"} VNĐ
@@ -327,7 +330,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
                   isDarkColorScheme ? "text-white/60" : "text-black/50"
                 } text-sm`}
               >
-                Không tìm thấy kết quả phù hợp
+                {t('no_search_results')}
               </Text>
             )}
           </Animated.View>

@@ -22,6 +22,7 @@ import {
   getDocs,
   orderBy,
   updateDoc,
+  limit,
 } from "firebase/firestore";
 import { db } from "~/firebase.config";
 import { useCart } from "../Cart/CartContext";
@@ -30,8 +31,8 @@ import QuantitySelector from "./components/QuantitySelector";
 import AddToCartButton from "./components/AddToCartButton";
 import { CartItem } from "../Cart/CartContext";
 import { AntDesign } from "@expo/vector-icons";
-
 import { useColorScheme } from "~/lib/useColorScheme";
+import { useTranslation } from "react-i18next";
 
 // Khai báo mảng màu cố định
 const AVAILABLE_COLORS = [
@@ -163,6 +164,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
 export default function ProductDetail(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [product, setProduct] = useState<Product | null>(null);
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -198,94 +200,48 @@ export default function ProductDetail(): JSX.Element {
             productColors = ["White"]; // Màu mặc định nếu không có dữ liệu
           }
 
-          // Xử lý dữ liệu hình ảnh
-          let productImages: string[] = [];
-          const imagesData = productSnap.data().images;
-          const linkData = productSnap.data().link;
-
-          if (Array.isArray(imagesData) && imagesData.length > 0) {
-            productImages = imagesData;
-          } else if (linkData) {
-            productImages = [linkData];
-          }
-
+          // Tạo đối tượng sản phẩm từ dữ liệu Firestore
           const productData = {
+            ...productSnap.data(),
             id: productSnap.id,
-            category: productSnap.data().category || "",
-            inStock: productSnap.data().inStock !== false,
-            link: productSnap.data().link || "",
-            images: productImages,
-            name: productSnap.data().name || "",
-            price: Number(productSnap.data().price) || 0,
-            description: productSnap.data().description || "",
             color: productColors,
-            size: productSnap.data().size || "",
-            rating: productSnap.data().rating || 0,
           } as Product;
 
           setProduct(productData);
+          setSelectedColor(productData.color[0] || "");
 
-          // Lấy tên danh mục
+          // Lấy thông tin danh mục
           if (productData.category) {
-            try {
-              const categoryRef = doc(db, "categories", productData.category);
-              const categorySnap = await getDoc(categoryRef);
-
-              if (categorySnap.exists()) {
-                const categoryData = categorySnap.data();
-                setCategoryName(categoryData.name || "Unknown Category");
-                productData.categoryName =
-                  categoryData.name || "Unknown Category";
-              } else {
-                setCategoryName(productData.category); // Sử dụng ID nếu không tìm thấy danh mục
-              }
-            } catch (categoryError) {
-              console.error("Lỗi khi lấy danh mục:", categoryError);
-              setCategoryName(productData.category);
+            const categoryRef = doc(db, "categories", productData.category);
+            const categorySnap = await getDoc(categoryRef);
+            if (categorySnap.exists()) {
+              setCategoryName(categorySnap.data().name || "");
             }
           }
 
-          // Fetch suggested products - Sửa lại logic để lấy sản phẩm cùng category
+          // Lấy các sản phẩm cùng danh mục
           if (productData.category) {
-            const productsRef = collection(db, "products");
-            const q = query(
-              productsRef,
-              where("category", "==", productData.category)
+            const suggestedQuery = query(
+              collection(db, "products"),
+              where("category", "==", productData.category),
+              where("id", "!=", id),
+              limit(4)
             );
+            const suggestedSnap = await getDocs(suggestedQuery);
 
-            const querySnapshot = await getDocs(q);
-            const suggestedProductsData: Product[] = [];
+            const suggestedData = suggestedSnap.docs.map((doc) => ({
+              ...doc.data(),
+              id: doc.id,
+            })) as Product[];
 
-            querySnapshot.forEach((doc) => {
-              // Lọc sản phẩm có id khác với sản phẩm hiện tại
-              if (doc.id !== id) {
-                const data = doc.data();
-                suggestedProductsData.push({
-                  id: doc.id,
-                  category: data.category || "",
-                  categoryName: categoryName, // Sử dụng tên danh mục đã lấy được
-                  inStock: data.inStock !== false,
-                  link: data.link || "",
-                  name: data.name || "",
-                  price: Number(data.price) || 0,
-                  description: data.description || "",
-                  color: Array.isArray(data.color)
-                    ? data.color
-                    : [data.color || "White"],
-                  size: data.size || "",
-                  rating: data.rating || 0,
-                });
-              }
-            });
-
-            setSuggestedProducts(suggestedProductsData);
+            setSuggestedProducts(suggestedData);
           }
         } else {
-          setError("Không tìm thấy sản phẩm");
+          setError(t("product_not_found"));
         }
-      } catch (err) {
-        console.error("Lỗi khi lấy dữ liệu sản phẩm:", err);
-        setError("Đã xảy ra lỗi khi tải dữ liệu sản phẩm");
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
+        setError(t("error_loading_product"));
       } finally {
         setLoading(false);
       }
@@ -349,7 +305,7 @@ export default function ProductDetail(): JSX.Element {
           const review: Review = {
             id: docSnapshot.id,
             ...reviewData,
-            userName: "Đang tải...",
+            userName: t("loading"),
             userAvatar: undefined,
           };
 
@@ -359,7 +315,7 @@ export default function ProductDetail(): JSX.Element {
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
               const userData = userSnap.data();
-              review.userName = userData.displayName || "Người dùng ẩn danh";
+              review.userName = userData.displayName || t("anonymous_user");
               review.userAvatar = userData.photoURL || undefined;
             }
 
@@ -376,7 +332,7 @@ export default function ProductDetail(): JSX.Element {
             })) as ReviewReply[];
           } catch (error) {
             console.error("Lỗi khi lấy thông tin người dùng:", error);
-            review.userName = "Người dùng ẩn danh";
+            review.userName = t("anonymous_user");
           }
 
           reviewsData.push(review);
@@ -404,13 +360,13 @@ export default function ProductDetail(): JSX.Element {
     if (!product) return;
 
     if (!selectedColor) {
-      Alert.alert("Lỗi", "Vui lòng chọn màu sắc trước khi thêm vào giỏ hàng");
+      Alert.alert(t("error"), t("select_color_before_adding"));
       return;
     }
 
     // Kiểm tra xem màu đã chọn có hợp lệ không
     if (!product.color.includes(selectedColor)) {
-      Alert.alert("Lỗi", "Màu sắc đã chọn không hợp lệ");
+      Alert.alert(t("error"), t("invalid_color_selected"));
       return;
     }
 
@@ -426,7 +382,7 @@ export default function ProductDetail(): JSX.Element {
     };
 
     addToCart(cartItem);
-    Alert.alert("Thành công", "Đã thêm sản phẩm vào giỏ hàng");
+    Alert.alert(t("success"), t("add_to_cart_success"));
   };
 
   if (loading) {
@@ -441,7 +397,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white mt-2" : "text-gray-800 mt-2"
             }
           >
-            Đang tải...
+            {t("loading_product")}
           </Text>
         </View>
       </SafeAreaView>
@@ -455,7 +411,7 @@ export default function ProductDetail(): JSX.Element {
       >
         <View className="flex-1 justify-center items-center p-5">
           <Text className={isDarkColorScheme ? "text-white" : "text-gray-800"}>
-            {error || "Không tìm thấy sản phẩm"}
+            {error || t("product_not_found")}
           </Text>
         </View>
       </SafeAreaView>
@@ -491,7 +447,7 @@ export default function ProductDetail(): JSX.Element {
             {product.name}
           </Text>
           <Text className="text-xl font-bold text-orange-500 mb-2">
-            {product.price.toFixed(2)} VNĐ
+            {product.price.toLocaleString("vi-VN")} VNĐ
           </Text>
           <Text
             className={`text-base mb-4 ${
@@ -509,7 +465,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Màu sắc
+            {t("product_color")}
           </Text>
           <ColorSelector
             colors={product.color}
@@ -526,7 +482,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Số lượng
+            {t("quantity")}
           </Text>
           <QuantitySelector
             quantity={quantity}
@@ -542,7 +498,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Mô tả
+            {t("product_description")}
           </Text>
           <Text
             className={`text-base leading-6 ${
@@ -569,7 +525,7 @@ export default function ProductDetail(): JSX.Element {
               isDarkColorScheme ? "text-white" : "text-gray-800"
             }`}
           >
-            Đánh giá sản phẩm
+            {t("product_reviews")}
           </Text>
 
           {/* Hiển thị rating trung bình */}
@@ -592,7 +548,7 @@ export default function ProductDetail(): JSX.Element {
               ))}
             </View>
             <Text className="text-sm text-gray-600">
-              ({reviews.length} đánh giá)
+              ({reviews.length} {t("reviews")})
             </Text>
           </View>
 
@@ -681,7 +637,7 @@ export default function ProductDetail(): JSX.Element {
                       <View className="flex-row items-center mb-1">
                         <AntDesign name="message1" size={16} color="#666" />
                         <Text className="ml-1.5 text-xs font-semibold text-gray-600">
-                          Phản hồi từ Admin
+                          {t("admin_reply")}
                         </Text>
                         <Text className="ml-2 text-xs text-gray-500">
                           {new Date(
@@ -701,67 +657,48 @@ export default function ProductDetail(): JSX.Element {
 
           {reviews.length === 0 && (
             <Text className="text-center italic text-gray-500">
-              Chưa có đánh giá nào cho sản phẩm này
+              {t("no_reviews")}
             </Text>
           )}
         </View>
 
         {/* Phần sản phẩm đề xuất */}
         {suggestedProducts.length > 0 && (
-          <View className="p-4 border-t mb-4 border-gray-200">
+          <View className="p-4 border-t border-gray-200">
             <Text
               className={`text-lg font-bold mb-3 ${
                 isDarkColorScheme ? "text-white" : "text-gray-800"
               }`}
             >
-              Sản phẩm liên quan
+              {t("related_products")}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {suggestedProducts.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  className="w-40 mr-3 bg-white rounded-lg shadow overflow-hidden"
+                  className="mr-4 w-[150px]"
                   onPress={() => {
                     router.push(`/user/Products/${item.id}`);
                   }}
                 >
                   <Image
-                    source={{ uri: item.link }}
-                    className="w-full h-40"
-                    style={{ resizeMode: "cover" }}
+                    source={{
+                      uri: item.images?.[0] || item.link,
+                    }}
+                    className="w-full h-[150px] rounded-lg mb-2"
+                    resizeMode="cover"
                   />
-                  <View className="p-2">
-                    <Text
-                      className={`text-sm font-medium mb-1 h-10 ${
-                        isDarkColorScheme ? "text-gray-300" : "text-gray-800"
-                      }`}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
-                    >
-                      {item.name}
-                    </Text>
-                    <Text className="text-base font-bold text-orange-500 mb-1">
-                      ${item.price.toFixed(2)} USD
-                    </Text>
-                    <View className="flex-row items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <AntDesign
-                          key={star}
-                          name={
-                            star <= Math.floor(item.rating || 0)
-                              ? "star"
-                              : "staro"
-                          }
-                          size={14}
-                          color="#FFD700"
-                          style={{ marginRight: 1 }}
-                        />
-                      ))}
-                      <Text className="text-xs ml-1 text-gray-500">
-                        {item.rating ? `(${item.rating.toFixed(1)})` : "(0.0)"}
-                      </Text>
-                    </View>
-                  </View>
+                  <Text
+                    className={`text-sm font-medium ${
+                      isDarkColorScheme ? "text-white" : "text-gray-800"
+                    }`}
+                    numberOfLines={2}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text className="text-sm font-bold text-orange-500">
+                    {item.price.toLocaleString("vi-VN")} VNĐ
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>

@@ -12,10 +12,12 @@ import { Card } from "~/components/ui/card";
 import { PackageOpen, Trash2 } from "lucide-react-native";
 import { useCart } from "./CartContext";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 import SuggestedProducts from "~/app/user/Cart/components/SuggestedProducts";
 
 const CartPages: React.FC = () => {
+  const { t } = useTranslation();
   const { isDarkColorScheme } = useColorScheme();
   const iconColor = isDarkColorScheme ? "white" : "black";
   const bgColor = isDarkColorScheme ? "#1E1E1E" : "white";
@@ -35,10 +37,10 @@ const CartPages: React.FC = () => {
         <View style={styles.emptyCartContainer}>
           <PackageOpen size={48} color={iconColor} />
           <Text style={[styles.emptyCartTitle, { color: textColor }]}>
-            Giỏ hàng của bạn trống
+            {t("cart_empty")}
           </Text>
           <Text style={[styles.emptyCartSubtitle, { color: textColor }]}>
-            Khám phá quà tặng đặc biệt cho bạn và người thân.
+            {t("cart_empty_message")}
           </Text>
           <Button
             variant="normal"
@@ -46,7 +48,9 @@ const CartPages: React.FC = () => {
             style={styles.keepShoppingButton}
             onPress={() => router.push("/user/home")}
           >
-            <Text style={styles.keepShoppingButtonText}>Tiếp tục mua hàng</Text>
+            <Text style={styles.keepShoppingButtonText}>
+              {t("continue_shopping")}
+            </Text>
           </Button>
         </View>
       </View>
@@ -80,13 +84,13 @@ const CartPages: React.FC = () => {
                 {item.name}
               </Text>
               <Text style={[styles.cartItemPrice, { color: "#F97316" }]}>
-                {item.price.toFixed(2)} VNĐ
+                {item.price} VNĐ
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Màu: {item.color || "Mặc định"}
+                {t("color")}: {item.color || t("default")}
               </Text>
               <Text style={[styles.cartItemInfo, { color: textColor }]}>
-                Số lượng: {item.quantity}
+                {t("quantity")}: {item.quantity}
               </Text>
 
               <View style={styles.quantityContainer}>
@@ -146,7 +150,7 @@ const CartPages: React.FC = () => {
         ))}
         <View style={styles.subtotalContainer}>
           <Text style={[styles.subtotalText, { color: textColor }]}>
-            Tổng tiền: {subtotal.toFixed(2)} VNĐ
+            {t("subtotal")}: {subtotal} VNĐ
           </Text>
         </View>
         <Button
@@ -155,7 +159,9 @@ const CartPages: React.FC = () => {
           style={styles.checkoutButton}
           onPress={() => router.push("/user/Checkout/Checkout")}
         >
-          <Text style={styles.checkoutButtonText}>Tiếp tục thanh toán</Text>
+          <Text style={styles.checkoutButtonText}>
+            {t("continue_to_checkout")}
+          </Text>
         </Button>
         <View style={{ marginTop: 20 }}>
           <SuggestedProducts />

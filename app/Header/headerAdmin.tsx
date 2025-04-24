@@ -196,25 +196,6 @@ function AdminHeader() {
             </TouchableOpacity>
           </View>
         </Modal>
-
-        {/* Search Modal */}
-        <Modal visible={isSearchOpen} transparent={true} animationType="slide">
-          <View className={`flex-1 bg-white dark:bg-[#1c1c1c]`}>
-            <View className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <Button
-                variant="ghost"
-                onPress={() => setIsSearchOpen(false)}
-                className="flex-row items-center"
-              >
-                <ChevronLeft size={26} color={iconColor} />
-                <Text className="dark:text-white">Cancel</Text>
-              </Button>
-            </View>
-            <View className="flex-1 p-4">
-              <SearchBar />
-            </View>
-          </View>
-        </Modal>
       </View>
     </SafeAreaView>
   );

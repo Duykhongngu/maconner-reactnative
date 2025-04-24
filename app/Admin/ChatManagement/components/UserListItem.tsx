@@ -1,12 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { UserListItemProps } from "../types";
+import { useTranslation } from "react-i18next";
 
 export const UserListItem: React.FC<UserListItemProps> = ({
   user,
   onSelect,
   formatTime,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <TouchableOpacity
       onPress={() => onSelect(user.id)}
@@ -29,7 +32,7 @@ export const UserListItem: React.FC<UserListItemProps> = ({
         <View className="flex-1">
           <View className="flex-row justify-between items-center">
             <Text className="text-base font-semibold text-black dark:text-white">
-              {user.name}
+              {user.name || t("unnamed_user")}
             </Text>
             {user.lastMessageTime && (
               <Text className="text-xs text-gray-500 dark:text-white">
@@ -39,7 +42,9 @@ export const UserListItem: React.FC<UserListItemProps> = ({
           </View>
           {user.lastMessage && (
             <Text className="text-gray-500 text-sm" numberOfLines={1}>
-              {user.lastMessage}
+              {user.lastMessage.startsWith("chat_")
+                ? t(user.lastMessage)
+                : user.lastMessage}
             </Text>
           )}
         </View>

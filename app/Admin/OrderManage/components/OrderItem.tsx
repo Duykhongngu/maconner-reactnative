@@ -42,6 +42,19 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "ĐANG XỬ LÝ";
+      case "completed":
+        return "HOÀN THÀNH";
+      case "cancelled":
+        return "ĐÃ HỦY";
+      default:
+        return status.toUpperCase();
+    }
+  };
+
   const renderOrderItems = () => {
     if (!order.cartItems || order.cartItems.length === 0) {
       return (
@@ -51,14 +64,14 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
               isDarkMode ? "text-white" : "text-black"
             }`}
           >
-            Order Items:
+            Danh mục sản phẩm
           </Text>
           <Text
             className={`text-sm italic mt-2 ${
               isDarkMode ? "text-gray-400" : "text-gray-600"
             }`}
           >
-            No items to display
+            Không có sản phẩm nào trong đơn hàng này.
           </Text>
         </View>
       );
@@ -71,7 +84,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
             isDarkMode ? "text-white" : "text-black"
           }`}
         >
-          Order Items:
+          Danh mục sản phẩm
         </Text>
         {order.cartItems.map((item, index) => (
           <View
@@ -110,7 +123,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                     {item.name}
                   </Text>
                   <Text className="text-base font-semibold text-orange-500 ml-2">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {(item.price * item.quantity).toLocaleString("vi-VN")} VNĐ
                   </Text>
                 </View>
                 <Text
@@ -118,14 +131,14 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                     isDarkMode ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  ID: {item.id}
+                  Mã SP: {item.id}
                 </Text>
                 <Text
                   className={`text-sm ${
                     isDarkMode ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  ${item.price.toFixed(2)} x {item.quantity}
+                  {item.price.toLocaleString("vi-VN")} VNĐ x {item.quantity}
                 </Text>
                 {item.color && (
                   <View className="flex-row items-center mt-1">
@@ -134,7 +147,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                         isDarkMode ? "text-gray-400" : "text-gray-600"
                       }`}
                     >
-                      Color: {item.color}
+                      Màu: {item.color}
                     </Text>
                     <View
                       style={{
@@ -152,7 +165,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-gray-400" : "text-gray-600"
                     }`}
                   >
-                    Size: {item.size}
+                    Kích thước: {item.size}
                   </Text>
                 )}
               </View>
@@ -181,7 +194,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
             }`}
             numberOfLines={1}
           >
-            Order: #{order.id.substring(0, 8)}
+            Đơn hàng: #{order.id.substring(0, 8)}
           </Text>
           <View
             style={{
@@ -198,7 +211,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                 fontSize: 12,
               }}
             >
-              {order.status.toUpperCase()}
+              {getStatusText(order.status)}
             </Text>
           </View>
         </View>
@@ -209,21 +222,21 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
           }`}
           numberOfLines={1}
         >
-          Customer: {order.name || "N/A"}
+          Khách hàng: {order.name || "N/A"}
         </Text>
         <Text
           className={`text-sm ${
             isDarkMode ? "text-gray-300" : "text-gray-700"
           }`}
         >
-          Date: {formatDate(order.date)}
+          Ngày đặt: {formatDate(order.date)}
         </Text>
         <Text
           className={`text-base font-bold mt-1 ${
             isDarkMode ? "text-white" : "text-black"
           }`}
         >
-          Total: ${order.total.toFixed(2)}
+          Tổng tiền: {order.total.toLocaleString("vi-VN")} VNĐ
         </Text>
       </TouchableOpacity>
 
@@ -249,7 +262,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-white" : "text-black"
                     }`}
                   >
-                    Order Details
+                    Chi tiết đơn hàng
                   </Text>
                   <TouchableOpacity
                     onPress={() => setModalVisible(false)}
@@ -271,14 +284,14 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-white" : "text-black"
                     }`}
                   >
-                    Order ID: {order.id}
+                    Mã đơn hàng: {order.id}
                   </Text>
                   <Text
                     className={`text-sm mt-1 ${
                       isDarkMode ? "text-gray-300" : "text-gray-700"
                     }`}
                   >
-                    Customer: {order.name || "N/A"}
+                    Khách hàng: {order.name || "N/A"}
                   </Text>
                   <Text
                     className={`text-sm ${
@@ -292,14 +305,14 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-gray-300" : "text-gray-700"
                     }`}
                   >
-                    Phone: {order.phone || "N/A"}
+                    Số điện thoại: {order.phone || "N/A"}
                   </Text>
                   <Text
                     className={`text-sm ${
                       isDarkMode ? "text-gray-300" : "text-gray-700"
                     }`}
                   >
-                    Date: {formatDate(order.date)}
+                    Ngày đặt: {formatDate(order.date)}
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Text
@@ -307,7 +320,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                         isDarkMode ? "text-gray-300" : "text-gray-700"
                       }`}
                     >
-                      Status:
+                      Trạng thái:
                     </Text>
                     <View
                       style={{
@@ -324,7 +337,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                           fontSize: 12,
                         }}
                       >
-                        {order.status.toUpperCase()}
+                        {getStatusText(order.status)}
                       </Text>
                     </View>
                   </View>
@@ -333,7 +346,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-white" : "text-black"
                     }`}
                   >
-                    Total: ${order.total.toFixed(2)}
+                    Tổng tiền: {order.total.toLocaleString("vi-VN")} VNĐ
                   </Text>
                 </View>
 
@@ -345,7 +358,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       isDarkMode ? "text-white" : "text-black"
                     }`}
                   >
-                    Update Status
+                    Cập nhật trạng thái
                   </Text>
                   <View className="flex-row flex-wrap justify-between">
                     <Button
@@ -359,7 +372,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                         marginBottom: screenWidth > 500 ? 0 : 8,
                       }}
                     >
-                      <Text className="text-white text-center">Pending</Text>
+                      <Text className="text-white text-center">Đang xử lý</Text>
                     </Button>
                     <Button
                       onPress={() => {
@@ -372,7 +385,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                         marginBottom: screenWidth > 500 ? 0 : 8,
                       }}
                     >
-                      <Text className="text-white text-center">Completed</Text>
+                      <Text className="text-white text-center">Hoàn thành</Text>
                     </Button>
                     <Button
                       onPress={() => {
@@ -382,7 +395,7 @@ const OrderItemComponent: React.FC<OrderItemProps> = ({
                       className="bg-red-500 p-2 rounded"
                       style={{ width: screenWidth > 500 ? "32%" : "100%" }}
                     >
-                      <Text className="text-white text-center">Cancel</Text>
+                      <Text className="text-white text-center">Hủy đơn</Text>
                     </Button>
                   </View>
                 </View>

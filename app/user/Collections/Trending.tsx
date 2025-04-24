@@ -51,7 +51,7 @@ function TrendingProducts() {
 
   // Hình ảnh dự phòng
   const fallbackImageUri =
-    "https://via.placeholder.com/300x300?text=Image+Not+Found";
+    "https://via.placeholder.com/300x300?text=Không+Tìm+Thấy+Hình";
 
   const handleImageError = (imageUrl: string) => {
     setImageErrors((prev) => ({
@@ -68,7 +68,7 @@ function TrendingProducts() {
         const products = await fetchTrendingProducts();
         setTrendingProducts(products);
       } catch (error) {
-        console.error("Error fetching trending products:", error);
+        console.error("Lỗi tải sản phẩm bán chạy:", error);
       } finally {
         setLoading(false);
       }

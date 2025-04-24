@@ -1,4 +1,3 @@
-
 import { Alert } from "react-native";
 import { auth, db } from "~/firebase.config";
 import {
@@ -116,7 +115,7 @@ export const createOrder = async (orderData: Omit<OrderData, "userId">): Promise
     // Lưu đơn hàng vào collection 'orderManager'
     const docRef = await addDoc(collection(db, "orderManager"), fullOrderData);
     
-    // Nếu có voucher, tăng số lần sử dụng
+    // Nếu có voucher, tăng số lần sử dụng và đánh dấu là đã sử dụng
     if (orderData.voucherId) {
       // Tăng số lần sử dụng của voucher
       const voucherRef = doc(db, "vouchers", orderData.voucherId);
@@ -132,7 +131,8 @@ export const createOrder = async (orderData: Omit<OrderData, "userId">): Promise
           collection(db, "userVouchers"),
           where("userId", "==", auth.currentUser.uid),
           where("voucherId", "==", orderData.voucherId),
-          where("isUsed", "==", false)
+          where("isUsed", "==", false),
+          limit(1)
         );
         
         const userVouchersSnapshot = await getDocs(userVouchersQuery);
@@ -308,13 +308,13 @@ export const processCheckout = async (
       cartItems: formattedCartItems,
       subtotal: subtotal.toFixed(2),
       shippingFee: shippingFee.toFixed(2),
-      discountAmount: values.discountAmount,
-      voucherId: values.voucherId,
       total,
       date: new Date().toISOString(),
       status: "pending",
       paymentStatus,
       country: "Vietnam",
+      ...(values.voucherId ? { voucherId: values.voucherId } : {}), // Only include voucherId if it exists
+      ...(values.discountAmount ? { discountAmount: values.discountAmount } : {}), // Only include discountAmount if it exists
     };
 
     // Tạo đơn hàng mới

@@ -29,7 +29,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
         setOrders(JSON.parse(savedOrders));
       }
     } catch (error) {
-      console.error("Error loading orders:", error);
+      console.error("Lỗi khi tải đơn hàng:", error);
     }
   };
 
@@ -38,8 +38,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       await AsyncStorage.setItem("orders", JSON.stringify(updatedOrders));
       setOrders(updatedOrders);
     } catch (error) {
-      console.error("Error saving orders:", error);
-      throw new Error("Failed to save orders");
+      console.error("Lỗi khi lưu đơn hàng:", error);
+      throw new Error("Không thể lưu đơn hàng");
     }
   };
 
@@ -59,8 +59,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       setCurrentOrder(newOrder);
       return newOrder;
     } catch (error) {
-      console.error("Error adding order:", error);
-      throw new Error("Failed to add order");
+      console.error("Lỗi khi thêm đơn hàng:", error);
+      throw new Error("Không thể thêm đơn hàng");
     }
   };
 
@@ -73,8 +73,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
         setCurrentOrder(null);
       }
     } catch (error) {
-      console.error("Error removing order:", error);
-      throw new Error("Failed to remove order");
+      console.error("Lỗi khi xóa đơn hàng:", error);
+      throw new Error("Không thể xóa đơn hàng");
     }
   };
 
@@ -101,7 +101,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 export const useOrder = () => {
   const context = useContext(OrderContext);
   if (!context) {
-    throw new Error("useOrder must be used within an OrderProvider");
+    throw new Error("useOrder phải được sử dụng bên trong OrderProvider");
   }
   return context;
 };
