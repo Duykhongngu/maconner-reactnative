@@ -1,10 +1,13 @@
 import { Alert } from 'react-native';
 import axios from 'axios';
 import { CartItem } from './checkout';
+import Config from '../config';
 
-// Stripe API keys from your credentials
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51REnejE6nM1R0xHPhP4OBQCLmgYSSqX27zJVQnu2wT3CDYdKnHvntwhGfqyiAOCWF2i9QOwKDuVTzfd1C9SpkRCH00Ld1x0EYn';
-const STRIPE_SECRET_KEY = 'sk_test_51REnejE6nM1R0xHPDUDrBca9Il4dSuBf7da5vBdJccDEaHxvFOvGCHaL6cxXk0EsyuWbSBXpjYlYPFnsLcJfgc89000zar9M2T';
+// NOTE: Stripe API keys should be loaded from .env file or secure storage
+// NEVER hardcode API keys directly in source code
+// For production use, keys should be loaded from environment variables or secure storage
+const STRIPE_PUBLISHABLE_KEY = Config.STRIPE.PUBLISHABLE_KEY;
+const STRIPE_SECRET_KEY = Config.STRIPE.SECRET_KEY;
 
 // Base URL for Stripe API
 const STRIPE_API_URL = 'https://api.stripe.com/v1';
