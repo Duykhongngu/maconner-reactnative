@@ -15,6 +15,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { markVoucherAsUsed } from "./vouchers";
+import { processStripePayment, getStripePublishableKey } from './StripeService';
 
 // Định nghĩa các interface
 export interface CartItem {
@@ -57,27 +58,34 @@ export interface Order extends OrderData {
 }
 
 // Hằng số cho Stripe
-export const STRIPE_PUBLISHABLE_KEY =
-  "pk_test_51REneqEDx5zvyNiagws0fpjFbifWh6v2ODyRoIs5RUDjZD72JAEijZSzCTy8PrqouJGYCLBqMvODB1DIxoVwrETw00VMnggwGW";
+export const STRIPE_PUBLISHABLE_KEY = getStripePublishableKey();
 
-// Hàm thanh toán qua Stripe (mô phỏng)
-export const initializeStripePayment = async (values: FormData): Promise<boolean> => {
+// Hàm thanh toán qua Stripe (thực tế sử dụng API Stripe)
+export const initializeStripePayment = async (
+  values: FormData, 
+  cartItems: CartItem[], 
+  total: number
+): Promise<boolean> => {
   try {
-    // Đây là mô phỏng, trong thực tế sẽ kết nối với Stripe API
-    return new Promise<boolean>((resolve) => {
-      Alert.alert("Thông báo", "Đang xử lý thanh toán qua Stripe...");
-      setTimeout(() => {
-        // Giả lập thanh toán thành công
-        const paymentSuccess = Math.random() > 0.2; // 80% xác suất thành công
-        if (paymentSuccess) {
-          Alert.alert("Thông báo", "Thanh toán thành công!");
-          resolve(true);
-        } else {
-          Alert.alert("Thông báo", "Thanh toán thất bại. Vui lòng thử lại.");
-          resolve(false);
-        }
-      }, 1000); // Giả lập thời gian xử lý 1 giây
-    });
+    // Hiển thị thông báo thanh toán đang xử lý
+    Alert.alert("Thông báo", "Đang xử lý thanh toán qua Stripe...");
+    
+    // Gọi API Stripe để xử lý thanh toán
+    const paymentResult = await processStripePayment(
+      total,
+      'vnd',
+      cartItems,
+      values.email,
+      values.name
+    );
+    
+    if (paymentResult.success) {
+      Alert.alert("Thông báo", "Thanh toán thành công!");
+      return true;
+    } else {
+      Alert.alert("Thông báo", "Thanh toán thất bại. Vui lòng thử lại.");
+      return false;
+    }
   } catch (error) {
     console.error("Payment error:", error);
     Alert.alert("Lỗi", "Có lỗi xảy ra trong quá trình thanh toán.");
@@ -277,7 +285,7 @@ export const processCheckout = async (
   let paymentStatus: "pending" | "paid" | "failed" = "pending";
 
   if (values.paymentMethod === "stripe") {
-    const paymentSuccess = await initializeStripePayment(values);
+    const paymentSuccess = await initializeStripePayment(values, cartItems, subtotal + shippingFee);
     if (!paymentSuccess) {
       return null; // Thoát nếu thanh toán thất bại
     }

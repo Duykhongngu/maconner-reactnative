@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Button } from "~/components/ui/button";
@@ -135,114 +136,121 @@ const OrderStatus: React.FC = () => {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        isDarkMode ? styles.darkBackground : styles.lightBackground,
-      ]}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollViewContainer}
+    <SafeAreaView className=" flex-1">
+      <View
+        style={[
+          styles.container,
+          isDarkMode ? styles.darkBackground : styles.lightBackground,
+        ]}
       >
-        <Text
-          style={[
-            styles.title,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollViewContainer}
         >
-          {t("order_status_title")}
-        </Text>
-        <Text
-          style={[
-            styles.orderCount,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
-          {t("total_orders", { count: orders.length })}
-        </Text>
-
-        {orders.length === 0 ? (
           <Text
             style={[
-              styles.message,
+              styles.title,
               isDarkMode ? styles.darkText : styles.lightText,
             ]}
           >
-            {t("no_orders")}
+            {t("order_status_title")}
           </Text>
-        ) : (
-          orders.map((item) => (
-            <TouchableOpacity
-              key={item.id}
+          <Text
+            style={[
+              styles.orderCount,
+              isDarkMode ? styles.darkText : styles.lightText,
+            ]}
+          >
+            {t("total_orders")} {orders.length}
+          </Text>
+
+          {orders.length === 0 ? (
+            <Text
               style={[
-                styles.orderItem,
-                isDarkMode ? styles.darkCard : styles.lightCard,
+                styles.message,
+                isDarkMode ? styles.darkText : styles.lightText,
               ]}
-              onPress={() =>
-                router.push(`/user/Order/OrderDetails?id=${item.id}` as any)
-              }
             >
-              <Text
+              {t("no_orders")}
+            </Text>
+          ) : (
+            orders.map((item) => (
+              <TouchableOpacity
+                key={item.id}
                 style={[
-                  styles.orderTitle,
-                  isDarkMode ? styles.darkText : styles.lightText,
+                  styles.orderItem,
+                  isDarkMode ? styles.darkCard : styles.lightCard,
                 ]}
+                onPress={() =>
+                  router.push(`/user/Order/OrderDetails?id=${item.id}` as any)
+                }
               >
-                {t("order_id")}: {item.id}
-              </Text>
-              {item.name && (
+                <Text
+                  style={[
+                    styles.orderTitle,
+                    isDarkMode ? styles.darkText : styles.lightText,
+                  ]}
+                >
+                  {t("order_id")}: {item.id}
+                </Text>
+                {item.name && (
+                  <Text
+                    style={[
+                      styles.orderInfo,
+                      isDarkMode ? styles.darkText : styles.lightText,
+                    ]}
+                  >
+                    {t("order_customer")}: {item.name}
+                  </Text>
+                )}
                 <Text
                   style={[
                     styles.orderInfo,
                     isDarkMode ? styles.darkText : styles.lightText,
                   ]}
                 >
-                  {t("order_customer")}: {item.name}
+                  {t("order_date")}: {formatDate(item.date)}
                 </Text>
-              )}
-              <Text
-                style={[
-                  styles.orderInfo,
-                  isDarkMode ? styles.darkText : styles.lightText,
-                ]}
-              >
-                {t("order_date")}: {formatDate(item.date)}
-              </Text>
-              <Text
-                style={[
-                  styles.orderPrice,
-                  isDarkMode ? styles.darkText : styles.lightText,
-                ]}
-              >
-                {t("order_total")}: {item.total.toLocaleString("vi-VN")} VNĐ
-              </Text>
-              <Text
-                style={[
-                  styles.orderInfo,
-                  item.status === "completed"
-                    ? styles.statusCompleted
-                    : item.status === "cancelled"
-                    ? styles.statusCancelled
-                    : styles.statusPending,
-                ]}
-              >
-                {t("order_status")}: {translateStatus(item.status)}
-              </Text>
-            </TouchableOpacity>
-          ))
-        )}
+                <Text
+                  style={[
+                    styles.orderPrice,
+                    isDarkMode ? styles.darkText : styles.lightText,
+                  ]}
+                >
+                  {t("order_total")}: {item.total.toLocaleString("vi-VN")} VNĐ
+                </Text>
+                <Text
+                  style={[
+                    styles.orderInfo,
+                    item.status === "completed"
+                      ? styles.statusCompleted
+                      : item.status === "cancelled"
+                      ? styles.statusCancelled
+                      : styles.statusPending,
+                  ]}
+                >
+                  {t("order_status")}: {translateStatus(item.status)}
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
 
-        <Button style={styles.button} onPress={() => router.push("/user/home")}>
-          <Text
-            style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
+          <Button
+            style={styles.button}
+            onPress={() => router.push("/user/home")}
           >
-            {t("continue_shopping")}
-          </Text>
-        </Button>
-      </ScrollView>
-    </View>
+            <Text
+              style={
+                isDarkMode ? styles.darkButtonText : styles.lightButtonText
+              }
+            >
+              {t("continue_shopping")}
+            </Text>
+          </Button>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 

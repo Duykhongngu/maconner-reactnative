@@ -82,7 +82,7 @@ const TrendingManager = ({
             } mb-4`}
           >
             {isAutoUpdateTrending
-              ? "Trending products are automatically updated based on purchase frequency."
+              ? "Trending products are automatically updated based on purchase ."
               : "Auto-update is disabled. Update trending products manually."}
           </Text>
 
