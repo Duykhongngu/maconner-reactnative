@@ -24,7 +24,8 @@
         }
       ],
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-env"
     ],
     "assetBundlePatterns": [
       "**/*"
