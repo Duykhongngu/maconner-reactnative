@@ -15,7 +15,6 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { markVoucherAsUsed } from "./vouchers";
-import { processStripePayment, getStripePublishableKey } from './StripeService';
 
 // Định nghĩa các interface
 export interface CartItem {
@@ -35,7 +34,7 @@ export interface FormData {
   email: string;
   phone: string;
   address: string;
-  paymentMethod: "stripe" | "cod";
+  paymentMethod: "cod";
   voucherCode?: string; // Optional voucher code field
 }
 
@@ -56,42 +55,6 @@ export interface OrderData extends FormData {
 export interface Order extends OrderData {
   id: string;
 }
-
-// Hằng số cho Stripe
-export const STRIPE_PUBLISHABLE_KEY = getStripePublishableKey();
-
-// Hàm thanh toán qua Stripe (thực tế sử dụng API Stripe)
-export const initializeStripePayment = async (
-  values: FormData, 
-  cartItems: CartItem[], 
-  total: number
-): Promise<boolean> => {
-  try {
-    // Hiển thị thông báo thanh toán đang xử lý
-    Alert.alert("Thông báo", "Đang xử lý thanh toán qua Stripe...");
-    
-    // Gọi API Stripe để xử lý thanh toán
-    const paymentResult = await processStripePayment(
-      total,
-      'vnd',
-      cartItems,
-      values.email,
-      values.name
-    );
-    
-    if (paymentResult.success) {
-      Alert.alert("Thông báo", "Thanh toán thành công!");
-      return true;
-    } else {
-      Alert.alert("Thông báo", "Thanh toán thất bại. Vui lòng thử lại.");
-      return false;
-    }
-  } catch (error) {
-    console.error("Payment error:", error);
-    Alert.alert("Lỗi", "Có lỗi xảy ra trong quá trình thanh toán.");
-    return false;
-  }
-};
 
 // Lấy thông tin người dùng từ Firestore
 export const getUserData = async (userId: string) => {
@@ -248,17 +211,18 @@ export const updateTrendingProducts = async (): Promise<void> => {
         batch.update(productDoc.ref, { isTrending: false });
       });
 
-      // Sau đó, đặt các sản phẩm top thành trending
-      for (const productId of topProductIds) {
+      // Sau đó, đặt các sản phẩm trong danh sách top thành trending
+      topProductIds.forEach(async (productId) => {
         const productRef = doc(db, "products", productId);
         batch.update(productRef, { isTrending: true });
-      }
+      });
 
+      // Commit batch
       await batch.commit();
     }
   } catch (error) {
     console.error("Error updating trending products:", error);
-    // Tiếp tục xử lý đơn hàng ngay cả khi cập nhật trending thất bại
+    // Không ảnh hưởng đến quá trình thanh toán nếu cập nhật thất bại
   }
 };
 
@@ -281,16 +245,8 @@ export const processCheckout = async (
     return null;
   }
 
-  // Xử lý thanh toán nếu chọn Stripe
-  let paymentStatus: "pending" | "paid" | "failed" = "pending";
-
-  if (values.paymentMethod === "stripe") {
-    const paymentSuccess = await initializeStripePayment(values, cartItems, subtotal + shippingFee);
-    if (!paymentSuccess) {
-      return null; // Thoát nếu thanh toán thất bại
-    }
-    paymentStatus = "paid";
-  }
+  // COD payment always starts as pending
+  const paymentStatus: "pending" | "paid" | "failed" = "pending";
 
   try {
     // Định dạng lại các mục trong giỏ hàng

@@ -21,7 +21,7 @@ export interface Order {
   phone?: string;
   address?: string;
   country?: string;
-  paymentMethod?: "credit" | "cod" | "stripe";
+  paymentMethod?: "credit" | "cod";
   paymentStatus?: "pending" | "paid" | "failed";
   subtotal?: string;
   shippingFee?: string;

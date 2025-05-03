@@ -36,7 +36,7 @@ const CheckoutContent: React.FC = () => {
     email: z.string().email({ message: t("form_validation_email") }),
     phone: z.string().min(10, { message: t("form_validation_phone") }),
     address: z.string().min(5, { message: t("form_validation_address") }),
-    paymentMethod: z.enum(["stripe", "cod"], {
+    paymentMethod: z.enum(["cod"], {
       required_error: t("form_validation_payment"),
     }),
     voucherCode: z.string().optional(),
@@ -78,7 +78,7 @@ const CheckoutContent: React.FC = () => {
       email: "",
       phone: "",
       address: "",
-      paymentMethod: "stripe",
+      paymentMethod: "cod",
       voucherCode: "",
     },
     mode: "onChange", // Validate on change for immediate feedback
@@ -96,7 +96,7 @@ const CheckoutContent: React.FC = () => {
               email: userData.email || "",
               phone: userData.phone_number || "",
               address: userData.address || "",
-              paymentMethod: "stripe",
+              paymentMethod: "cod",
               voucherCode: "",
             });
 
