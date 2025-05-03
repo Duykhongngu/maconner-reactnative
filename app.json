@@ -23,9 +23,7 @@
           "cameraPermission": "Ứng dụng cần quyền truy cập vào máy ảnh của bạn."
         }
       ],
-      "expo-router",
-      "expo-font",
-      "expo-env"
+      "expo-router"
     ],
     "assetBundlePatterns": [
       "**/*"
