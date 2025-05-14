@@ -2,6 +2,7 @@ import { collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc } from
 import { deleteUser, User } from "firebase/auth";
 import { db } from "~/firebase.config";
 import axios from "axios";
+import Config from "~/config";
 
 export type Account = {
   id: string;
@@ -13,8 +14,8 @@ export type Account = {
   address?: string;
 };
 
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
-const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset";
+const CLOUDINARY_URL = Config.CLOUDINARY.URL;
+const CLOUDINARY_UPLOAD_PRESET = Config.CLOUDINARY.UPLOAD_PRESET;
 
 export const fetchAccounts = async (callback: (accounts: Account[]) => void, onError: (error: any) => void) => {
   try {

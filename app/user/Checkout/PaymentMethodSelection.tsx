@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Appearance,
 } from "react-native";
-import { DollarSign } from "lucide-react-native";
+import { DollarSign, Wallet } from "lucide-react-native";
 import { Controller, Control, FieldErrors } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FormData } from "~/service/checkout";
@@ -37,7 +37,7 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
           control={control}
           name="paymentMethod"
           render={({ field: { onChange, value } }) => (
-            <View>
+            <View className="space-y-4">
               <TouchableOpacity
                 className={`flex-row items-center p-4 border rounded-md ${
                   value === "cod"
@@ -54,6 +54,25 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                 />
                 <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                   {t("cod_payment")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className={`flex-row items-center p-4 border rounded-md ${
+                  value === "momo"
+                    ? "border-orange-500"
+                    : errors.paymentMethod
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+                onPress={() => onChange("momo")}
+              >
+                <Wallet
+                  color={value === "momo" ? "#F97316" : "#6B7280"}
+                  className="mr-2"
+                />
+                <Text style={isDarkMode ? styles.darkText : styles.lightText}>
+                  MoMo E-Wallet
                 </Text>
               </TouchableOpacity>
             </View>

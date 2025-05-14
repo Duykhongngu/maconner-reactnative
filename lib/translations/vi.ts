@@ -30,6 +30,14 @@ export default {
   "chatWithAdmin": "Chat với Admin",
   "chatWithAI": "Chat với AI",
   "Logout": "Đăng xuất",
+
+  // Checkout Steps
+  "shipping": "Giao hàng",
+  "review": "Kiểm tra",
+  "payment": "Thanh toán",
+  "previous": "Trước",
+  "next": "Tiếp",
+
   // Products
   "product_name": "Tên sản phẩm",
   "product_price": "Giá bán",

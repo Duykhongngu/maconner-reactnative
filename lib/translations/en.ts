@@ -30,6 +30,12 @@ export default {
   "chatWithAdmin": "Chat with Admin",
   "chatWithAI": "Chat with AI",
     
+  // Checkout Steps
+  "shipping": "Shipping",
+  "review": "Review",
+  "payment": "Payment",
+  "previous": "Previous",
+  "next": "Next",
 
   // Products
   "product_name": "Product Name",

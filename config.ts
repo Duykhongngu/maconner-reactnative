@@ -32,12 +32,12 @@ export const Config = {
     PARTNER_CODE: getEnv('MOMO_PARTNER_CODE'),
     ACCESS_KEY: getEnv('MOMO_ACCESS_KEY'),
     SECRET_KEY: getEnv('MOMO_SECRET_KEY'),
-    ENDPOINT: getEnv('MOMO_ENDPOINT', 'https://test-payment.momo.vn/v2/gateway/api/create'),
-    REDIRECT_URL: getEnv('MOMO_REDIRECT_URL', 'nadshop://momo-return'),
-    IPN_URL: getEnv('MOMO_IPN_URL', 'https://your-backend-url.com/api/momo-ipn'),
-    POS_ENDPOINT: getEnv('MOMO_POS_ENDPOINT', 'https://test-payment.momo.vn/v2/gateway/api/pos'),
+    ENDPOINT: getEnv('MOMO_ENDPOINT'),
+    REDIRECT_URL: getEnv('MOMO_REDIRECT_URL'),
+    POS_ENDPOINT: getEnv('MOMO_POS_ENDPOINT'),
     PUBLIC_KEY: getEnv('MOMO_PUBLIC_KEY'),
   },
+   
   
   // Firebase Configuration
   FIREBASE: {

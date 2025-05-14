@@ -1,19 +1,24 @@
 import { getApps, initializeApp } from "firebase/app";
-import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; // Nhập Firestore
 import { getStorage } from "firebase/storage"; // Nhập Storage (chỉ nhập một lần)
 import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import Config from "./config";
 
+// Sử dụng cấu hình từ Config
 const firebaseConfig = {
-  apiKey: "AIzaSyAROIKd7YY1QWlMb-D_nASWFfSAEwrEpO8",
-  authDomain: "maconer-c3047.firebaseapp.com",
-  projectId: "maconer-c3047",
-  storageBucket: "maconer-c3047.firebasestorage.app",
-  messagingSenderId: "305889940349",
-  appId: "1:305889940349:web:1ab2513ad44f9491b9f214",
-  measurementId: "G-ZB9N2NZKY2",
+  apiKey: Config.FIREBASE.API_KEY,
+  authDomain: Config.FIREBASE.AUTH_DOMAIN,
+  projectId: Config.FIREBASE.PROJECT_ID,
+  storageBucket: Config.FIREBASE.STORAGE_BUCKET,
+  messagingSenderId: Config.FIREBASE.MESSAGING_SENDER_ID,
+  appId: Config.FIREBASE.APP_ID,
+  measurementId: Config.FIREBASE.MEASUREMENT_ID,
 };
+
+// Kiểm tra cấu hình
+console.log("Firebase config loaded");
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 

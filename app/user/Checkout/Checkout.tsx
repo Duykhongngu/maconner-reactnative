@@ -6,6 +6,9 @@ import {
   Appearance,
   Alert,
   SafeAreaView,
+  View,
+  TouchableOpacity,
+  Linking,
 } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,10 +19,17 @@ import { useOrder } from "../Order/OrderContext";
 import { useRouter } from "expo-router";
 import { auth } from "~/firebase.config";
 import { onAuthStateChanged } from "firebase/auth";
-import { FormData, getUserData, processCheckout } from "~/service/checkout";
+import { getUserData, processCheckout } from "~/service/checkout";
 import { Order as OrderType } from "../Order/components/types";
 import { getUserVouchers, Voucher } from "~/service/vouchers";
 import { useTranslation } from "react-i18next";
+import {
+  CheckCircle2,
+  Circle,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react-native";
+import { handleMoMoPayment } from "~/service/momo";
 
 // Import custom components
 import ShippingForm from "./ShippingForm";
@@ -27,20 +37,32 @@ import VoucherSection from "./VoucherSection";
 import PaymentMethodSelection from "./PaymentMethodSelection";
 import OrderSummary from "./OrderSummary";
 
+// Define checkout steps
+enum CheckoutStep {
+  SHIPPING = 0,
+  REVIEW = 1,
+  PAYMENT = 2,
+}
+
 // Form schema definition - Now with translations
 const CheckoutContent: React.FC = () => {
   const { t } = useTranslation();
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>(
+    CheckoutStep.SHIPPING
+  );
 
   const formSchema = z.object({
     name: z.string().min(2, { message: t("form_validation_name") }),
     email: z.string().email({ message: t("form_validation_email") }),
     phone: z.string().min(10, { message: t("form_validation_phone") }),
     address: z.string().min(5, { message: t("form_validation_address") }),
-    paymentMethod: z.enum(["cod"], {
+    paymentMethod: z.enum(["cod", "momo"], {
       required_error: t("form_validation_payment"),
     }),
     voucherCode: z.string().optional(),
   });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const { cartItems, clearCart } = useCart();
   const { setCurrentOrder } = useOrder();
@@ -71,7 +93,7 @@ const CheckoutContent: React.FC = () => {
     watch,
     setValue,
     getValues,
-  } = useForm<FormData>({
+  } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -142,9 +164,32 @@ const CheckoutContent: React.FC = () => {
     }
   };
 
+  // Function to validate shipping details before proceeding to next step
+  const validateShippingStep = async () => {
+    const isValid = await trigger(["name", "email", "phone", "address"]);
+    if (isValid) {
+      setCurrentStep(CheckoutStep.REVIEW);
+    } else {
+      Alert.alert(t("error"), t("please_fill_all_info"));
+    }
+  };
+
+  // Function to move to the payment step
+  const goToPaymentStep = () => {
+    setCurrentStep(CheckoutStep.PAYMENT);
+  };
+
+  // Function to go back to previous step
+  const goToPreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   // Handle form submission and save the order to Firestore with userId
-  const onSubmit = async (values: FormData) => {
+  const onSubmit = async (values: FormValues) => {
     const isValid = await trigger();
+
     if (!isValid) {
       Alert.alert(t("error"), t("please_fill_all_info"));
       return;
@@ -153,70 +198,73 @@ const CheckoutContent: React.FC = () => {
     setIsPaymentLoading(true);
 
     try {
-      // Only include voucher data if a voucher is selected and valid
       const checkoutData: any = {
         ...values,
       };
 
-      // Only add voucher data if a voucher is selected and valid
       if (voucher && discountAmount > 0) {
         checkoutData.voucherId = voucher.id;
         checkoutData.discountAmount = discountAmount;
       }
 
+      // Xử lý thanh toán MoMo
+      if (values.paymentMethod === "momo") {
+        const finalAmount = subtotal + shippingFee - discountAmount;
+        const success = await handleMoMoPayment(
+          finalAmount,
+          `Thanh toán đơn hàng NAD Shop`
+        );
+
+        if (success) {
+          // Tạo đơn hàng với trạng thái chờ thanh toán
+          const order = await processCheckout(
+            {
+              ...checkoutData,
+              discountAmount: discountAmount.toString(),
+              status: "pending", // Trạng thái chờ thanh toán
+            },
+            cartItems,
+            subtotal,
+            shippingFee
+          );
+
+          if (order) {
+            setCurrentOrder(order as OrderType);
+            clearCart();
+            router.push("/user/Order/OrderStatus");
+          }
+        }
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      // Xử lý thanh toán COD
       const order = await processCheckout(
-        checkoutData,
+        {
+          ...checkoutData,
+          discountAmount: discountAmount.toString(),
+          status: "processing", // Trạng thái đang xử lý cho COD
+        },
         cartItems,
         subtotal,
         shippingFee
       );
 
       if (order) {
-        // Chuyển đổi định dạng Order sang định dạng OrderType cho OrderContext
-        const orderForContext: OrderType = {
-          id: order.id,
-          date: order.date,
-          cartItems: order.cartItems.map((item) => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            color: item.color || "Default",
-            size: item.size || "Standard",
-            image: item.image || "",
-            images: item.images || [],
-            description: item.description || "",
-          })),
-          total: order.total,
-          userId: order.userId,
-          name: order.name,
-          email: order.email,
-          phone: order.phone,
-          address: order.address,
-          country: order.country,
-          paymentMethod: order.paymentMethod,
-          paymentStatus: order.paymentStatus,
-          subtotal: order.subtotal,
-          shippingFee: order.shippingFee,
-          status: order.status,
-          discountAmount: discountAmount.toFixed(2),
-          voucherId: voucher?.id,
-        };
-
-        // Update current order in OrderContext
-        setCurrentOrder(orderForContext);
-
-        // Clear the cart
+        setCurrentOrder(order as OrderType);
         clearCart();
-
-        // Navigate to order status page
-        setTimeout(() => {
-          router.push("/user/Order/OrderStatus" as any);
-        }, 500);
+        router.push("/user/Order/OrderStatus");
       }
     } catch (error) {
-      console.error("Error during checkout:", error);
-      Alert.alert(t("error"), t("checkout_error"));
+      console.error("Error processing checkout:", error);
+      Alert.alert(
+        t("error"),
+        t(
+          values.paymentMethod === "momo"
+            ? "momo_payment_error"
+            : "checkout_error"
+        )
+      );
     } finally {
       setIsPaymentLoading(false);
     }
@@ -225,6 +273,132 @@ const CheckoutContent: React.FC = () => {
   const colorScheme = Appearance.getColorScheme();
   const isDarkMode = colorScheme === "dark";
 
+  // Render step indicator
+  const renderStepIndicator = () => {
+    return (
+      <View className="flex-row justify-between items-center mb-4 px-4 pt-4">
+        <View className="flex-1 items-center">
+          <View className="flex-row items-center">
+            {currentStep >= CheckoutStep.SHIPPING ? (
+              <CheckCircle2 size={24} color="#F97316" />
+            ) : (
+              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+            )}
+            <Text
+              className="ml-2 font-medium"
+              style={isDarkMode ? styles.darkText : styles.lightText}
+            >
+              {t("shipping")}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={styles.connector}
+          className={
+            currentStep >= CheckoutStep.REVIEW ? "bg-orange-500" : "bg-gray-300"
+          }
+        />
+
+        <View className="flex-1 items-center">
+          <View className="flex-row items-center">
+            {currentStep >= CheckoutStep.REVIEW ? (
+              <CheckCircle2 size={24} color="#F97316" />
+            ) : (
+              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+            )}
+            <Text
+              className="ml-2 font-medium"
+              style={isDarkMode ? styles.darkText : styles.lightText}
+            >
+              {t("review")}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={styles.connector}
+          className={
+            currentStep >= CheckoutStep.PAYMENT
+              ? "bg-orange-500"
+              : "bg-gray-300"
+          }
+        />
+
+        <View className="flex-1 items-center">
+          <View className="flex-row items-center">
+            {currentStep >= CheckoutStep.PAYMENT ? (
+              <CheckCircle2 size={24} color="#F97316" />
+            ) : (
+              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+            )}
+            <Text
+              className="ml-2 font-medium"
+              style={isDarkMode ? styles.darkText : styles.lightText}
+            >
+              {t("payment")}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // Render navigation buttons
+  const renderNavButtons = () => {
+    return (
+      <View className="flex-row justify-between mt-4 mb-6 px-4">
+        {currentStep > 0 && (
+          <Button
+            className="flex-1 mr-2"
+            style={[styles.secondaryButton]}
+            onPress={goToPreviousStep}
+          >
+            <View className="flex-row items-center">
+              <ArrowLeft size={16} color="white" />
+              <Text className="text-white font-semibold ml-2">
+                {t("previous")}
+              </Text>
+            </View>
+          </Button>
+        )}
+
+        {currentStep < CheckoutStep.PAYMENT ? (
+          <Button
+            className={currentStep === 0 ? "flex-1" : "flex-1 ml-2"}
+            style={[styles.checkoutButton]}
+            onPress={
+              currentStep === CheckoutStep.SHIPPING
+                ? validateShippingStep
+                : goToPaymentStep
+            }
+          >
+            <View className="flex-row items-center">
+              <Text className="text-white font-semibold mr-2">{t("next")}</Text>
+              <ArrowRight size={16} color="white" />
+            </View>
+          </Button>
+        ) : (
+          <Button
+            className="flex-1 ml-2"
+            style={[
+              styles.checkoutButton,
+              Object.keys(errors).length > 0 || isPaymentLoading
+                ? { backgroundColor: "#999" }
+                : {},
+            ]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isPaymentLoading}
+          >
+            <Text className="text-white font-semibold">
+              {isPaymentLoading ? t("payment_processing") : t("place_order")}
+            </Text>
+          </Button>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView
@@ -232,61 +406,64 @@ const CheckoutContent: React.FC = () => {
         showsHorizontalScrollIndicator={false}
         style={isDarkMode ? styles.darkBackground : styles.lightBackground}
       >
-        {/* Shipping Information Form */}
-        <ShippingForm control={control} errors={errors} />
+        {/* Step Indicator */}
+        {renderStepIndicator()}
 
-        {/* Voucher Section */}
-        <VoucherSection
-          control={control}
-          setValue={setValue}
-          getValues={getValues}
-          voucher={voucher}
-          setVoucher={setVoucher}
-          discountAmount={discountAmount}
-          setDiscountAmount={setDiscountAmount}
-          voucherError={voucherError}
-          setVoucherError={setVoucherError}
-          isApplyingVoucher={isApplyingVoucher}
-          setIsApplyingVoucher={setIsApplyingVoucher}
-          userVouchers={userVouchers}
-          loadUserVouchers={loadUserVouchers}
-          loadingUserVouchers={loadingUserVouchers}
-          subtotal={subtotal}
-          cartItems={cartItems}
-          router={router}
-        />
+        {/* Step 1: Shipping Information */}
+        {currentStep === CheckoutStep.SHIPPING && (
+          <ShippingForm control={control} errors={errors} />
+        )}
 
-        {/* Payment Method Selection */}
-        <PaymentMethodSelection control={control} errors={errors} />
+        {/* Step 2: Order Review and Voucher */}
+        {currentStep === CheckoutStep.REVIEW && (
+          <>
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              shippingFee={shippingFee}
+              discountAmount={discountAmount}
+              total={total}
+            />
 
-        {/* Order Summary */}
-        <OrderSummary
-          cartItems={cartItems}
-          subtotal={subtotal}
-          shippingFee={shippingFee}
-          discountAmount={discountAmount}
-          total={total}
-        />
+            <VoucherSection
+              control={control}
+              setValue={setValue}
+              getValues={getValues}
+              voucher={voucher}
+              setVoucher={setVoucher}
+              discountAmount={discountAmount}
+              setDiscountAmount={setDiscountAmount}
+              voucherError={voucherError}
+              setVoucherError={setVoucherError}
+              isApplyingVoucher={isApplyingVoucher}
+              setIsApplyingVoucher={setIsApplyingVoucher}
+              userVouchers={userVouchers}
+              loadUserVouchers={loadUserVouchers}
+              loadingUserVouchers={loadingUserVouchers}
+              subtotal={subtotal}
+              cartItems={cartItems}
+              router={router}
+            />
+          </>
+        )}
 
-        <Button
-          style={[
-            styles.checkoutButton,
-            Object.keys(errors).length > 0 || isPaymentLoading
-              ? { backgroundColor: "#999" }
-              : {},
-          ]}
-          className="w-full mt-4 mb-6"
-          onPress={handleSubmit(onSubmit)}
-          disabled={isPaymentLoading}
-        >
-          <Text style={styles.checkoutButtonText}>
-            {isPaymentLoading
-              ? t("payment_processing")
-              : Object.keys(errors).length > 0
-              ? t("please_fill_all_info")
-              : t("place_order")}
-          </Text>
-        </Button>
+        {/* Step 3: Payment */}
+        {currentStep === CheckoutStep.PAYMENT && (
+          <>
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              shippingFee={shippingFee}
+              discountAmount={discountAmount}
+              total={total}
+            />
+
+            <PaymentMethodSelection control={control} errors={errors} />
+          </>
+        )}
+
+        {/* Navigation Buttons */}
+        {renderNavButtons()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -303,17 +480,31 @@ const styles = StyleSheet.create({
   lightBackground: {
     backgroundColor: "#FFFFFF",
   },
+  darkText: {
+    color: "#FFFFFF",
+  },
+  lightText: {
+    color: "#000000",
+  },
   checkoutButton: {
-    marginTop: 16,
     paddingVertical: 12,
     backgroundColor: "#F97316",
     borderRadius: 8,
   },
+  secondaryButton: {
+    paddingVertical: 12,
+    backgroundColor: "#64748B",
+    borderRadius: 8,
+  },
   checkoutButtonText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+  },
+  connector: {
+    height: 2,
+    width: 30,
   },
 });
 

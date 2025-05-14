@@ -13,10 +13,11 @@ import {
 import { db } from "~/firebase.config";
 import { httpsCallable, getFunctions } from "firebase/functions";
 import axios from "axios";
+import Config from "~/config";
 
 // Cấu hình Cloudinary
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dpyzwrsni/image/upload";
-const CLOUDINARY_UPLOAD_PRESET = "unsigned_review_preset"; // Sử dụng preset giống như accounts.ts
+const CLOUDINARY_URL = Config.CLOUDINARY.URL;
+const CLOUDINARY_UPLOAD_PRESET = Config.CLOUDINARY.UPLOAD_PRESET;
 
 // Interface cho FirebaseError
 interface FirebaseError extends Error {

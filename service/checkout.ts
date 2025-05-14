@@ -34,7 +34,7 @@ export interface FormData {
   email: string;
   phone: string;
   address: string;
-  paymentMethod: "cod";
+  paymentMethod: "cod" | "momo";
   voucherCode?: string; // Optional voucher code field
 }
 
