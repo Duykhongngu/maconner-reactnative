@@ -23,12 +23,8 @@ import { getUserData, processCheckout } from "~/service/checkout";
 import { Order as OrderType } from "../Order/components/types";
 import { getUserVouchers, Voucher } from "~/service/vouchers";
 import { useTranslation } from "react-i18next";
-import {
-  CheckCircle2,
-  Circle,
-  ArrowLeft,
-  ArrowRight,
-} from "lucide-react-native";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { handleMoMoPayment } from "~/service/momo";
 
 // Import custom components
@@ -280,9 +276,9 @@ const CheckoutContent: React.FC = () => {
         <View className="flex-1 items-center">
           <View className="flex-row items-center">
             {currentStep >= CheckoutStep.SHIPPING ? (
-              <CheckCircle2 size={24} color="#F97316" />
+              <Feather name="check-circle" size={24} color="#F97316" />
             ) : (
-              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+              <Feather name="circle" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
             )}
             <Text
               className="ml-2 font-medium"
@@ -303,9 +299,9 @@ const CheckoutContent: React.FC = () => {
         <View className="flex-1 items-center">
           <View className="flex-row items-center">
             {currentStep >= CheckoutStep.REVIEW ? (
-              <CheckCircle2 size={24} color="#F97316" />
+              <Feather name="check-circle" size={24} color="#F97316" />
             ) : (
-              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+              <Feather name="circle" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
             )}
             <Text
               className="ml-2 font-medium"
@@ -328,9 +324,9 @@ const CheckoutContent: React.FC = () => {
         <View className="flex-1 items-center">
           <View className="flex-row items-center">
             {currentStep >= CheckoutStep.PAYMENT ? (
-              <CheckCircle2 size={24} color="#F97316" />
+              <Feather name="check-circle" size={24} color="#F97316" />
             ) : (
-              <Circle size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+              <Feather name="circle" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
             )}
             <Text
               className="ml-2 font-medium"
@@ -355,7 +351,7 @@ const CheckoutContent: React.FC = () => {
             onPress={goToPreviousStep}
           >
             <View className="flex-row items-center">
-              <ArrowLeft size={16} color="white" />
+              <Feather name="arrow-left" size={16} color="white" />
               <Text className="text-white font-semibold ml-2">
                 {t("previous")}
               </Text>
@@ -375,7 +371,7 @@ const CheckoutContent: React.FC = () => {
           >
             <View className="flex-row items-center">
               <Text className="text-white font-semibold mr-2">{t("next")}</Text>
-              <ArrowRight size={16} color="white" />
+              <Feather name="arrow-right" size={16} color="white" />
             </View>
           </Button>
         ) : (

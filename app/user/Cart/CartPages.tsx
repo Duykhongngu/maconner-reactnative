@@ -9,7 +9,8 @@ import {
 import { useColorScheme } from "~/lib/useColorScheme";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { PackageOpen, Trash2 } from "lucide-react-native";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useCart } from "./CartContext";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -35,7 +36,7 @@ const CartPages: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: bgColor }]}>
         <View style={styles.emptyCartContainer}>
-          <PackageOpen size={48} color={iconColor} />
+          <MaterialCommunityIcons name="package-variant" size={48} color={iconColor} />
           <Text style={[styles.emptyCartTitle, { color: textColor }]}>
             {t("cart_empty")}
           </Text>
@@ -144,7 +145,7 @@ const CartPages: React.FC = () => {
               variant="outline"
               onPress={() => removeFromCart(item.id, item.color)}
             >
-              <Trash2 size={16} color={iconColor} />
+              <Feather name="trash-2" size={16} color={iconColor} />
             </Button>
           </Card>
         ))}

@@ -18,15 +18,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import {
-  ChevronLeft,
-  MenuIcon,
-  MessageCircle,
-  SearchIcon,
-  Send,
-  ShoppingCart,
-  Truck,
-} from "lucide-react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import Feather from "react-native-vector-icons/Feather";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
@@ -238,7 +232,7 @@ function SiteHeader() {
           onPress={() => setMenuVisible(true)}
           style={styles.iconButton}
         >
-          <MenuIcon size={24} color={iconColor} />
+          <Feather name="menu" size={24} color={iconColor} />
         </TouchableOpacity>
       </View>
 
@@ -256,14 +250,14 @@ function SiteHeader() {
             style={styles.iconButton}
             onPress={() => setIsSearchOpen(true)}
           >
-            <SearchIcon size={24} color={iconColor} />
+            <Ionicons name="search" size={24} color={iconColor} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => router.push("/user/Order/OrderStatus" as any)}
           >
-            <Truck size={24} color={iconColor} />
+            <MaterialIcons name="local-shipping" size={24} color={iconColor} />
             {totalOrders > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{totalOrders}</Text>
@@ -275,7 +269,7 @@ function SiteHeader() {
             style={styles.iconButton}
             onPress={() => router.push("/user/Cart/CartPages" as any)}
           >
-            <ShoppingCart size={24} color={iconColor} />
+            <Feather name="shopping-cart" size={24} color={iconColor} />
             {totalItems > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{totalItems}</Text>
@@ -286,7 +280,7 @@ function SiteHeader() {
             style={styles.iconButton}
             onPress={() => router.push("/user/Chat/AdminChat" as any)}
           >
-            <Send size={24} color={iconColor} />
+            <Feather name="send" size={24} color={iconColor} />
             {unreadMessages > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadMessages}</Text>
@@ -433,7 +427,7 @@ function SiteHeader() {
             style={styles.closeButton}
             onPress={() => setMenuVisible(false)}
           >
-            <ChevronLeft size={24} color={iconColor} />
+            <Ionicons name="chevron-back" size={24} color={iconColor} />
             <Text style={[styles.backText, { color: iconColor }]}>
               {t("back")}
             </Text>
@@ -491,7 +485,7 @@ function SiteHeader() {
               onPress={() => setIsSearchOpen(false)}
               style={styles.cancelButton}
             >
-              <ChevronLeft size={24} color={iconColor} />
+              <Ionicons name="chevron-back" size={24} color={iconColor} />
               <Text style={{ color: iconColor }}>{t("cancel")}</Text>
             </TouchableOpacity>
           </View>

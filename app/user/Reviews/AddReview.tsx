@@ -20,7 +20,7 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { Star } from "lucide-react-native";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 interface Product {
   id: string;
@@ -178,10 +178,13 @@ export default function AddReview() {
                 onPress={() => setRating(star)}
                 className="mx-2"
               >
-                <Star
+                <FontAwesome
+                  name="star"
                   size={32}
                   color={star <= rating ? "#FFB800" : "#D1D5DB"}
-                  fill={star <= rating ? "#FFB800" : "transparent"}
+                  style={{
+                    backgroundColor: star <= rating ? "transparent" : "transparent",
+                  }}
                 />
               </TouchableOpacity>
             ))}

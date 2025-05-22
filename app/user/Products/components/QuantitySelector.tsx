@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Plus, Minus } from "lucide-react-native";
+import AntDesign from "react-native-vector-icons/AntDesign";
 
 interface QuantitySelectorProps {
   quantity: number;
@@ -26,7 +26,7 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         ]}
         accessibilityLabel={t("decrease_quantity")}
       >
-        <Minus size={20} color={isDarkMode ? "#D1D5DB" : "#4B5563"} />
+        <AntDesign name="minus" size={20} color={isDarkMode ? "#D1D5DB" : "#4B5563"} />
       </TouchableOpacity>
 
       <Text
@@ -47,7 +47,7 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         ]}
         accessibilityLabel={t("increase_quantity")}
       >
-        <Plus size={20} color={isDarkMode ? "#D1D5DB" : "#4B5563"} />
+        <AntDesign name="plus" size={20} color={isDarkMode ? "#D1D5DB" : "#4B5563"} />
       </TouchableOpacity>
     </View>
   );

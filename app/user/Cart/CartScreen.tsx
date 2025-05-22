@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Trash2 } from "lucide-react-native";
+import Feather from "react-native-vector-icons/Feather";
 import { useCart } from "./CartContext";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/firebase.config";
@@ -43,7 +43,7 @@ export default function CartScreen() {
           <Text>{item.name}</Text>
           <Text>{item.price}</Text>
           <TouchableOpacity onPress={() => removeFromCart(item.id, item.color)}>
-            <Trash2 />
+            <Feather name="trash-2" size={24} color="#FF0000" />
           </TouchableOpacity>
         </View>
       ))}

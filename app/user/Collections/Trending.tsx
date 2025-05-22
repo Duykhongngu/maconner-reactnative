@@ -9,7 +9,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { useState, useEffect } from "react";
 import { fetchTrendingProducts } from "~/service/products";
@@ -134,7 +134,8 @@ function TrendingProducts() {
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ArrowLeft
+          <Ionicons
+            name="arrow-back"
             size={24}
             color={isDarkColorScheme ? "#FFFFFF" : "#000000"}
           />

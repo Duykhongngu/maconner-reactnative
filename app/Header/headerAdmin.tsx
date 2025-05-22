@@ -12,7 +12,8 @@ import {
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft, MenuIcon, Send, SendIcon } from "lucide-react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import SearchBar from "./search";
@@ -116,7 +117,7 @@ function AdminHeader() {
             onPress={() => setMenuVisible(true)}
             className="p-2"
           >
-            <MenuIcon size={26} color={iconColor} />
+            <Feather name="menu" size={26} color={iconColor} />
           </TouchableOpacity>
         </View>
 
@@ -133,7 +134,7 @@ function AdminHeader() {
               router.push("/Admin/ChatManagement/AdminChatManagement")
             }
           >
-            <Send size={26} color={iconColor} />
+            <Feather name="send" size={26} color={iconColor} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setProfileMenuVisible(true)}
@@ -189,7 +190,7 @@ function AdminHeader() {
               className="flex-row items-center p-4"
               onPress={() => setMenuVisible(false)}
             >
-              <ChevronLeft size={24} color={iconColor} />
+              <Ionicons name="chevron-back" size={24} color={iconColor} />
               <Text className="text-lg font-semibold ml-2 dark:text-white">
                 Back
               </Text>

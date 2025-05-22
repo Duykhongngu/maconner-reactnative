@@ -1,12 +1,11 @@
 import { getApps, initializeApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore"; // Nhập Firestore
-import { getStorage } from "firebase/storage"; // Nhập Storage (chỉ nhập một lần)
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import Config from "./config";
 
-// Sử dụng cấu hình từ Config
+// Cấu hình Firebase
 const firebaseConfig = {
   apiKey: Config.FIREBASE.API_KEY,
   authDomain: Config.FIREBASE.AUTH_DOMAIN,
@@ -17,35 +16,33 @@ const firebaseConfig = {
   measurementId: Config.FIREBASE.MEASUREMENT_ID,
 };
 
-// Kiểm tra cấu hình
-console.log("Firebase config loaded");
-
+// Chỉ initialize nếu chưa có app nào
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Sử dụng initializeAuth với AsyncStorage
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-});
+// ✅ Khởi tạo auth đơn giản cho Web (không cần persistence tùy biến)
+const auth = getAuth(app);
 
-// Khởi tạo Firestore
+// ✅ Firestore cho Web
 export const db = getFirestore(app);
 
-// Khởi tạo Storage (chỉ khai báo một lần, không thêm declare module)
+// ✅ Storage cho Web
 export const storage = getStorage(app);
 
-let analytics: any;
+// ✅ Analytics (chỉ có tác dụng nếu chạy trong trình duyệt)
+let analytics: any = null;
 isSupported().then((supported) => {
   if (supported) {
     analytics = getAnalytics(app);
   }
 });
 
+// Hàm log sự kiện custom
 const logCustomEvent = async () => {
   try {
     if (analytics) {
       logEvent(analytics, "custom_event", {
-        item: "React Native",
-        description: "Sử dụng Firebase Analytics trong React Native",
+        item: "WebApp",
+        description: "Gửi sự kiện từ Firebase Web SDK",
       });
       console.log("Sự kiện đã được ghi nhận!");
     } else {

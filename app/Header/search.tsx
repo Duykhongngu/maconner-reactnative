@@ -11,7 +11,9 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import { Search, ShoppingBag } from "lucide-react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
+import AntDesign from "react-native-vector-icons/AntDesign";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { fetchProducts, fetchTrendingProducts } from "~/service/products";
 import { useRouter } from "expo-router";
@@ -174,7 +176,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
             />
           ) : (
             <View className="bg-orange-100 h-12 w-12 rounded-md justify-center items-center">
-              <ShoppingBag size={20} color="#FF6B00" />
+              <Feather name="shopping-bag" size={20} color="#FF6B00" />
             </View>
           )}
           <View className="ml-3 flex-1">
@@ -255,7 +257,7 @@ export default function SearchBar({ isOpen, onClose }: SearchBarProps) {
               elevation: 3,
             }}
           >
-            <Search size={20} color="white" />
+            <Ionicons name="search" size={20} color="white" />
           </TouchableOpacity>
         </View>
 

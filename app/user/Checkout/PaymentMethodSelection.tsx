@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Appearance,
 } from "react-native";
-import { DollarSign, Wallet } from "lucide-react-native";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { Controller, Control, FieldErrors } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FormData } from "~/service/checkout";
@@ -48,9 +49,11 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                 }`}
                 onPress={() => onChange("cod")}
               >
-                <DollarSign
+                <FontAwesome
+                  name="dollar"
+                  size={20}
                   color={value === "cod" ? "#F97316" : "#6B7280"}
-                  className="mr-2"
+                  style={{marginRight: 8}}
                 />
                 <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                   {t("cod_payment")}
@@ -67,9 +70,11 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                 }`}
                 onPress={() => onChange("momo")}
               >
-                <Wallet
+                <MaterialIcons
+                  name="account-balance-wallet"
+                  size={20}
                   color={value === "momo" ? "#F97316" : "#6B7280"}
-                  className="mr-2"
+                  style={{marginRight: 8}}
                 />
                 <Text style={isDarkMode ? styles.darkText : styles.lightText}>
                   MoMo E-Wallet

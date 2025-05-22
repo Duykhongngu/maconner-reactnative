@@ -7,7 +7,7 @@ import {
   Modal,
   StyleSheet,
 } from "react-native";
-import { Search } from "lucide-react-native";
+import Feather from "react-native-vector-icons/Feather";
 
 interface SearchFilterProps {
   searchQuery: string;
@@ -51,10 +51,11 @@ const SearchFilter: React.FC<SearchFilterProps> = ({
     <View className="mb-4">
       <View className="flex-row items-center mb-2 border rounded border-gray-300">
         <View className="bg-white dark:bg-black">
-          <Search
+          <Feather
+            name="search"
             size={20}
             color={isDarkMode ? "#ffffff" : "#000000"}
-            className="mx-2"
+            style={{marginHorizontal: 8}}
           />
         </View>
         <TextInput

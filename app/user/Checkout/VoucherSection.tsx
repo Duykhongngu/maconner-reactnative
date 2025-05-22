@@ -11,7 +11,9 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { Tag, ChevronDown, X } from "lucide-react-native";
+import Feather from "react-native-vector-icons/Feather";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import AntDesign from "react-native-vector-icons/AntDesign";
 import {
   Controller,
   Control,
@@ -277,7 +279,7 @@ const VoucherSection: React.FC<VoucherSectionProps> = ({
                   <Text className="text-orange-500 mr-2">
                     {t("select_available_vouchers")}
                   </Text>
-                  <ChevronDown size={16} color="#F97316" />
+                  <Feather name="chevron-down" size={16} color="#F97316" />
                 </TouchableOpacity>
               )}
 
@@ -289,7 +291,7 @@ const VoucherSection: React.FC<VoucherSectionProps> = ({
               {voucher && (
                 <View className="mt-2 p-3 bg-orange-100 rounded-md border border-orange-200">
                   <View className="flex-row items-center">
-                    <Tag size={16} color="#F97316" />
+                    <FontAwesome name="tag" size={16} color="#F97316" />
                     <Text className="font-bold text-orange-500 ml-2">
                       {voucher.code}
                     </Text>
@@ -330,7 +332,7 @@ const VoucherSection: React.FC<VoucherSectionProps> = ({
                   {t("choose_voucher")}
                 </Text>
                 <TouchableOpacity onPress={() => setShowVoucherModal(false)}>
-                  <X color={isDarkMode ? "#FFFFFF" : "#000000"} size={24} />
+                  <AntDesign name="close" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
                 </TouchableOpacity>
               </View>
 
@@ -380,7 +382,7 @@ const VoucherSection: React.FC<VoucherSectionProps> = ({
                     >
                       <View style={styles.voucherContent}>
                         <View style={styles.voucherIconContainer}>
-                          <Tag size={20} color="#F97316" />
+                          <FontAwesome name="tag" size={20} color="#F97316" />
                         </View>
                         <View style={styles.voucherDetails}>
                           <Text

@@ -15,14 +15,10 @@ import {
 } from "react-native";
 import { useWindowDimensions } from "react-native";
 import { useColorScheme } from "~/lib/useColorScheme";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Filter,
-  X,
-  SlidersHorizontal,
-} from "lucide-react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import AntDesign from "react-native-vector-icons/AntDesign";
 import {
   collection,
   query,
@@ -187,139 +183,6 @@ function CategoryProducts() {
     setShowFilterModal(false);
   };
 
-  const renderFilterModal = () => (
-    <Modal
-      visible={showFilterModal}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setShowFilterModal(false)}
-    >
-      <TouchableOpacity
-        className="flex-1 bg-black/50 justify-end"
-        activeOpacity={1}
-        onPress={() => setShowFilterModal(false)}
-      >
-        <View
-          className="bg-white dark:bg-[#1A1A1A] rounded-t-3xl p-5"
-          style={{ minHeight: 300 }}
-        >
-          <View className="flex-row justify-between items-center mb-5">
-            <Text className="text-lg font-bold dark:text-white">Bộ lọc</Text>
-            <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-              <X size={24} color={iconColor} />
-            </TouchableOpacity>
-          </View>
-
-          <Text className="text-base mb-2 dark:text-gray-300">Khoảng giá</Text>
-          <View className="flex-row mb-5">
-            <TextInput
-              className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 mr-2 dark:bg-[#2D2D2D] dark:text-white"
-              placeholder="Tối thiểu"
-              placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
-              keyboardType="numeric"
-              value={tempPriceRange.min}
-              onChangeText={(text) =>
-                setTempPriceRange({ ...tempPriceRange, min: text })
-              }
-            />
-            <TextInput
-              className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 dark:bg-[#2D2D2D] dark:text-white"
-              placeholder="Tối đa"
-              placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
-              keyboardType="numeric"
-              value={tempPriceRange.max}
-              onChangeText={(text) =>
-                setTempPriceRange({ ...tempPriceRange, max: text })
-              }
-            />
-          </View>
-
-          <View className="flex-row justify-between mt-5">
-            <TouchableOpacity
-              className="bg-gray-200 dark:bg-gray-800 rounded-lg p-3 flex-1 mr-2 items-center"
-              onPress={() => {
-                setTempPriceRange({ min: "", max: "" });
-                setPriceRange({ min: null, max: null });
-                setShowFilterModal(false);
-              }}
-            >
-              <Text className="font-semibold dark:text-white">Đặt lại</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="bg-orange-500 rounded-lg p-3 flex-1 items-center"
-              onPress={applyPriceFilter}
-            >
-              <Text className="text-white font-semibold">Áp dụng</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  const renderSortModal = () => (
-    <Modal
-      visible={showSortModal}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setShowSortModal(false)}
-    >
-      <TouchableOpacity
-        className="flex-1 bg-black/50 justify-end"
-        activeOpacity={1}
-        onPress={() => setShowSortModal(false)}
-      >
-        <View className="bg-white dark:bg-[#1A1A1A] rounded-t-3xl p-5">
-          <View className="flex-row justify-between items-center mb-5">
-            <Text className="text-lg font-bold dark:text-white">
-              Sắp xếp theo
-            </Text>
-            <TouchableOpacity onPress={() => setShowSortModal(false)}>
-              <X size={24} color={iconColor} />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            className={`py-4 border-b border-gray-200 dark:border-gray-700 ${
-              sortOption === "default" ? "bg-gray-100 dark:bg-gray-800" : ""
-            }`}
-            onPress={() => {
-              setSortOption("default");
-              setShowSortModal(false);
-            }}
-          >
-            <Text className="text-base dark:text-white">Mặc định</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`py-4 border-b border-gray-200 dark:border-gray-700 ${
-              sortOption === "price-asc" ? "bg-gray-100 dark:bg-gray-800" : ""
-            }`}
-            onPress={() => {
-              setSortOption("price-asc");
-              setShowSortModal(false);
-            }}
-          >
-            <Text className="text-base dark:text-white">Giá: Thấp đến cao</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className={`py-4 ${
-              sortOption === "price-desc" ? "bg-gray-100 dark:bg-gray-800" : ""
-            }`}
-            onPress={() => {
-              setSortOption("price-desc");
-              setShowSortModal(false);
-            }}
-          >
-            <Text className="text-base dark:text-white">Giá: Cao đến thấp</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
-
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-white dark:bg-black">
@@ -358,7 +221,8 @@ function CategoryProducts() {
           {/* Search and filter bar */}
           <View className="flex-row items-center mb-4">
             <View className="flex-1 flex-row items-center border border-gray-300 dark:border-gray-700 rounded-lg p-2 mr-2 bg-gray-100 dark:bg-[#2D2D2D]">
-              <Search
+              <Ionicons
+                name="search"
                 size={20}
                 color={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
               />
@@ -371,7 +235,8 @@ function CategoryProducts() {
               />
               {searchQuery ? (
                 <TouchableOpacity onPress={() => setSearchQuery("")}>
-                  <X
+                  <AntDesign
+                    name="close"
                     size={18}
                     color={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
                   />
@@ -384,7 +249,8 @@ function CategoryProducts() {
                 className="p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg mr-1.5"
                 onPress={() => setShowFilterModal(true)}
               >
-                <Filter
+                <Feather
+                  name="filter"
                   size={20}
                   color={isDarkColorScheme ? "#E5E7EB" : "#4B5563"}
                 />
@@ -394,7 +260,8 @@ function CategoryProducts() {
                 className="p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg"
                 onPress={() => setShowSortModal(true)}
               >
-                <SlidersHorizontal
+                <Feather
+                  name="sliders"
                   size={20}
                   color={isDarkColorScheme ? "#E5E7EB" : "#4B5563"}
                 />
@@ -416,7 +283,7 @@ function CategoryProducts() {
                 <View className="bg-orange-500 rounded-full px-2 py-1 flex-row items-center mr-2 mb-1.5">
                   <Text className="text-white text-xs mr-1">{`"${searchQuery}"`}</Text>
                   <TouchableOpacity onPress={() => setSearchQuery("")}>
-                    <X size={14} color="white" />
+                    <AntDesign name="close" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -429,7 +296,7 @@ function CategoryProducts() {
                   <TouchableOpacity
                     onPress={() => setPriceRange({ ...priceRange, min: null })}
                   >
-                    <X size={14} color="white" />
+                    <AntDesign name="close" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -442,7 +309,7 @@ function CategoryProducts() {
                   <TouchableOpacity
                     onPress={() => setPriceRange({ ...priceRange, max: null })}
                   >
-                    <X size={14} color="white" />
+                    <AntDesign name="close" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -455,7 +322,7 @@ function CategoryProducts() {
                       : "Cao đến thấp"}
                   </Text>
                   <TouchableOpacity onPress={() => setSortOption("default")}>
-                    <X size={14} color="white" />
+                    <AntDesign name="close" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -519,7 +386,7 @@ function CategoryProducts() {
                           currentPage === 1 ? "opacity-50" : ""
                         }`}
                       >
-                        <ChevronLeft size={24} color="white" />
+                        <Ionicons name="chevron-back" size={24} color="white" />
                       </TouchableOpacity>
                       <Text className="mx-4 text-base dark:text-white">
                         {currentPage} / {totalPages}
@@ -535,7 +402,7 @@ function CategoryProducts() {
                           currentPage === totalPages ? "opacity-50" : ""
                         }`}
                       >
-                        <ChevronRight size={24} color="white" />
+                        <Ionicons name="chevron-forward" size={24} color="white" />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -570,8 +437,136 @@ function CategoryProducts() {
         </View>
       </ScrollView>
 
-      {renderFilterModal()}
-      {renderSortModal()}
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-black/50 justify-end"
+          activeOpacity={1}
+          onPress={() => setShowFilterModal(false)}
+        >
+          <View
+            className="bg-white dark:bg-[#1A1A1A] rounded-t-3xl p-5"
+            style={{ minHeight: 300 }}
+          >
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-lg font-bold dark:text-white">Bộ lọc</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <AntDesign name="close" size={24} color={iconColor} />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-base mb-2 dark:text-gray-300">Khoảng giá</Text>
+            <View className="flex-row mb-5">
+              <TextInput
+                className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 mr-2 dark:bg-[#2D2D2D] dark:text-white"
+                placeholder="Tối thiểu"
+                placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
+                keyboardType="numeric"
+                value={tempPriceRange.min}
+                onChangeText={(text) =>
+                  setTempPriceRange({ ...tempPriceRange, min: text })
+                }
+              />
+              <TextInput
+                className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg p-3 dark:bg-[#2D2D2D] dark:text-white"
+                placeholder="Tối đa"
+                placeholderTextColor={isDarkColorScheme ? "#9CA3AF" : "#6B7280"}
+                keyboardType="numeric"
+                value={tempPriceRange.max}
+                onChangeText={(text) =>
+                  setTempPriceRange({ ...tempPriceRange, max: text })
+                }
+              />
+            </View>
+
+            <View className="flex-row justify-between mt-5">
+              <TouchableOpacity
+                className="bg-gray-200 dark:bg-gray-800 rounded-lg p-3 flex-1 mr-2 items-center"
+                onPress={() => {
+                  setTempPriceRange({ min: "", max: "" });
+                  setPriceRange({ min: null, max: null });
+                  setShowFilterModal(false);
+                }}
+              >
+                <Text className="font-semibold dark:text-white">Đặt lại</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="bg-orange-500 rounded-lg p-3 flex-1 items-center"
+                onPress={applyPriceFilter}
+              >
+                <Text className="text-white font-semibold">Áp dụng</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Sort Modal */}
+      <Modal
+        visible={showSortModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-black/50 justify-end"
+          activeOpacity={1}
+          onPress={() => setShowSortModal(false)}
+        >
+          <View className="bg-white dark:bg-[#1A1A1A] rounded-t-3xl p-5">
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-lg font-bold dark:text-white">
+                Sắp xếp theo
+              </Text>
+              <TouchableOpacity onPress={() => setShowSortModal(false)}>
+                <AntDesign name="close" size={24} color={iconColor} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              className={`py-4 border-b border-gray-200 dark:border-gray-700 ${
+                sortOption === "default" ? "bg-gray-100 dark:bg-gray-800" : ""
+              }`}
+              onPress={() => {
+                setSortOption("default");
+                setShowSortModal(false);
+              }}
+            >
+              <Text className="text-base dark:text-white">Mặc định</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className={`py-4 border-b border-gray-200 dark:border-gray-700 ${
+                sortOption === "price-asc" ? "bg-gray-100 dark:bg-gray-800" : ""
+              }`}
+              onPress={() => {
+                setSortOption("price-asc");
+                setShowSortModal(false);
+              }}
+            >
+              <Text className="text-base dark:text-white">Giá: Thấp đến cao</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className={`py-4 ${
+                sortOption === "price-desc" ? "bg-gray-100 dark:bg-gray-800" : ""
+              }`}
+              onPress={() => {
+                setSortOption("price-desc");
+                setShowSortModal(false);
+              }}
+            >
+              <Text className="text-base dark:text-white">Giá: Cao đến thấp</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
