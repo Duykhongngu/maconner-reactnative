@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Duy dang ngu",
-    "slug": "maconer-reactnative", 
-    "description": "Duy dang ngu",
+    "name": "NAD Shop",
+    "slug": "nadshop-reactnative", 
+    "description": "Ứng dụng mua sắm thời trang NAD Shop",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "assets/images/NADlogo.png",
@@ -56,6 +56,14 @@
             "host": "*",
             "pathPattern": ".*",
             "mimeType": "image/*"
+          }
+        },
+        {
+          "action": "android.intent.action.VIEW",
+          "category": ["android.intent.category.DEFAULT", "android.intent.category.BROWSABLE"],
+          "data": {
+            "scheme": "myapp",
+            "host": "*"
           }
         }
       ],

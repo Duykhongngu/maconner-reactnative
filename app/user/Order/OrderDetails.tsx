@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   ScrollView,
   Alert,
@@ -92,19 +91,9 @@ const OrderDetailsScreen: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <View
-        style={[
-          styles.loadingContainer,
-          isDarkMode ? styles.darkBackground : styles.lightBackground,
-        ]}
-      >
+      <View className={`flex-1 justify-center items-center p-4 ${isDarkMode ? "bg-zinc-900" : "bg-gray-100"}`}>
         <ActivityIndicator size="large" color="#f97316" />
-        <Text
-          style={[
-            styles.loadingText,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
+        <Text className={`mt-3 text-base text-center ${isDarkMode ? "text-white" : "text-black"}`}>
           {t('loading_order')}
         </Text>
       </View>
@@ -113,27 +102,15 @@ const OrderDetailsScreen: React.FC = () => {
 
   if (!order) {
     return (
-      <View
-        style={[
-          styles.container,
-          isDarkMode ? styles.darkBackground : styles.lightBackground,
-        ]}
-      >
-        <Text
-          style={[
-            styles.message,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
+      <View className={`flex-1 p-4 ${isDarkMode ? "bg-zinc-900" : "bg-gray-100"}`}>
+        <Text className={`text-lg text-center my-5 ${isDarkMode ? "text-white" : "text-black"}`}>
           {t('order_not_found')}
         </Text>
         <Button
-          style={styles.button}
+          className="bg-orange-500"
           onPress={() => router.push("/user/Order/OrderStatus")}
         >
-          <Text
-            style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
-          >
+          <Text className="text-white font-medium">
             {t('back_to_orders')}
           </Text>
         </Button>
@@ -145,189 +122,115 @@ const OrderDetailsScreen: React.FC = () => {
     <ScrollView
       showsVerticalScrollIndicator={false}
       showsHorizontalScrollIndicator={false}
-      style={[
-        styles.container,
-        isDarkMode ? styles.darkBackground : styles.lightBackground,
-      ]}
+      className={`flex-1 p-4 mb-9 ${isDarkMode ? "bg-zinc-900" : "bg-gray-100"}`}
     >
-      <Text
-        style={[styles.title, isDarkMode ? styles.darkText : styles.lightText]}
-      >
+      <Text className="text-2xl font-bold mb-4 text-center text-orange-500">
         {t('order_details')}
       </Text>
-      <View style={styles.orderDetailsContainer}>
-        <Text
-          style={[
-            styles.successMessage,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
+      <View className="mb-5">
+        <Text className={`text-lg font-bold mb-4 text-center text-green-500 ${isDarkMode ? "text-white" : "text-black"}`}>
           {t('order_success')}
         </Text>
 
-        <View style={styles.orderStatusContainer}>
-          <Text style={styles.orderStatusLabel}>{t('order_status')}:</Text>
+        <View className="flex-row justify-center items-center mb-4">
+          <Text className="text-base mr-2 text-gray-500">{t('order_status')}:</Text>
           <Text
-            style={[
-              styles.orderStatusValue,
+            className={`text-base font-bold ${
               order.status === "completed"
-                ? styles.statusCompleted
+                ? "text-green-500"
                 : order.status === "cancelled"
-                ? styles.statusCancelled
-                : styles.statusPending,
-            ]}
+                ? "text-red-500"
+                : "text-orange-500"
+            }`}
           >
             {translateStatus(order.status)}
           </Text>
         </View>
 
-        <View style={styles.orderIdContainer}>
-          <Text
-            style={[
-              styles.orderIdText,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
-          >
+        <View className="items-center mb-4">
+          <Text className={`text-sm mb-1 ${isDarkMode ? "text-white" : "text-black"}`}>
             {t('order_id')}: {order.id}
           </Text>
-          <Text
-            style={[
-              styles.orderDateText,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
-          >
+          <Text className="text-sm text-gray-500">
             {t('order_date')}: {formatDate(order.date)}
           </Text>
         </View>
 
-        <View
-          style={[
-            styles.infoGroupContainer,
-            isDarkMode ? styles.darkCard : styles.lightCard,
-          ]}
-        >
-          <Text
-            style={[
-              styles.infoGroupTitle,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
-          >
+        <View className={`p-4 rounded-lg mb-4 shadow ${isDarkMode ? "bg-zinc-800" : "bg-white"}`}>
+          <Text className="text-lg font-bold mb-3 text-orange-500">
             {t('customer_info')}
           </Text>
 
-          <View style={styles.infoContainer}>
+          <View className="flex-row items-center mb-2">
             <MaterialIcons
               name="person"
               size={20}
               color={isDarkMode ? "#ffffff" : "#000000"}
             />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
+            <Text className={`ml-2 text-base ${isDarkMode ? "text-white" : "text-black"}`}>
               {t('name')}: {order.name || t('no_info')}
             </Text>
           </View>
 
-          <View style={styles.infoContainer}>
+          <View className="flex-row items-center mb-2">
             <MaterialIcons
               name="email"
               size={20}
               color={isDarkMode ? "#ffffff" : "#000000"}
             />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
+            <Text className={`ml-2 text-base ${isDarkMode ? "text-white" : "text-black"}`}>
               {t('email')}: {order.email || t('no_info')}
             </Text>
           </View>
 
-          <View style={styles.infoContainer}>
+          <View className="flex-row items-center mb-2">
             <MaterialIcons
               name="phone"
               size={20}
               color={isDarkMode ? "#ffffff" : "#000000"}
             />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
+            <Text className={`ml-2 text-base ${isDarkMode ? "text-white" : "text-black"}`}>
               {t('phone')}: {order.phone || t('no_info')}
             </Text>
           </View>
         </View>
 
-        <View
-          style={[
-            styles.infoGroupContainer,
-            isDarkMode ? styles.darkCard : styles.lightCard,
-          ]}
-        >
-          <Text
-            style={[
-              styles.infoGroupTitle,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
-          >
+        <View className={`p-4 rounded-lg mb-4 shadow ${isDarkMode ? "bg-zinc-800" : "bg-white"}`}>
+          <Text className="text-lg font-bold mb-3 text-orange-500">
             {t('shipping_info')}
           </Text>
 
-          <View style={styles.infoContainer}>
+          <View className="flex-row items-center mb-2">
             <MaterialIcons
               name="location-on"
               size={20}
               color={isDarkMode ? "#ffffff" : "#000000"}
             />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
+            <Text className={`ml-2 text-base ${isDarkMode ? "text-white" : "text-black"}`}>
               {t('address')}: {order.address || t('no_info')}
             </Text>
           </View>
 
-          <View style={styles.infoContainer}>
+          <View className="flex-row items-center mb-2">
             <MaterialIcons
               name="language"
               size={20}
               color={isDarkMode ? "#ffffff" : "#000000"}
             />
-            <Text
-              style={[
-                styles.itemInfo,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
-            >
+            <Text className={`ml-2 text-base ${isDarkMode ? "text-white" : "text-black"}`}>
               {t('country')}: {order.country || t('no_info')}
             </Text>
           </View>
         </View>
 
-        <Text
-          style={[
-            styles.sectionTitle,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
-        >
+        <Text className={`text-lg font-bold mt-2 mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>
           {t('product_list')}
         </Text>
 
         {order.cartItems.map((item) => (
           <View
             key={`${item.id}-${item.color}-${item.size || "default"}`}
-            style={[
-              styles.itemContainer,
-              isDarkMode ? styles.darkCard : styles.lightCard,
-            ]}
+            className={`flex-row p-3 rounded-lg mb-3 shadow ${isDarkMode ? "bg-zinc-800" : "bg-white"}`}
           >
             <Image
               source={
@@ -335,256 +238,45 @@ const OrderDetailsScreen: React.FC = () => {
                   ? { uri: item.image }
                   : item.image
               }
-              style={styles.itemImage}
+              className="w-20 h-20 rounded mr-3"
             />
-            <View style={styles.itemDetails}>
-              <Text
-                style={[
-                  styles.itemName,
-                  isDarkMode ? styles.darkText : styles.lightText,
-                ]}
-              >
+            <View className="flex-1 justify-center">
+              <Text className={`text-base font-bold mb-1 ${isDarkMode ? "text-white" : "text-black"}`}>
                 {item.name}
               </Text>
-              <Text
-                style={[
-                  styles.itemInfo,
-                  isDarkMode ? styles.darkText : styles.lightText,
-                ]}
-              >
+              <Text className={`text-sm mb-1 ${isDarkMode ? "text-white" : "text-black"}`}>
                 {t('color')}: {item.color} | {t('size')}: {item.size || t('default')}
               </Text>
-              <Text style={styles.itemPrice}>
+              <Text className="text-sm text-gray-500">
                 {item.price.toLocaleString("vi-VN")} VNĐ x {item.quantity}
               </Text>
-              <Text style={styles.itemSubtotal}>
+              <Text className="text-base font-medium text-orange-500 mt-1">
                 {t('amount')}: {(item.price * item.quantity).toLocaleString("vi-VN")} VNĐ
               </Text>
             </View>
           </View>
         ))}
 
-        <View
-          style={[
-            styles.totalContainer,
-            isDarkMode ? styles.darkCard : styles.lightCard,
-          ]}
-        >
-          <Text
-            style={[
-              styles.totalText,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
-          >
+        <View className={`flex-row justify-between items-center p-4 rounded-lg mt-4 ${isDarkMode ? "bg-zinc-800" : "bg-white"}`}>
+          <Text className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-black"}`}>
             {t('order_total')}:
           </Text>
-          <Text style={[styles.totalPrice]}>
+          <Text className="text-lg font-bold text-orange-500">
             {order.total.toLocaleString("vi-VN")} VNĐ
           </Text>
         </View>
       </View>
 
       <Button
-        style={styles.button}
+        className="bg-orange-500 mt-4"
         onPress={() => router.push("/user/Order/OrderStatus")}
       >
-        <Text
-          style={isDarkMode ? styles.darkButtonText : styles.lightButtonText}
-        >
+        <Text className="text-white font-medium">
           {t('back_to_orders')}
         </Text>
       </Button>
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    textAlign: "center",
-  },
-  darkBackground: {
-    backgroundColor: "#121212",
-  },
-  lightBackground: {
-    backgroundColor: "#f8f9fa",
-  },
-  darkText: {
-    color: "#ffffff",
-  },
-  lightText: {
-    color: "#000000",
-  },
-  darkCard: {
-    backgroundColor: "#1E1E1E",
-  },
-  lightCard: {
-    backgroundColor: "white",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-    color: "#f97316",
-  },
-  message: {
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  orderDetailsContainer: {
-    marginBottom: 20,
-  },
-  successMessage: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-    color: "#10b981",
-  },
-  orderStatusContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  orderStatusLabel: {
-    fontSize: 16,
-    marginRight: 8,
-    color: "#6b7280",
-  },
-  orderStatusValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  statusCompleted: {
-    color: "#10b981",
-  },
-  statusCancelled: {
-    color: "#ef4444",
-  },
-  statusPending: {
-    color: "#f97316",
-  },
-  orderIdContainer: {
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  orderIdText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  orderDateText: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  infoGroupContainer: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  infoGroupTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#f97316",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  infoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  itemContainer: {
-    flexDirection: "row",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  itemDetails: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  itemInfo: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  itemPrice: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  itemSubtotal: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#f97316",
-    marginTop: 4,
-  },
-  totalContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  totalText: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#f97316",
-  },
-  button: {
-    backgroundColor: "#f97316",
-    marginTop: 16,
-  },
-  darkButtonText: {
-    color: "#ffffff",
-    fontWeight: "500",
-  },
-  lightButtonText: {
-    color: "#ffffff",
-    fontWeight: "500",
-  },
-});
 
 export default OrderDetailsScreen;

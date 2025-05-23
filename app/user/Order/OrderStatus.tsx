@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Text,
-  StyleSheet,
   TouchableOpacity,
   View,
   ScrollView,
@@ -117,17 +116,15 @@ const OrderStatus: React.FC = () => {
   if (loading) {
     return (
       <View
-        style={[
-          styles.loadingContainer,
-          isDarkMode ? styles.darkBackground : styles.lightBackground,
-        ]}
+        className={`flex-1 justify-center items-center p-4 ${
+          isDarkMode ? "bg-zinc-900" : "bg-gray-100"
+        }`}
       >
         <ActivityIndicator size="large" color="#f97316" />
         <Text
-          style={[
-            styles.loadingText,
-            isDarkMode ? styles.darkText : styles.lightText,
-          ]}
+          className={`mt-3 text-base text-center ${
+            isDarkMode ? "text-white" : "text-black"
+          }`}
         >
           {t("loading_orders")}
         </Text>
@@ -136,41 +133,35 @@ const OrderStatus: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className=" flex-1">
+    <SafeAreaView className="flex-1">
       <View
-        style={[
-          styles.container,
-          isDarkMode ? styles.darkBackground : styles.lightBackground,
-        ]}
+        className={`flex-1 p-4 ${
+          isDarkMode ? "bg-zinc-900" : "bg-gray-100"
+        }`}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollViewContainer}
+          contentContainerStyle={{ paddingBottom: 20 }}
         >
           <Text
-            style={[
-              styles.title,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
+            className={`text-2xl font-bold mb-4 text-center text-orange-500`}
           >
             {t("order_status_title")}
           </Text>
           <Text
-            style={[
-              styles.orderCount,
-              isDarkMode ? styles.darkText : styles.lightText,
-            ]}
+            className={`text-base mb-4 text-center ${
+              isDarkMode ? "text-white" : "text-black"
+            }`}
           >
             {t("total_orders")} {orders.length}
           </Text>
 
           {orders.length === 0 ? (
             <Text
-              style={[
-                styles.message,
-                isDarkMode ? styles.darkText : styles.lightText,
-              ]}
+              className={`text-lg text-center mt-5 ${
+                isDarkMode ? "text-white" : "text-black"
+              }`}
             >
               {t("no_orders")}
             </Text>
@@ -178,57 +169,49 @@ const OrderStatus: React.FC = () => {
             orders.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[
-                  styles.orderItem,
-                  isDarkMode ? styles.darkCard : styles.lightCard,
-                ]}
+                className={`p-4 rounded-lg mb-4 shadow ${
+                  isDarkMode ? "bg-zinc-800" : "bg-white"
+                }`}
                 onPress={() =>
                   router.push(`/user/Order/OrderDetails?id=${item.id}` as any)
                 }
               >
                 <Text
-                  style={[
-                    styles.orderTitle,
-                    isDarkMode ? styles.darkText : styles.lightText,
-                  ]}
+                  className={`text-lg font-bold mb-2 ${
+                    isDarkMode ? "text-white" : "text-black"
+                  }`}
                 >
                   {t("order_id")}: {item.id}
                 </Text>
                 {item.name && (
                   <Text
-                    style={[
-                      styles.orderInfo,
-                      isDarkMode ? styles.darkText : styles.lightText,
-                    ]}
+                    className={`text-base mb-1 ${
+                      isDarkMode ? "text-white" : "text-black"
+                    }`}
                   >
                     {t("order_customer")}: {item.name}
                   </Text>
                 )}
                 <Text
-                  style={[
-                    styles.orderInfo,
-                    isDarkMode ? styles.darkText : styles.lightText,
-                  ]}
+                  className={`text-base mb-1 ${
+                    isDarkMode ? "text-white" : "text-black"
+                  }`}
                 >
                   {t("order_date")}: {formatDate(item.date)}
                 </Text>
                 <Text
-                  style={[
-                    styles.orderPrice,
-                    isDarkMode ? styles.darkText : styles.lightText,
-                  ]}
+                  className="text-lg font-medium text-orange-500"
                 >
                   {t("order_total")}: {item.total.toLocaleString("vi-VN")} VNĐ
                 </Text>
                 <Text
-                  style={[
-                    styles.orderInfo,
+                  className={`text-base ${
                     item.status === "completed"
-                      ? styles.statusCompleted
+                      ? "text-green-500"
                       : item.status === "cancelled"
-                      ? styles.statusCancelled
-                      : styles.statusPending,
-                  ]}
+                      ? "text-red-500"
+                      : "text-orange-500"
+                  } font-medium`}
                 >
                   {t("order_status")}: {translateStatus(item.status)}
                 </Text>
@@ -237,14 +220,10 @@ const OrderStatus: React.FC = () => {
           )}
 
           <Button
-            style={styles.button}
+            className="bg-orange-500 mt-4"
             onPress={() => router.push("/user/home")}
           >
-            <Text
-              style={
-                isDarkMode ? styles.darkButtonText : styles.lightButtonText
-              }
-            >
+            <Text className="text-white font-medium">
               {t("continue_shopping")}
             </Text>
           </Button>
@@ -253,108 +232,5 @@ const OrderStatus: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    textAlign: "center",
-  },
-  darkBackground: {
-    backgroundColor: "#121212",
-  },
-  lightBackground: {
-    backgroundColor: "#f8f9fa",
-  },
-  darkText: {
-    color: "#ffffff",
-  },
-  lightText: {
-    color: "#000000",
-  },
-  darkCard: {
-    backgroundColor: "#1E1E1E",
-  },
-  lightCard: {
-    backgroundColor: "white",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-    color: "#f97316",
-  },
-  orderCount: {
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  orderItem: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  orderTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  orderInfo: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  orderPrice: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#f97316",
-  },
-  statusCompleted: {
-    color: "#10b981",
-    fontWeight: "500",
-  },
-  statusCancelled: {
-    color: "#ef4444",
-    fontWeight: "500",
-  },
-  statusPending: {
-    color: "#f97316",
-    fontWeight: "500",
-  },
-  message: {
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 20,
-  },
-  scrollViewContainer: {
-    paddingBottom: 20,
-  },
-  button: {
-    backgroundColor: "#f97316",
-    marginTop: 16,
-  },
-  darkButtonText: {
-    color: "#ffffff",
-    fontWeight: "500",
-  },
-  lightButtonText: {
-    color: "#ffffff",
-    fontWeight: "500",
-  },
-});
 
 export default OrderStatus;

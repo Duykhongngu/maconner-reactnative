@@ -188,7 +188,7 @@ export default function ChatScreen() {
     if (message.type === "suggestion" && message.suggestions) {
       return (
         <View className="mb-4">
-          <Text className="text-gray-600 mb-2">{message.text}</Text>
+          <Text className="text-gray-600 mb-2">{t(message.text)}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row space-x-2">
               {message.suggestions.map((suggestion, index) => (
@@ -197,7 +197,7 @@ export default function ChatScreen() {
                   onPress={() => handleSend(suggestion)}
                   className="bg-blue-100 px-4 py-2 rounded-full"
                 >
-                  <Text className="text-blue-600">{suggestion}</Text>
+                  <Text className="text-blue-600">{t(suggestion)}</Text>
                 </TouchableOpacity>
               ))}
             </View>

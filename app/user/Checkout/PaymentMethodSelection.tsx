@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Appearance,
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -12,6 +11,7 @@ import { Controller, Control, FieldErrors } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FormData } from "~/service/checkout";
 import { useTranslation } from "react-i18next";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 interface PaymentMethodSelectionProps {
   control: Control<FormData>;
@@ -23,13 +23,13 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
   errors,
 }) => {
   const { t } = useTranslation();
-  const colorScheme = Appearance.getColorScheme();
+  const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
 
   return (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle style={isDarkMode ? styles.darkText : styles.lightText}>
+        <CardTitle className={isDarkMode ? "text-white" : "text-black"}>
           {t("payment_method")}
         </CardTitle>
       </CardHeader>
@@ -55,7 +55,7 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                   color={value === "cod" ? "#F97316" : "#6B7280"}
                   style={{marginRight: 8}}
                 />
-                <Text style={isDarkMode ? styles.darkText : styles.lightText}>
+                <Text className={isDarkMode ? "text-white" : "text-black"}>
                   {t("cod_payment")}
                 </Text>
               </TouchableOpacity>
@@ -76,7 +76,7 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
                   color={value === "momo" ? "#F97316" : "#6B7280"}
                   style={{marginRight: 8}}
                 />
-                <Text style={isDarkMode ? styles.darkText : styles.lightText}>
+                <Text className={isDarkMode ? "text-white" : "text-black"}>
                   MoMo E-Wallet
                 </Text>
               </TouchableOpacity>
@@ -92,14 +92,5 @@ const PaymentMethodSelection: React.FC<PaymentMethodSelectionProps> = ({
     </Card>
   );
 };
-
-const styles = StyleSheet.create({
-  darkText: {
-    color: "#FFFFFF",
-  },
-  lightText: {
-    color: "#000000",
-  },
-});
 
 export default PaymentMethodSelection;

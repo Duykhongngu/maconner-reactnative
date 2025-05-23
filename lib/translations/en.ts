@@ -36,6 +36,7 @@ export default {
   "payment": "Payment",
   "previous": "Previous",
   "next": "Next",
+  
 
   // Products
   "product_name": "Product Name",
@@ -141,6 +142,16 @@ export default {
   "chat_new_message": "New message from Admin",
   "chat_mark_as_read": "Mark as read",
 
+   // Chat Bot Messages & Suggestions
+   "chat_help_topics": "You can ask me about:",
+   "chat_about_shop": "About the shop",
+   "chat_return_policy": "Return policy",
+   "chat_payment_methods": "Payment methods", 
+  "chat_order_status": "Order status",
+  "chat_new_products": "New products",
+  "chat_related_topics": "You might also be interested in:",
+  "chat_error_response": "Sorry, I'm having trouble. Please try again later.",
+  "chat_try_again": "Try again",
   // Colors
   "color_white": "White",
   "color_black": "Black",
@@ -242,6 +253,8 @@ export default {
   "no_vouchers": "You don't have any vouchers yet.",
   "explore_vouchers": "Explore Vouchers",
   "voucher_discount": "Discount",
+  "redirecting_to_momo": "Redirecting to MoMo...",
+  "dont_close_app": "Please don't close the app",
 
   "shipping_fee": "Shipping Fee",
   "discount": "Discount",

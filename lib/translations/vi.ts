@@ -38,6 +38,7 @@ export default {
   "previous": "Trước",
   "next": "Tiếp",
 
+
   // Products
   "product_name": "Tên sản phẩm",
   "product_price": "Giá bán",
@@ -248,6 +249,8 @@ export default {
   "order_summary": "Tóm tắt đơn hàng",
   "enter_voucher_code": "Nhập mã giảm giá",
   "apply": "Áp dụng",
+  "redirecting_to_momo": "Chuyển hướng đến MoMo...",
+  "dont_close_app": "Vui lòng không đóng ứng dụng",
   
   "processing": "Đang xử lý...",
   "please_fill_all_info": "Vui lòng điền đầy đủ thông tin",

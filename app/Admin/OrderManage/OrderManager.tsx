@@ -29,7 +29,6 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "~/firebase.config";
-import { Search } from "lucide-react-native";
 import { Order, OrderItem } from "./types";
 import SearchFilter from "./components/SearchFilter";
 import OrderItemComponent from "./components/OrderItem";

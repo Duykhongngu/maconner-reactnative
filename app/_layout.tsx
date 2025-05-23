@@ -20,6 +20,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { CartProvider } from "./user/Cart/CartContext";
 import '../lib/translations/i18n';
+import useMoMoDeepLink from '~/lib/useMoMoDeepLink';
 
 const LIGHT_THEME = { ...DefaultTheme, colors: NAV_THEME.light };
 const DARK_THEME = { ...DarkTheme, colors: NAV_THEME.dark };
@@ -34,6 +35,9 @@ export default function RootLayout() {
   const [statusBarStyle, setStatusBarStyle] = React.useState<"light" | "dark">(
     isDarkColorScheme ? "light" : "dark"
   );
+
+  // Sử dụng hook để thiết lập deeplink
+  const { isSetup } = useMoMoDeepLink();
 
   // Handle theme
   React.useEffect(() => {
@@ -66,7 +70,15 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, []);
 
+  React.useEffect(() => {
+    if (isSetup) {
+      console.log("MoMo DeepLink setup complete");
+    }
+  }, [isSetup]);
+
   if (!isColorSchemeLoaded || !isAuthLoaded) return null;
+
+  console.log("Checking if _layout.tsx exists");
 
   return (
     <OrderProvider>

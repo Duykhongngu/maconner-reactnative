@@ -4,7 +4,7 @@ import { Text } from "~/components/ui/text";
 
 export default function NotFoundScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1  bg-white">
       <Stack.Screen options={{ title: "Oops!" }} />
       <View className="flex-1 justify-center items-center">
         <Text className="text-xl font-bold mb-4">Trang này không tồn tại!</Text>

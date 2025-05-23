@@ -9,6 +9,7 @@ import {
   View,
   TouchableOpacity,
   Linking,
+  ActivityIndicator,
 } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +26,11 @@ import { getUserVouchers, Voucher } from "~/service/vouchers";
 import { useTranslation } from "react-i18next";
 import Feather from "react-native-vector-icons/Feather";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { handleMoMoPayment } from "~/service/momo";
+import { 
+  handleMoMoPayment, 
+  waitForPaymentResult 
+} from "~/service/momo";
+import { useMoMoDeepLink } from "~/lib/useMoMoDeepLink";
 
 // Import custom components
 import ShippingForm from "./ShippingForm";
@@ -38,6 +43,7 @@ enum CheckoutStep {
   SHIPPING = 0,
   REVIEW = 1,
   PAYMENT = 2,
+  PROCESSING = 3, // Thêm bước xử lý thanh toán
 }
 
 // Form schema definition - Now with translations
@@ -46,6 +52,9 @@ const CheckoutContent: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(
     CheckoutStep.SHIPPING
   );
+
+  // Sử dụng hook để nhận thông tin về deeplink
+  const { lastDeepLink } = useMoMoDeepLink();
 
   const formSchema = z.object({
     name: z.string().min(2, { message: t("form_validation_name") }),
@@ -206,18 +215,25 @@ const CheckoutContent: React.FC = () => {
       // Xử lý thanh toán MoMo
       if (values.paymentMethod === "momo") {
         const finalAmount = subtotal + shippingFee - discountAmount;
-        const success = await handleMoMoPayment(
+        
+        // Hiển thị trạng thái đang xử lý thanh toán
+        setCurrentStep(CheckoutStep.PROCESSING);
+        
+        // Gọi API thanh toán MoMo, kết quả trả về sẽ là một đối tượng có status và orderId
+        const result = await handleMoMoPayment(
           finalAmount,
           `Thanh toán đơn hàng NAD Shop`
         );
 
-        if (success) {
+        // Nếu quá trình khởi tạo thanh toán thành công (có được orderId và đã mở app MoMo)
+        if (result.status === "pending" && result.orderId) {
           // Tạo đơn hàng với trạng thái chờ thanh toán
           const order = await processCheckout(
             {
               ...checkoutData,
               discountAmount: discountAmount.toString(),
               status: "pending", // Trạng thái chờ thanh toán
+              momoOrderId: result.orderId // Lưu mã giao dịch MoMo để theo dõi
             },
             cartItems,
             subtotal,
@@ -226,10 +242,51 @@ const CheckoutContent: React.FC = () => {
 
           if (order) {
             setCurrentOrder(order as OrderType);
-            clearCart();
-            router.push("/user/Order/OrderStatus");
+            console.log(`Order created with ID: ${order.id}, waiting for payment result...`);
+            
+            try {
+              // Đợi kết quả thanh toán (tối đa 5 phút)
+              const paymentResult = await waitForPaymentResult(result.orderId, 300000);
+              console.log(`Payment result received: ${JSON.stringify(paymentResult)}`);
+              
+              if (paymentResult.status === "success") {
+                // Thanh toán thành công, cập nhật trạng thái đơn hàng
+                // Ở đây có thể gọi API để cập nhật trạng thái đơn hàng thành "completed"
+                Alert.alert(
+                  t("success"), 
+                  t("payment_successful"),
+                  [{ 
+                    text: 'OK', 
+                    onPress: () => {
+                      clearCart();
+                      router.push("/user/Order/OrderStatus");
+                    }
+                  }]
+                );
+              } else if (paymentResult.status === "cancelled") {
+                // Người dùng đã hủy thanh toán
+                Alert.alert(t("notification"), t("payment_cancelled"));
+                setCurrentStep(CheckoutStep.PAYMENT); // Quay lại bước thanh toán
+              } else {
+                // Thanh toán thất bại
+                Alert.alert(t("error"), t("payment_failed"));
+                setCurrentStep(CheckoutStep.PAYMENT); // Quay lại bước thanh toán
+              }
+            } catch (error) {
+              console.error("Error waiting for payment result:", error);
+              Alert.alert(
+                t("error"),
+                t("payment_process_error"),
+                [{ text: 'OK', onPress: () => setCurrentStep(CheckoutStep.PAYMENT) }]
+              );
+            }
           }
+        } else {
+          // Không thể khởi tạo thanh toán MoMo
+          Alert.alert(t("error"), t("momo_init_failed"));
+          setCurrentStep(CheckoutStep.PAYMENT); // Quay lại bước thanh toán
         }
+        
         setIsPaymentLoading(false);
         return;
       }
@@ -261,6 +318,7 @@ const CheckoutContent: React.FC = () => {
             : "checkout_error"
         )
       );
+      setCurrentStep(CheckoutStep.PAYMENT); // Đảm bảo quay lại bước thanh toán nếu có lỗi
     } finally {
       setIsPaymentLoading(false);
     }
@@ -271,6 +329,28 @@ const CheckoutContent: React.FC = () => {
 
   // Render step indicator
   const renderStepIndicator = () => {
+    // Nếu đang xử lý thanh toán, hiển thị giao diện loading
+    if (currentStep === CheckoutStep.PROCESSING) {
+      return (
+        <View className="flex-1 justify-center items-center p-8">
+          <ActivityIndicator size="large" color="#F97316" />
+          <Text 
+            className="mt-4 text-lg font-medium text-center"
+            style={isDarkMode ? styles.darkText : styles.lightText}
+          >
+            {t("payment_processing")}
+          </Text>
+          <Text
+            className="mt-2 text-sm text-center"
+            style={isDarkMode ? styles.darkText : styles.lightText}
+          >
+            {t("dont_close_app")}
+          </Text>
+        </View>
+      );
+    }
+
+    // Giữ nguyên code cũ cho các bước còn lại
     return (
       <View className="flex-row justify-between items-center mb-4 px-4 pt-4">
         <View className="flex-1 items-center">
@@ -340,8 +420,91 @@ const CheckoutContent: React.FC = () => {
     );
   };
 
+  // Render content based on current step
+  const renderContent = () => {
+    // Nếu đang ở bước xử lý thanh toán
+    if (currentStep === CheckoutStep.PROCESSING) {
+      return (
+        <View className="flex-1 justify-center items-center p-4">
+          <Text 
+            className="mb-6 text-base text-center"
+            style={isDarkMode ? styles.darkText : styles.lightText}
+          >
+            {t("redirecting_to_momo")}
+          </Text>
+        </View>
+      );
+    }
+    
+    return (
+      <>
+        {/* Step 1: Shipping Information */}
+        {currentStep === CheckoutStep.SHIPPING && (
+          <ShippingForm control={control} errors={errors} />
+        )}
+
+        {/* Step 2: Order Review and Voucher */}
+        {currentStep === CheckoutStep.REVIEW && (
+          <>
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              shippingFee={shippingFee}
+              discountAmount={discountAmount}
+              total={total}
+            />
+
+            <VoucherSection
+              control={control}
+              setValue={setValue}
+              getValues={getValues}
+              voucher={voucher}
+              setVoucher={setVoucher}
+              discountAmount={discountAmount}
+              setDiscountAmount={setDiscountAmount}
+              voucherError={voucherError}
+              setVoucherError={setVoucherError}
+              isApplyingVoucher={isApplyingVoucher}
+              setIsApplyingVoucher={setIsApplyingVoucher}
+              userVouchers={userVouchers}
+              loadUserVouchers={loadUserVouchers}
+              loadingUserVouchers={loadingUserVouchers}
+              subtotal={subtotal}
+              cartItems={cartItems}
+              router={router}
+            />
+          </>
+        )}
+
+        {/* Step 3: Payment */}
+        {currentStep === CheckoutStep.PAYMENT && (
+          <>
+            <OrderSummary
+              cartItems={cartItems}
+              subtotal={subtotal}
+              shippingFee={shippingFee}
+              discountAmount={discountAmount}
+              total={total}
+            />
+
+            <PaymentMethodSelection control={control} errors={errors} />
+          </>
+        )}
+
+        {/* Navigation Buttons */}
+        {renderNavButtons()}
+      </>
+    );
+  };
+
   // Render navigation buttons
   const renderNavButtons = () => {
+    // Nếu đang xử lý thanh toán, không hiển thị các nút điều hướng
+    if (currentStep === CheckoutStep.PROCESSING) {
+      return null;
+    }
+    
+    // Giữ nguyên code cũ
     return (
       <View className="flex-row justify-between mt-4 mb-6 px-4">
         {currentStep > 0 && (
@@ -405,61 +568,8 @@ const CheckoutContent: React.FC = () => {
         {/* Step Indicator */}
         {renderStepIndicator()}
 
-        {/* Step 1: Shipping Information */}
-        {currentStep === CheckoutStep.SHIPPING && (
-          <ShippingForm control={control} errors={errors} />
-        )}
-
-        {/* Step 2: Order Review and Voucher */}
-        {currentStep === CheckoutStep.REVIEW && (
-          <>
-            <OrderSummary
-              cartItems={cartItems}
-              subtotal={subtotal}
-              shippingFee={shippingFee}
-              discountAmount={discountAmount}
-              total={total}
-            />
-
-            <VoucherSection
-              control={control}
-              setValue={setValue}
-              getValues={getValues}
-              voucher={voucher}
-              setVoucher={setVoucher}
-              discountAmount={discountAmount}
-              setDiscountAmount={setDiscountAmount}
-              voucherError={voucherError}
-              setVoucherError={setVoucherError}
-              isApplyingVoucher={isApplyingVoucher}
-              setIsApplyingVoucher={setIsApplyingVoucher}
-              userVouchers={userVouchers}
-              loadUserVouchers={loadUserVouchers}
-              loadingUserVouchers={loadingUserVouchers}
-              subtotal={subtotal}
-              cartItems={cartItems}
-              router={router}
-            />
-          </>
-        )}
-
-        {/* Step 3: Payment */}
-        {currentStep === CheckoutStep.PAYMENT && (
-          <>
-            <OrderSummary
-              cartItems={cartItems}
-              subtotal={subtotal}
-              shippingFee={shippingFee}
-              discountAmount={discountAmount}
-              total={total}
-            />
-
-            <PaymentMethodSelection control={control} errors={errors} />
-          </>
-        )}
-
-        {/* Navigation Buttons */}
-        {renderNavButtons()}
+        {/* Content based on current step */}
+        {renderContent()}
       </ScrollView>
     </SafeAreaView>
   );
